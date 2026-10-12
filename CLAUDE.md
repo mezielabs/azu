@@ -14,7 +14,7 @@ If the code forces a change to the API in `README.md` or `docs/spec.md`, update 
 
 ## Current phase
 
-**Phase 0: technical spike.** Do not start Phase 1 features until Chimezie approves the spike findings in `docs/spike-findings.md`. See `docs/spec.md` §11.
+**Phase 1** (approved 2026-10-12). The plan, starting with its week-one items, is in `docs/spec.md` §11. One FR per branch and PR, and stop for Chimezie's review where he asks.
 
 ## Stack
 
