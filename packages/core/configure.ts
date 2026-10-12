@@ -8,9 +8,53 @@
 |
 */
 
-import { appendFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import type Configure from '@adonisjs/core/commands/configure'
 import { stubsRoot } from './stubs/main.ts'
+
+/**
+ * Appended to app/abilities/main.ts. Denies everyone until the app
+ * decides who gets in (FR-02).
+ */
+const ACCESS_ABILITY = `
+/**
+ * Who can open the admin panel. Azu denies everyone until this returns
+ * true, for example: (user: User) => user.role === 'admin'
+ */
+export const accessAdmin = Bouncer.ability(() => {
+  return false
+})
+`
+
+/**
+ * Adds the accessAdmin ability when Bouncer is set up and the ability
+ * doesn't exist yet. Without Bouncer, the access gate fails closed, so
+ * explain how to add it instead of installing it here (AdonisJS presets
+ * don't install their dependencies either).
+ */
+async function addAccessAbility(command: Configure) {
+  const abilitiesFile = command.app.makePath('app/abilities/main.ts')
+
+  if (!existsSync(abilitiesFile)) {
+    command.logger.warning(
+      'Bouncer is not set up, so the admin panel denies everyone. Run "node ace add @adonisjs/bouncer", then "node ace configure @mezielabs/azu" again'
+    )
+    return
+  }
+
+  let contents = await readFile(abilitiesFile, 'utf8')
+  if (/export const accessAdmin\b/.test(contents)) {
+    command.logger.action('update app/abilities/main.ts').skipped('accessAdmin already exists')
+    return
+  }
+
+  if (!/import \{[^}]*\bBouncer\b[^}]*\} from '@adonisjs\/bouncer'/.test(contents)) {
+    contents = `import { Bouncer } from '@adonisjs/bouncer'\n${contents}`
+  }
+  await writeFile(abilitiesFile, `${contents.trimEnd()}\n${ACCESS_ABILITY}`)
+  command.logger.action('update app/abilities/main.ts').succeeded()
+}
 
 /**
  * The front-end package installed alongside core.
@@ -53,6 +97,11 @@ export async function configure(command: Configure) {
   await codemods.registerVitePlugin('azu()', [
     { isNamed: true, module: '@mezielabs/azu/vite', identifier: 'azu' },
   ])
+
+  /**
+   * The access gate's ability (FR-02)
+   */
+  await addAccessAbility(command)
 
   if (shouldInstallPackages) {
     await codemods.installPackages([FRONT_END_PACKAGE])
