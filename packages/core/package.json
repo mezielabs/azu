@@ -22,10 +22,6 @@
     "./azu_provider": {
       "types": "./build/providers/azu_provider.d.ts",
       "default": "./build/providers/azu_provider.js"
-    },
-    "./spike": {
-      "types": "./build/spike/index.d.ts",
-      "default": "./build/spike/index.js"
     }
   },
   "scripts": {
@@ -81,8 +77,7 @@
     "entry": [
       "./index.ts",
       "./configure.ts",
-      "./providers/azu_provider.ts",
-      "./spike/index.ts"
+      "./providers/azu_provider.ts"
     ],
     "outDir": "./build",
     "clean": true,
