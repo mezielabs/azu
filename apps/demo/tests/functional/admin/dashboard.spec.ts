@@ -1,8 +1,13 @@
 import { test } from '@japa/runner'
+import testUtils from '@adonisjs/core/services/test_utils'
+import { createUser } from './helpers.ts'
 
-test.group('Admin / dashboard (FR-01)', () => {
+test.group('Admin / dashboard (FR-01)', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
   test('renders the azu/dashboard page under /admin', async ({ client }) => {
-    const response = await client.get('/admin').withInertia()
+    const admin = await createUser('admin')
+    const response = await client.get('/admin').loginAs(admin).withInertia()
 
     response.assertStatus(200)
     response.assertInertiaComponent('azu/dashboard')
@@ -13,7 +18,8 @@ test.group('Admin / dashboard (FR-01)', () => {
     client,
     assert,
   }) => {
-    const response = await client.get('/admin')
+    const admin = await createUser('admin')
+    const response = await client.get('/admin').loginAs(admin)
 
     response.assertStatus(200)
     assert.include(response.text(), 'inertia/admin/app.tsx')
