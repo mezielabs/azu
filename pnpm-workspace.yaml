@@ -1,0 +1,16 @@
+packages:
+  - packages/*
+  - apps/*
+
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': true
+  better-sqlite3: true
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - rolldown-plugin-dts@0.28.7
+  - tsdown@0.23.1
+
+overrides:
+  eslint-plugin-react>eslint: ^10.11.0

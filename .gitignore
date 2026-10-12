@@ -2,10 +2,14 @@ node_modules/
 build/
 dist/
 coverage/
-tmp/
+**/tmp/*
+!**/tmp/.gitkeep
 .env
 .env.*
 !.env.example
 *.log
+*.tgz
 .DS_Store
+.idea/
+.vscode/
 .claude/settings.local.json

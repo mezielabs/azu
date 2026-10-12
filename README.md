@@ -32,7 +32,7 @@ If your API rejects a request, Azu rejects it too. There's one source of truth, 
 
 - AdonisJS 7 with Lucid
 - Inertia with React
-- Node.js 22 or later
+- Node.js 24 or later
 - PostgreSQL, MySQL, or SQLite
 
 ## Installation
@@ -186,6 +186,16 @@ Validation errors show up under the field that caused them, including nested and
 
 Note: validators written for your API don't always fit a form. If update needs different rules from create (an optional password, say), give the resource a separate `update` validator.
 
+Some validators need context, such as an update validator whose `unique` rule has to skip the record being edited. Azu passes `{ record }` as VineJS metadata: the record being edited on update, `undefined` on create. If your validator expects a different shape, map it with `meta`, which receives the record and the HTTP context:
+
+```ts
+validators: {
+  create: createProductValidator,
+  update: updateProductValidator,
+  meta: ({ record }) => ({ productId: record?.id }),
+},
+```
+
 ## Actions
 
 Actions are async functions. They run on a single row, or on a selection of rows as a bulk action:
@@ -239,8 +249,10 @@ Components in `inertia/admin/components` are registered by file name, so `sku_in
 **3. Publish a page.** Copy any page into your app and edit it however you like:
 
 ```sh
-node ace admin:publish Resource/Index
+node ace admin:publish resource/index
 ```
+
+This copies the page to `inertia/admin/pages/resource/index.tsx`. Page names are snake_case paths, like your app's own Inertia pages; the older `Resource/Index` spelling works too.
 
 Azu renders your copy from then on. It's the most flexible option, but you now own that page through upgrades. Run `node ace admin:doctor` after upgrading to see which published files drifted from the new version.
 
