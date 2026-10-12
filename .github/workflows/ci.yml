@@ -39,6 +39,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
 
+      # Production build of the demo against the admin bundle budget
+      # (spec §2). The demo's .env says development, so force production.
+      - name: Admin bundle budget
+        run: pnpm budget
+
   test:
     name: Test (${{ matrix.db }})
     runs-on: ubuntu-latest
