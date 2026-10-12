@@ -7,6 +7,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# Test settings, no secrets (the AdonisJS starter kit commits it)
+!.env.test
 *.log
 *.tgz
 .DS_Store
