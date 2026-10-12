@@ -125,7 +125,14 @@ export default defineResource(Product, {
 Rules:
 
 - **Typed against the model.** `defineResource(Model, …)` infers attribute and relation names; `column.text('nmae')` fails `tsc`.
-- **Required comes from the validator.** Fields have no `required()`. The form reads required, maxLength, and min/max hints from the VineJS schema where it can.
+  - Sortable columns, `search`, and form fields must be persisted columns. Getters are display-only columns.
+  - Telling getters apart from columns needs AdonisJS 7's generated schema classes (the `$columns` tuple). Hand-written models without it still get name checks, but a sortable getter compiles.
+  - Bulk action handlers receive typed records: in `.handle(async (products) => …)`, `products` is `Product[]` with no annotation.
+- **Required comes from the validator.** Fields have no `required()`. The form reads hints from the compiled VineJS validator where it can: required, minLength/maxLength, min/max, step, pattern, choices, and array sizes.
+  - Fields with conditional rules (`requiredWhen` and similar) show as optional; the server still enforces them.
+  - Union and group schemas give no hints, because their shape depends on the data.
+  - Explicit field hints such as `field.number('price').min(0)` override introspection, for the UI only. They never change validation.
+- **Validator metadata.** Azu passes `{ record }` as VineJS metadata: the record being edited on update, `undefined` on create. A resource can map it with `validators.meta: ({ record, ctx }) => ({ productId: record?.id })` when its validators expect a different shape.
 - **Discovery by convention.** Files in `app/admin/resources` load at boot. `start/admin.ts` can register resources explicitly when autoload is off.
 - **Hooks.** `beforeSave`, `afterSave`, `beforeDelete` receive the model instance and the HTTP context.
 - **Defaults.** Omitting `columns` or `fields` falls back to what the generator would produce.
@@ -169,7 +176,7 @@ Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('crea
 
 The server computes abilities once per request and sends them as Inertia props. The UI hides what the server would reject, but the server always checks.
 
-**Validation:** payload limited to declared fields, then passed to the named VineJS validator. `E_VALIDATION_ERROR` messages map to fields by path, including nested and array paths (`tags.0`). File fields validate size and MIME on upload, then the record validates through the resource validator.
+**Validation:** payload limited to declared fields, then passed to the named VineJS validator with metadata (`{ record }` by default, or the result of `validators.meta`; see §4). `E_VALIDATION_ERROR` messages map to fields by path, including nested and array paths (`tags.0`). File fields validate size and MIME on upload, then the record validates through the resource validator.
 
 ## 7. Commands
 
@@ -178,7 +185,7 @@ The server computes abilities once per request and sends them as Inertia props. 
 | `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin`, mounts routes at `/admin`, adds the admin Vite entry |
 | `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
-| `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`; no argument lists options |
+| `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
 | `node ace admin:doctor` | Checks config, missing policy methods, validators not covering declared fields, drifted published files |
 
 Generator mapping:
@@ -192,15 +199,17 @@ Generator mapping:
 
 ## 8. Frontend
 
-React 19 Inertia pages, Tailwind, headless components, served from a separate Vite entry.
+React 19 Inertia pages and headless components, served from a separate Vite entry.
 
-**Pages:** `Admin/Dashboard`, `Admin/Resource/Index`, `Create`, `Edit`, `Show`. Each receives one typed props object: schema, data, abilities.
+**Styling:** Azu ships its own prebuilt stylesheet, built with Tailwind inside `@mezielabs/azu-react`. The app doesn't need Tailwind. App components can use Azu's CSS variables, or the app's own Tailwind with an `@source` pointing at the package.
+
+**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object: schema, data, abilities.
 
 **Overrides, smallest first:**
 
 1. **Config:** labels, icons, colours, page size in the resource or `config/admin.ts`.
 2. **Component swap:** `field.text('sku').component('SkuInput')` or `column.custom('stock', 'StockBar')` resolves a React component from `inertia/admin/components`, registered by file name (`sku_input.tsx` → `SkuInput`). Field components receive `value`, `onChange`, `field`, `errors`, `record`. Export the prop types from `@mezielabs/azu-react` (`FieldProps<T>`).
-3. **Page publish:** `admin:publish Resource/Index` copies a page into the app; Azu renders the app's copy.
+3. **Page publish:** `admin:publish resource/index` copies the page to `inertia/admin/pages/resource/index.tsx`; Azu renders the app's copy. `Resource/Index` is accepted too.
 
 Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cover cases between levels 2 and 3.
 
