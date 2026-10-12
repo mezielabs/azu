@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { test } from '@japa/runner'
 import db from '@adonisjs/lucid/services/db'
 import testUtils from '@adonisjs/core/services/test_utils'
@@ -20,11 +21,13 @@ test.group('Numeric columns', (group) => {
   const dialect = () => db.connection().dialect.name
 
   async function createProduct(price: string) {
-    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen' })
+    // Unique values, so the test also passes against a seeded database
+    const suffix = randomUUID().slice(0, 8)
+    const category = await Category.create({ name: 'Kitchen', slug: `kitchen-${suffix}` })
     return Product.create({
       categoryId: category.id,
       name: 'Pot',
-      sku: 'SKU-1',
+      sku: `TEST-${suffix}`,
       price,
       stock: 3,
       status: 'draft',
@@ -45,8 +48,8 @@ test.group('Numeric columns', (group) => {
   })
 
   test('decimal(12,2) through the query builder', async ({ assert }) => {
-    await createProduct('99.90')
-    const row = await db.from('products').select('price').firstOrFail()
+    const { id } = await createProduct('99.90')
+    const row = await db.from('products').where('id', id).select('price').firstOrFail()
 
     if (dialect() === 'postgres') {
       assert.strictEqual(row.price, '99.90')
@@ -56,8 +59,13 @@ test.group('Numeric columns', (group) => {
   })
 
   test('count(*) and sum() aggregates', async ({ assert }) => {
-    await createProduct('10.25')
-    const row = await db.from('products').count('* as total').sum('price as revenue').firstOrFail()
+    const { categoryId } = await createProduct('10.25')
+    const row = await db
+      .from('products')
+      .where('category_id', categoryId)
+      .count('* as total')
+      .sum('price as revenue')
+      .firstOrFail()
 
     if (dialect() === 'postgres') {
       // bigint and numeric: both strings from node-postgres
@@ -70,8 +78,8 @@ test.group('Numeric columns', (group) => {
   })
 
   test('paginator totals are numbers on every database', async ({ assert }) => {
-    await createProduct('5.00')
-    const page = await Product.query().paginate(1, 10)
+    const { categoryId } = await createProduct('5.00')
+    const page = await Product.query().where('categoryId', categoryId).paginate(1, 10)
 
     assert.strictEqual(page.total, 1)
     assert.strictEqual(page.getMeta().total, 1)
