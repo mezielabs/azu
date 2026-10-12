@@ -6,6 +6,7 @@ import type { AzuConfig, AzuConfigInput } from './types.ts'
 export const defaults: AzuConfig = {
   path: '/admin',
   entry: 'inertia/admin/app.tsx',
+  loginUrl: '/login',
 }
 
 /**
@@ -15,7 +16,7 @@ export const defaults: AzuConfig = {
  * ```ts
  * import { defineConfig } from '@mezielabs/azu'
  *
- * export default defineConfig({ path: '/admin' })
+ * export default defineConfig({ path: '/admin', guard: 'web', loginUrl: '/login' })
  * ```
  */
 export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
@@ -23,5 +24,10 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
   if (path === '/') {
     throw new Error('Azu can\'t be mounted at "/". Set "path" in config/admin.ts, e.g. "/admin"')
   }
-  return { path, entry: config.entry ?? defaults.entry }
+  return {
+    path,
+    entry: config.entry ?? defaults.entry,
+    guard: config.guard,
+    loginUrl: config.loginUrl ?? defaults.loginUrl,
+  }
 }
