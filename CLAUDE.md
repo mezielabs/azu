@@ -1,8 +1,8 @@
 # Azu
 
-Azu (Igbo for "back") is an admin panel for AdonisJS 7, published as `@mezielabs/azu` by Mezie Labs. It reads an app's existing Lucid models, Bouncer policies, VineJS validators, and Drive disks, and renders an Inertia + React back office from small resource definitions. Free MIT core now; paid Pro extensions later.
+Azu (Igbo for "back") is an admin panel for AdonisJS 7, published as `@mezielabs/azu` by [Mezie Labs](https://mezielabs.com). It reads an app's existing Lucid models, Bouncer policies, VineJS validators, and Drive disks, and renders an Inertia + React back office from small resource definitions. Free MIT core now; paid Pro extensions later.
 
-Owner: Chimezie (Mezie Labs). He makes product calls; you build.
+Owner: Chimezie Enyinnaya (Mezie Labs). He makes product calls; you build.
 
 ## Read first
 
@@ -20,7 +20,7 @@ If the code forces a change to the API in `README.md` or `docs/spec.md`, update 
 
 - AdonisJS 7, Lucid, Bouncer, VineJS, Drive, Inertia
 - React 19, Tailwind, a headless component library (decide in the spike)
-- TypeScript (strict), ESM, Node 22+
+- TypeScript (strict), ESM, Node 24+
 - Tests: Japa (unit, API client, browser client)
 - Databases: Postgres (primary), MySQL, SQLite
 - Monorepo: pnpm workspaces
@@ -36,13 +36,17 @@ docs/            spec, decisions, spike findings
 
 ## Commands
 
-Fill this in as scripts are created, and keep it accurate:
+Run from the repo root. Root scripts build `packages/*` first, because the demo consumes their built output.
 
 - Install: `pnpm install`
-- Typecheck: _tbd_
-- Lint: _tbd_
-- Test: _tbd_
-- Run demo: _tbd_
+- First-time demo setup: `cp apps/demo/.env.example apps/demo/.env && pnpm --filter demo exec node ace generate:key`, then `pnpm demo:seed`
+- Build packages: `pnpm build`
+- Typecheck: `pnpm typecheck` (packages, then the demo; the demo runs `node ace codegen` first)
+- Lint: `pnpm lint`
+- Test: `pnpm test` (core Japa suite, then the demo's `node ace test`)
+- Run demo: `pnpm dev` (`node ace serve --hmr`), then open http://localhost:3333/admin. Needs Node 24.21 or later; `--hmr` crashes on 24.3.0. `.nvmrc` pins 24.
+- Reset and seed the demo DB: `pnpm demo:seed`. Logins are in `apps/demo/database/seeders/main_seeder.ts`.
+- Format: `pnpm format`
 
 ## Non-negotiables
 
