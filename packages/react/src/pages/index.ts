@@ -9,5 +9,7 @@ export type PageModule = { default: ComponentType<any> }
  */
 export const packagePages: Record<string, () => Promise<PageModule>> = {
   'dashboard': () => import('./dashboard.tsx'),
+  'resource/index': () => import('./resource/index.tsx'),
   'errors/forbidden': () => import('./errors/forbidden.tsx'),
+  'errors/not_found': () => import('./errors/not_found.tsx'),
 }

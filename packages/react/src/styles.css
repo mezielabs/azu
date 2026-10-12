@@ -48,8 +48,46 @@
     color: var(--azu-muted);
   }
 
+  .azu-body {
+    @apply flex;
+  }
+
   .azu-main {
-    @apply p-6;
+    @apply min-w-0 flex-1 p-6;
+  }
+
+  .azu-nav {
+    @apply w-56 shrink-0 space-y-4 border-r p-4;
+    border-color: var(--azu-border);
+  }
+
+  .azu-nav-heading {
+    @apply mb-1 px-2 text-xs font-semibold tracking-wide uppercase;
+    color: var(--azu-muted);
+  }
+
+  .azu-nav-link {
+    @apply block rounded px-2 py-1 text-sm;
+  }
+
+  .azu-nav-link:hover {
+    background: var(--azu-subtle);
+  }
+
+  .azu-nav-link[aria-current='page'] {
+    @apply font-semibold;
+    background: var(--azu-subtle);
+    color: var(--azu-brand);
+  }
+
+  @media (max-width: 640px) {
+    .azu-body {
+      @apply flex-col;
+    }
+
+    .azu-nav {
+      @apply w-full border-r-0 border-b;
+    }
   }
 
   .azu-page-title {
