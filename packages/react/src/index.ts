@@ -15,4 +15,9 @@ export { useComponent } from './components/registry.tsx'
  * Contracts are defined in `@mezielabs/azu`, so a future Vue package
  * shares them.
  */
-export type { FieldProps, DashboardPageProps, AzuSharedProps } from '@mezielabs/azu/types'
+export type {
+  FieldProps,
+  DashboardPageProps,
+  ForbiddenPageProps,
+  AzuSharedProps,
+} from '@mezielabs/azu/types'
