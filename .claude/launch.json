@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "apps/demo", "exec", "node", "ace", "serve", "--watch"],
+      "port": 3333
+    }
+  ]
+}

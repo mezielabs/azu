@@ -1,0 +1,9 @@
+build
+node_modules
+pnpm-lock.yaml
+apps/demo/.adonisjs
+*.md
+apps/demo/database/schema.ts
+apps/demo/public
+apps/demo/tmp
+.claude

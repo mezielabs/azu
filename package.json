@@ -1,0 +1,23 @@
+{
+  "name": "azu-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter \"./packages/*\" run build",
+    "typecheck": "pnpm build && pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm build && pnpm -r run test",
+    "dev": "pnpm build && pnpm --filter demo run dev",
+    "format": "prettier --write .",
+    "demo:seed": "pnpm --filter demo exec node ace migration:fresh --seed"
+  },
+  "devDependencies": {
+    "@adonisjs/prettier-config": "^1.5.0",
+    "prettier": "^3.9.9"
+  },
+  "prettier": "@adonisjs/prettier-config"
+}
