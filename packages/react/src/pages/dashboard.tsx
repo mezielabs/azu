@@ -1,0 +1,16 @@
+import { AdminLayout, Head, type DashboardPageProps } from '@mezielabs/azu-react'
+
+export default function Dashboard({ azu }: DashboardPageProps) {
+  return (
+    <AdminLayout azu={azu} title="Dashboard">
+      <Head title="Dashboard" />
+      <h1 className="azu-page-title" data-azu-page="dashboard">
+        Dashboard
+      </h1>
+      <div className="azu-empty">
+        <p>Azu is installed.</p>
+        <p>Resources you add in app/admin/resources will show up here.</p>
+      </div>
+    </AdminLayout>
+  )
+}
