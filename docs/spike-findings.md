@@ -38,6 +38,8 @@ What exists now:
 
 ### Removing the spike code
 
+**Done 2026-10-12 on `feat/vite-plugin`**, where FR-01's real install path replaced it. The tables are kept as the record.
+
 The proofs are throwaway. **Phase 1 removes them using the tables below, not by searching for the `SPIKE (Phase 0)` header.** Most files don't carry the header, including all of `packages/react/src/`, `packages/core/resources/views/admin.edge`, and `apps/demo/inertia/admin/app.tsx`. Rebuild the real versions from these notes rather than promoting spike files.
 
 Delete:
