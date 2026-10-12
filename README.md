@@ -95,7 +95,7 @@ export default defineResource(Product, {
   columns: [
     column.image('thumbnail'),
     column.text('name').sortable(),
-    column.number('price').format('currency', 'NGN').sortable(),
+    column.decimal('price').format('currency', 'NGN').sortable(),
     column.belongsTo('category', 'name'),
     column.badge('status').colors({ draft: 'gray', published: 'green' }),
   ],
@@ -103,7 +103,7 @@ export default defineResource(Product, {
   fields: [
     field.text('name'),
     field.text('sku'),
-    field.number('price').min(0),
+    field.decimal('price').min(0),
     field.belongsTo('category').searchable('name'),
     field.select('status').options({ draft: 'Draft', published: 'Published' }),
     field.richText('description'),
@@ -127,7 +127,8 @@ Files in `app/admin/resources` load automatically. Prefer explicit registration?
 | Field | Form control | Notes |
 | --- | --- | --- |
 | `text`, `textarea` | Input, auto-growing textarea | |
-| `number` | Numeric input | Supports `min`, `max`, `step` |
+| `number` | Numeric input | For numeric attributes (integers, floats). Supports `min`, `max`, `step` |
+| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step` |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
 | `date`, `datetime` | Date picker | Uses your app's timezone |

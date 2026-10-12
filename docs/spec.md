@@ -18,7 +18,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles and renders list and forms with zero edits | P0 |
 | FR-05 | List screen: pagination, sorting, search | Server-side; page sizes 10/25/50/100; sort, search, and page survive reload via the URL | P0 |
 | FR-06 | Create, edit, and detail screens | Save redirects to detail with a success toast; unsaved-changes warning on navigate away | P0 |
-| FR-07 | Core field types | text, textarea, number, boolean, select, date, datetime, richText, file, image (via Drive) | P0 |
+| FR-07 | Core field types | text, textarea, number, decimal, boolean, select, date, datetime, richText, file, image (via Drive) | P0 |
 | FR-08 | belongsTo and hasMany | belongsTo renders a searchable async select; hasMany renders a paginated table on detail | P0 |
 | FR-09 | manyToMany picker | Attach and detach related records from the form with search | P1 |
 | FR-10 | VineJS validation reuse | Create and update use the validators named on the resource; 422 errors render under each field | P0 |
@@ -86,7 +86,7 @@ export default defineResource(Product, {
     column.image('thumbnail'),
     column.text('name').sortable(),
     column.text('sku'),
-    column.number('price').format('currency', 'NGN').sortable(),
+    column.decimal('price').format('currency', 'NGN').sortable(),
     column.belongsTo('category', 'name'),
     column.badge('status').colors({ draft: 'gray', published: 'green' }),
     column.datetime('createdAt').sortable().hiddenByDefault(),
@@ -95,7 +95,7 @@ export default defineResource(Product, {
   fields: [
     field.text('name'),
     field.text('sku'),
-    field.number('price').min(0),
+    field.decimal('price').min(0),
     field.belongsTo('category').searchable('name'),
     field.select('status').options({ draft: 'Draft', published: 'Published' }),
     field.richText('description'),
@@ -131,7 +131,8 @@ Rules:
 - **Required comes from the validator.** Fields have no `required()`. The form reads hints from the compiled VineJS validator where it can: required, minLength/maxLength, min/max, step, pattern, choices, and array sizes.
   - Fields with conditional rules (`requiredWhen` and similar) show as optional; the server still enforces them.
   - Union and group schemas give no hints, because their shape depends on the data.
-  - Explicit field hints such as `field.number('price').min(0)` override introspection, for the UI only. They never change validation.
+  - Explicit field hints such as `field.decimal('price').min(0)` override introspection, for the UI only. They never change validation.
+- **Decimals stay strings.** `column.decimal()` and `field.decimal()` take attributes typed `string`: decimal columns, as Lucid's schema generator types them on Postgres. Values stay exact strings from the database to the browser and back. They're formatted with `Intl.NumberFormat`, which formats numeric strings exactly, and never converted through `Number`. `column.number()` and `field.number()` take attributes typed `number`. Using the wrong one fails `tsc`.
 - **Validator metadata.** Azu passes `{ record }` as VineJS metadata: the record being edited on update, `undefined` on create. A resource can map it with `validators.meta: ({ record, ctx }) => ({ productId: record?.id })` when its validators expect a different shape.
 - **Discovery by convention.** Files in `app/admin/resources` load at boot. `start/admin.ts` can register resources explicitly when autoload is off.
 - **Hooks.** `beforeSave`, `afterSave`, `beforeDelete` receive the model instance and the HTTP context.
@@ -143,7 +144,8 @@ Rules:
 | --- | --- | --- | --- |
 | `text` | Input, optional prefix/suffix | Text, truncated at 60 chars | String |
 | `textarea` | Auto-growing textarea | Hidden by default | Text |
-| `number` | Numeric input with min, max, step | Number, optional currency/percent format | Integer or decimal |
+| `number` | Numeric input with min, max, step | Number, optional currency/percent format | Integer or float (`number` attribute) |
+| `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
 | `date`, `datetime` | Date picker in the app's timezone | Formatted, relative on hover | Luxon `DateTime` |
@@ -191,7 +193,7 @@ The server computes abilities once per request and sends them as Inertia props. 
 Generator mapping:
 
 - `string` → `text`; columns named `description`, `body`, `content` → `richText`
-- `boolean` → `boolean`; `number` → `number`; `DateTime` → `datetime`
+- `boolean` → `boolean`; `number` → `number`; decimal/numeric database columns → `decimal`; `DateTime` → `datetime`
 - enum check or TS union type → `select` with those options
 - foreign key with a `belongsTo` relation → `belongsTo`, titled by the related model's first string column
 - skip `password`, `rememberMeToken`, and `serializeAs: null` columns
@@ -276,7 +278,7 @@ For each: what works, what doesn't, the recommended approach, and any spec chang
 **Phase 1, week one.** Phase 1 starts by closing the risks the spike left open, before building on them:
 
 1. **`azu()` Vite plugin (FR-01).** Adds the admin entry and `resolve.dedupe`, and is installed with the assembler's `addVitePlugin` codemod. This is the one part of install the spike didn't verify.
-2. **Postgres in CI.** Settle whether `decimal` columns arrive as strings (the generated schema types them as `number`) before building number fields and currency formatting.
+2. **Postgres in CI.** Settle whether `decimal` columns arrive as strings before building number fields and currency formatting. Settled 2026-10-12: they do, so decimals get their own `decimal` column and field type (§4, §5).
 3. **UI check of the riskiest components,** on React Aria Components and Tiptap:
    - an async `belongsTo` combobox
    - a timezone-aware date picker
