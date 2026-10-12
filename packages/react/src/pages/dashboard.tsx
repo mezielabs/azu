@@ -9,7 +9,11 @@ export default function Dashboard({ azu }: DashboardPageProps) {
       </h1>
       <div className="azu-empty">
         <p>Azu is installed.</p>
-        <p>Resources you add in app/admin/resources will show up here.</p>
+        <p>
+          {azu.navigation.length > 0
+            ? 'Pick a resource from the navigation.'
+            : 'Resources you add in app/admin/resources will show up here.'}
+        </p>
       </div>
     </AdminLayout>
   )

@@ -23,6 +23,10 @@
       "types": "./build/providers/azu_provider.d.ts",
       "default": "./build/providers/azu_provider.js"
     },
+    "./services/main": {
+      "types": "./build/services/main.d.ts",
+      "default": "./build/services/main.js"
+    },
     "./vite": {
       "types": "./build/vite.d.ts",
       "default": "./build/vite.js"
@@ -96,6 +100,7 @@
       "./configure.ts",
       "./vite.ts",
       "./providers/azu_provider.ts",
+      "./services/main.ts",
       "./src/types.ts"
     ],
     "outDir": "./build",

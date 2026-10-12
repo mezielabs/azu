@@ -5,6 +5,7 @@ type ParamValue = string | number | bigint | boolean
 export type ScannedRoutes = {
   ALL: {
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'new_account.store': { paramsTuple?: []; params?: {} }
@@ -15,6 +16,7 @@ export type ScannedRoutes = {
   }
   GET: {
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
@@ -22,6 +24,7 @@ export type ScannedRoutes = {
   }
   HEAD: {
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }

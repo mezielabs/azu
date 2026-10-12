@@ -63,6 +63,11 @@ test.group('configure', (group) => {
     await assert.fileContains('adonisrc.ts', `@mezielabs/azu/azu_provider`)
     await assert.fileContains('vite.config.ts', `import { azu } from '@mezielabs/azu/vite'`)
     await assert.fileContains('vite.config.ts', `azu()`)
+    await assert.fileContains('config/admin.ts', `resources: { autoload: 'app/admin/resources' }`)
+    await assert.fileContains('start/admin.ts', `azu.register(productResource)`)
+    await assert.fileContains('adonisrc.ts', `#start/admin`)
+    const pkg = await fs.contentsJson('package.json')
+    assert.equal(pkg.imports['#admin/*'], './app/admin/*.js')
 
     // Generated files end with a newline, as Prettier expects
     const adminConfig = await fs.contents('config/admin.ts')

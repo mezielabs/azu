@@ -134,9 +134,11 @@ Rules:
   - Explicit field hints such as `field.decimal('price').min(0)` override introspection, for the UI only. They never change validation.
 - **Decimals stay strings.** `column.decimal()` and `field.decimal()` take attributes typed `string`: decimal columns, as Lucid's schema generator types them on Postgres. Values stay exact strings from the database to the browser and back. They're formatted with `Intl.NumberFormat`, which formats numeric strings exactly, and never converted through `Number`. `column.number()` and `field.number()` take attributes typed `number`. Using the wrong one fails `tsc`.
 - **Validator metadata.** Azu passes `{ record }` as VineJS metadata: the record being edited on update, `undefined` on create. A resource can map it with `validators.meta: ({ record, ctx }) => ({ productId: record?.id })` when its validators expect a different shape.
-- **Discovery by convention.** Files in `app/admin/resources` load at boot. `start/admin.ts` can register resources explicitly when autoload is off.
+- **Discovery by convention.** Files in `resources.autoload` (default `app/admin/resources`) load at boot; each must export a resource as its default. With `resources: { autoload: false }`, `start/admin.ts` registers resources explicitly: `azu.register(resource)`, with `azu` from `@mezielabs/azu/services/main`. The installer writes `start/admin.ts`, registers it as a preload, and adds a `#admin/*` import alias. Two resources with the same URL name are an error at boot.
+- **Names and labels.** A resource's URL name and labels come from the model: `OrderItem` → `order-items`, "Order items", "Order item". `label` and `singularLabel` override the labels.
+- **Builders fit their kind.** Kind-specific methods only compile on the kinds they belong to: `format()` on number and decimal columns, `colors()` on badges, `options()` on select fields, `min`/`max`/`step` on number and decimal fields, `disk`/`maxSize` on file and image fields, `searchable()` on relation fields. `filter.custom`'s query and an action's records are typed against the model, and a row action's handler gets one record.
 - **Hooks.** `beforeSave`, `afterSave`, `beforeDelete` receive the model instance and the HTTP context.
-- **Defaults.** Omitting `columns` or `fields` falls back to what the generator would produce.
+- **Defaults.** Omitting `columns` or `fields` falls back to what the generator would produce. This arrives with the generator (FR-04): types are erased at runtime, so the defaults need the database's column metadata. Until then, omitted lists are empty.
 
 ## 5. Fields, columns, filters, actions
 
@@ -175,7 +177,7 @@ The access gate runs on every admin route, after the admin root view is set up:
 
 | Policy method | Gates | When checked |
 | --- | --- | --- |
-| `viewList(user)` | Nav item and list page | Every list request |
+| `viewList(user)` | Nav item and list page | Every admin page (to build the navigation) and every list request |
 | `view(user, record)` | Detail page, row link | Detail request; per row for links |
 | `create(user)` | Create button and form | Form load and submit |
 | `update(user, record)` | Edit button, form | Form load and submit |
@@ -190,7 +192,7 @@ The server computes abilities once per request and sends them as Inertia props. 
 
 | Command | Behaviour |
 | --- | --- |
-| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
+| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
 | `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
@@ -211,7 +213,7 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 
 **Styling:** Azu ships its own prebuilt stylesheet, built with Tailwind inside `@mezielabs/azu-react`. The app doesn't need Tailwind. App components can use Azu's CSS variables, or the app's own Tailwind with an `@source` pointing at the package.
 
-**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`, `azu/errors/forbidden`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object (schema, data, abilities), typed in `@mezielabs/azu`.
+**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`, `azu/errors/forbidden`, `azu/errors/not_found`. A resource's pages live under `/admin/resources/<name>`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object (schema, data, abilities), typed in `@mezielabs/azu`. The resource schema (`ResourceSchema`, with its column, field, filter and action schemas) is plain JSON, defined in `@mezielabs/azu`. Absent values are `null`, never `undefined`. Every page also gets the shared `azu` props: the admin path, and the navigation built for this user.
 
 **Overrides, smallest first:**
 

@@ -1,6 +1,6 @@
-import { Link } from '@inertiajs/react'
+import { Link, usePage } from '@inertiajs/react'
 import type { ReactNode } from 'react'
-import type { AzuSharedProps } from '@mezielabs/azu/types'
+import type { AzuSharedProps, NavigationGroup } from '@mezielabs/azu/types'
 
 export type AdminLayoutProps = AzuSharedProps & {
   title: string
@@ -8,7 +8,46 @@ export type AdminLayoutProps = AzuSharedProps & {
 }
 
 /**
- * The admin shell: header with the panel link, then the page.
+ * Resources the user may list, in groups. The server builds the list,
+ * checking each resource's policy.
+ */
+function Navigation({ groups }: { groups: NavigationGroup[] }) {
+  const { url } = usePage()
+  if (groups.length === 0) return null
+
+  return (
+    <nav className="azu-nav" aria-label="Resources">
+      {groups.map((group) => (
+        <div key={group.label ?? ''} className="azu-nav-group">
+          {group.label && <p className="azu-nav-heading">{group.label}</p>}
+          <ul className="azu-nav-list">
+            {group.items.map((item) => {
+              const current =
+                url === item.href ||
+                url.startsWith(`${item.href}/`) ||
+                url.startsWith(`${item.href}?`)
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="azu-nav-link"
+                    aria-current={current ? 'page' : undefined}
+                    data-azu-icon={item.icon ?? undefined}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  )
+}
+
+/**
+ * The admin shell: header, resource navigation, then the page.
  */
 export function AdminLayout({ azu, title, children }: AdminLayoutProps) {
   return (
@@ -19,7 +58,10 @@ export function AdminLayout({ azu, title, children }: AdminLayoutProps) {
         </Link>
         <span className="azu-header-title">{title}</span>
       </header>
-      <main className="azu-main">{children}</main>
+      <div className="azu-body">
+        <Navigation groups={azu.navigation} />
+        <main className="azu-main">{children}</main>
+      </div>
     </div>
   )
 }

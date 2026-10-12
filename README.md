@@ -122,7 +122,20 @@ export default defineResource(Product, {
 
 Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo.
 
-Files in `app/admin/resources` load automatically. Prefer explicit registration? Turn off autoload in `config/admin.ts` and register resources in `start/admin.ts`.
+Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/admin.ts` and register resources in `start/admin.ts`:
+
+```ts
+// config/admin.ts
+resources: { autoload: false },
+```
+
+```ts
+// start/admin.ts
+import azu from '@mezielabs/azu/services/main'
+import productResource from '#admin/resources/product_resource'
+
+azu.register(productResource)
+```
 
 ### Field types
 

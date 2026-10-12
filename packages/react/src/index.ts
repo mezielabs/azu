@@ -18,6 +18,15 @@ export { useComponent } from './components/registry.tsx'
 export type {
   FieldProps,
   DashboardPageProps,
+  ResourceIndexPageProps,
   ForbiddenPageProps,
+  NotFoundPageProps,
   AzuSharedProps,
+  NavigationGroup,
+  NavigationItem,
+  ResourceSchema,
+  ColumnSchema,
+  FieldSchema,
+  FilterSchema,
+  ActionSchema,
 } from '@mezielabs/azu/types'

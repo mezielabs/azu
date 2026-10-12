@@ -19,6 +19,18 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.resources.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/resources/:resource'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { resource: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'home': {
     methods: ["GET","HEAD"]
     pattern: '/'

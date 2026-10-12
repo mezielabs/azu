@@ -8,6 +8,13 @@ test.group('defineConfig', () => {
       entry: 'inertia/admin/app.tsx',
       guard: undefined,
       loginUrl: '/login',
+      resources: { autoload: 'app/admin/resources' },
+    })
+  })
+
+  test('turns resource autoload off', ({ assert }) => {
+    assert.deepEqual(defineConfig({ resources: { autoload: false } }).resources, {
+      autoload: false,
     })
   })
 

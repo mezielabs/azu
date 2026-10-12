@@ -11,6 +11,12 @@ const adminConfig = defineConfig({
    * auth guard; set "guard" to use another one.
    */
   loginUrl: '/login',
+
+  /**
+   * Resources in this directory load automatically. Set autoload to
+   * false to register them in start/admin.ts instead.
+   */
+  resources: { autoload: 'app/admin/resources' },
 })
 
 export default adminConfig
