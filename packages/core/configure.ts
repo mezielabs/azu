@@ -81,7 +81,7 @@ export async function configure(command: Configure) {
    * Stub rendering trims the output, so add back the final newline that
    * the app's Prettier config expects.
    */
-  for (const stub of ['config/admin.stub', 'inertia/admin/app.stub']) {
+  for (const stub of ['config/admin.stub', 'start/admin.stub', 'inertia/admin/app.stub']) {
     const output = await codemods.makeUsingStub(stubsRoot, stub, {})
     if (output.status === 'created' || output.status === 'force_created') {
       await appendFile(output.destination, '\n')
@@ -93,7 +93,13 @@ export async function configure(command: Configure) {
    */
   await codemods.updateRcFile((rcFile) => {
     rcFile.addProvider('@mezielabs/azu/azu_provider')
+    rcFile.addPreloadFile('#start/admin')
   })
+
+  /**
+   * So start/admin.ts can import resources as #admin/resources/...
+   */
+  await codemods.addImportAlias('#admin/*', './app/admin/*.js')
   await codemods.registerVitePlugin('azu()', [
     { isNamed: true, module: '@mezielabs/azu/vite', identifier: 'azu' },
   ])
