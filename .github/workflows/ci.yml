@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Installs the pnpm version pinned in package.json "packageManager"
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      # Ace commands (codegen in typecheck) validate the demo's env
+      - name: Create demo .env
+        working-directory: apps/demo
+        run: cp .env.example .env && node ace generate:key
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  test:
+    name: Test (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [pg, sqlite]
+
+    services:
+      postgres:
+        # An empty image skips the service, so only the pg leg starts it
+        image: ${{ matrix.db == 'pg' && 'postgres:18' || '' }}
+        env:
+          POSTGRES_USER: azu
+          POSTGRES_PASSWORD: azu
+          POSTGRES_DB: azu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U azu"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_CONNECTION: ${{ matrix.db }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: azu
+      DB_PASSWORD: azu
+      DB_DATABASE: azu_test
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create demo .env
+        working-directory: apps/demo
+        run: cp .env.example .env && node ace generate:key
+
+      - run: pnpm test
+
+      # The tests roll their migrations back; also prove the seeder runs
+      - run: pnpm demo:seed

@@ -1,24 +1,25 @@
+import env from '#start/env'
 import app from '@adonisjs/core/services/app'
 import { defineConfig } from '@adonisjs/lucid'
 
 const dbConfig = defineConfig({
   /**
-   * Default connection used for all queries.
+   * Default connection. SQLite needs no server, so it's the local
+   * default; CI also runs the suite against Postgres (the primary
+   * target) with DB_CONNECTION=pg.
    */
-  connection: 'sqlite',
+  connection: env.get('DB_CONNECTION', 'sqlite'),
 
   connections: {
-    /**
-     * SQLite connection (default).
-     */
     sqlite: {
       client: 'better-sqlite3',
 
       connection: {
         /**
-         * Database file location.
+         * Tests use their own file, so `node ace test` never touches
+         * the dev database.
          */
-        filename: app.tmpPath('db.sqlite3'),
+        filename: app.tmpPath(app.inTest ? 'test.sqlite3' : 'db.sqlite3'),
       },
 
       /**
@@ -27,100 +28,38 @@ const dbConfig = defineConfig({
       useNullAsDefault: true,
 
       migrations: {
-        /**
-         * Sort migration files naturally by filename.
-         */
         naturalSort: true,
-
-        /**
-         * Paths containing migration files.
-         */
         paths: ['database/migrations'],
       },
 
+      /**
+       * database/schema.ts is generated from SQLite. Postgres types
+       * decimal columns differently (see docs/decisions.md), so
+       * generation stays on this connection only.
+       */
       schemaGeneration: {
         enabled: true,
         rulesPaths: ['./database/schema_rules.js'],
       },
     },
 
-    /**
-     * PostgreSQL connection.
-     * Install package to switch: npm install pg
-     */
-    // pg: {
-    //   client: 'pg',
-    //   connection: {
-    //     host: env.get('DB_HOST'),
-    //     port: env.get('DB_PORT'),
-    //     user: env.get('DB_USER'),
-    //     password: env.get('DB_PASSWORD'),
-    //     database: env.get('DB_DATABASE'),
-    //   },
-    //   migrations: {
-    //     naturalSort: true,
-    //     paths: ['database/migrations'],
-    //   },
-    //   debug: app.inDev,
-    // },
-
-    /**
-     * MySQL / MariaDB connection.
-     * Install package to switch: npm install mysql2
-     */
-    // mysql: {
-    //   client: 'mysql2',
-    //   connection: {
-    //     host: env.get('DB_HOST'),
-    //     port: env.get('DB_PORT'),
-    //     user: env.get('DB_USER'),
-    //     password: env.get('DB_PASSWORD'),
-    //     database: env.get('DB_DATABASE'),
-    //   },
-    //   migrations: {
-    //     naturalSort: true,
-    //     paths: ['database/migrations'],
-    //   },
-    //   debug: app.inDev,
-    // },
-
-    /**
-     * Microsoft SQL Server connection.
-     * Install package to switch: npm install tedious
-     */
-    // mssql: {
-    //   client: 'mssql',
-    //   connection: {
-    //     server: env.get('DB_HOST'),
-    //     port: env.get('DB_PORT'),
-    //     user: env.get('DB_USER'),
-    //     password: env.get('DB_PASSWORD'),
-    //     database: env.get('DB_DATABASE'),
-    //   },
-    //   migrations: {
-    //     naturalSort: true,
-    //     paths: ['database/migrations'],
-    //   },
-    //   debug: app.inDev,
-    // },
-
-    /**
-     * libSQL (Turso) connection.
-     * Install package to switch: npm install @libsql/client
-     */
-    // libsql: {
-    //   client: 'libsql',
-    //   connection: {
-    //     url: env.get('LIBSQL_URL'),
-    //     authToken: env.get('LIBSQL_AUTH_TOKEN'),
-    //   },
-    //   useNullAsDefault: true,
-    //   migrations: {
-    //     naturalSort: true,
-    //     paths: ['database/migrations'],
-    //   },
-    //   debug: app.inDev,
-    // },
+    pg: {
+      client: 'pg',
+      connection: {
+        host: env.get('DB_HOST', '127.0.0.1'),
+        port: env.get('DB_PORT', 5432),
+        user: env.get('DB_USER', 'postgres'),
+        password: env.get('DB_PASSWORD', ''),
+        database: env.get('DB_DATABASE', 'azu_demo'),
+      },
+      migrations: {
+        naturalSort: true,
+        paths: ['database/migrations'],
+      },
+      schemaGeneration: {
+        enabled: false,
+      },
+    },
   },
 })
 
