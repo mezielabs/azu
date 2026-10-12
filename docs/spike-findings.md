@@ -1,8 +1,8 @@
 # Phase 0 spike findings
 
-**Date:** 2026-10-11 · **Status:** awaiting Chimezie's approval to start Phase 1
+**Date:** 2026-10-11 · **Status:** approved by Chimezie on 2026-10-12. Phase 1 may start.
 
-All three risk checks pass. No blockers for the README API. There are two small API additions to approve (validator metadata, page naming) and a few spec clarifications, listed at the end.
+All three risk checks pass. No blockers for the README API. The two API additions (validator metadata, page naming) and the spec clarifications listed at the end are approved and applied to `README.md` and `docs/spec.md`. The headless library question is closed in `docs/decisions.md`.
 
 | Check | Verdict | Recommendation |
 | --- | --- | --- |
@@ -36,15 +36,31 @@ What exists now:
 - **`packages/react` (`@mezielabs/azu-react`):** compiled with `tsc` and the Tailwind CLI. It ships `build/` and `src/`, because `admin:publish` needs the TSX source.
 - **`apps/demo`:** the official `inertia-react` starter kit plus Bouncer, with users (with `role`), categories, products, tags, `product_tag`, orders, and `order_items`. `node ace migration:fresh --seed` gives 5 users, 4 categories, 5 tags, 40 products, and 20 orders. There's an `accessAdmin` ability, `ProductPolicy`, and create/update product validators. The spike runs on SQLite; Postgres and MySQL connections are Phase 1 CI work.
 
-The proofs are throwaway. Each file starts with `SPIKE (Phase 0)`:
+### Removing the spike code
+
+The proofs are throwaway. **Phase 1 removes them using the tables below, not by searching for the `SPIKE (Phase 0)` header.** Most files don't carry the header, including all of `packages/react/src/`, `packages/core/resources/views/admin.edge`, and `apps/demo/inertia/admin/app.tsx`. Rebuild the real versions from these notes rather than promoting spike files.
+
+Delete:
 
 | Check | Files |
 | --- | --- |
 | 1 | `packages/core/spike/type_inference.ts`, `apps/demo/spike/type_inference_check.ts` |
 | 2 | `packages/core/spike/vine_introspection.ts`, `packages/core/tests/vine_introspection.spec.ts`, `apps/demo/tests/unit/spike/vine_introspection.spec.ts` |
-| 3 | `packages/core/spike/admin_inertia.ts`, `packages/core/resources/views/admin.edge`, `packages/react/src/**`, `apps/demo/inertia/admin/**`, `apps/demo/spike/admin_routes.ts` |
+| 3 | `packages/core/spike/admin_inertia.ts`, `packages/core/resources/views/admin.edge`, `apps/demo/spike/admin_routes.ts` |
+| 3 | All of `packages/react/src/`: `app.tsx`, `index.ts`, `styles.css`, `components/admin_layout.tsx`, `components/registry.tsx`, `pages/index.ts`, `pages/dashboard.tsx`, `pages/resource/index.tsx`. `FieldProps` moves to `@mezielabs/azu` (CLAUDE.md non-negotiable 10). |
+| 3 | `apps/demo/inertia/admin/app.tsx` (the installer writes the real one), `apps/demo/inertia/admin/components/sku_badge.tsx`, `apps/demo/inertia/admin/pages/dashboard.tsx` |
+| All | `packages/core/spike/index.ts`, then the empty `packages/core/spike/` and `apps/demo/spike/` folders |
 
-Phase 1 deletes `spike/` and the `/admin` spike routes, then rebuilds the real versions from these notes.
+Edit:
+
+| File | Change |
+| --- | --- |
+| `packages/core/package.json` | Remove the `./spike` export and the `./spike/index.ts` tsdown entry |
+| `apps/demo/start/routes.ts` | Remove the `SPIKE (Phase 0)` block that imports `../spike/admin_routes.js` |
+| `apps/demo/vite.config.ts` | Replace the second entry point (`inertia/admin/app.tsx`) with the `azu()` Vite plugin (spec §11, week one) |
+| `apps/demo/adonisrc.ts` | Keep the `@mezielabs/azu/azu_provider` line, but have `node ace add @mezielabs/azu` write it (FR-01) |
+
+Keep as the real scaffold: the rest of `packages/core` (starter kit files, provider, configure hook) and the `packages/react` config files (`package.json`, `tsconfig*.json`, `eslint.config.js`, `LICENSE.md`).
 
 ---
 
@@ -177,6 +193,8 @@ Build Phase 1 on this design: app-owned admin entry, package pages as a static d
 
 ### Headless component library (open question in spec §12)
 
+**Decided 2026-10-12:** React Aria Components (including its table) and Tiptap 3, pending the Phase 1 week-one UI check. No TanStack Table or Query in v1. See `docs/decisions.md`. The original recommendation follows.
+
 Not prototyped in this spike. I recommend **React Aria Components** (1.22.1) over Radix (1.2.x) and Base UI (1.9.0):
 
 - Its async combobox fits `belongsTo` search (FR-08).
@@ -187,9 +205,9 @@ It's heavier, but it loads only on `/admin`. **Tiptap 3** (3.31.4) for rich text
 
 ---
 
-## Proposed changes (need approval)
+## Changes (approved and applied 2026-10-12)
 
-These touch the public API in `README.md` or behaviour in `docs/spec.md`, so I haven't edited either. Once approved, I'll update both in one change.
+All six were approved and applied to `README.md` and `docs/spec.md` in one commit. Where the final version differs from the proposal, the outcome is noted under the item.
 
 1. **Validator metadata (README "Validation", spec §4 and §6).** Add an optional resource hook:
 
@@ -202,7 +220,11 @@ These touch the public API in `README.md` or behaviour in `docs/spec.md`, so I h
    ```
 
    Without this, update validators that exclude the current record from `unique` can't work. The default could pass `{ record, id }` for validators that don't declare metadata.
+
+   **Outcome:** the default is `{ record }`: the record being edited on update, `undefined` on create.
 2. **Page names (spec §8, README "Customising").** Spec §8 lists `Admin/Dashboard` and `Admin/Resource/Index`. AdonisJS 7 uses snake_case page paths (`auth/login`), so I propose `azu/dashboard` and `azu/resource/index` on the wire. Published copies would live at `inertia/admin/pages/resource/index.tsx`. `node ace admin:publish Resource/Index` can keep working by accepting both spellings, or the README example becomes `admin:publish resource/index`. Your call.
+
+   **Outcome:** snake_case. The README example is now `admin:publish resource/index`, and `Resource/Index` is still accepted.
 3. **Spec §4 clarifications (no API change):**
    - Sortable columns, `search`, and form fields must be persisted columns; getters are display-only.
    - Full getter/column separation needs generated schema classes (`$columns`).
