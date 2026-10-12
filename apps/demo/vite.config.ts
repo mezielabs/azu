@@ -5,7 +5,10 @@ import adonisjs from '@adonisjs/vite/client'
 export default defineConfig({
   plugins: [
     react(),
-    adonisjs({ entryPoints: ['inertia/app.tsx'], reload: ['resources/views/**/*.edge'] }),
+    adonisjs({
+      entryPoints: ['inertia/app.tsx', 'inertia/admin/app.tsx'],
+      reload: ['resources/views/**/*.edge'],
+    }),
   ],
 
   /**

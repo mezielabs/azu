@@ -61,6 +61,7 @@ export default defineConfig({
     () => import('@adonisjs/inertia/inertia_provider'),
     () => import('@adonisjs/auth/auth_provider'),
     () => import('#providers/api_provider'),
+    () => import('@mezielabs/azu/azu_provider'),
     () => import('@adonisjs/bouncer/bouncer_provider'),
   ],
 

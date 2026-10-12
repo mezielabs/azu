@@ -30,3 +30,7 @@ router
   })
   .use(middleware.auth())
 
+/**
+ * SPIKE (Phase 0): package-rendered admin pages. Remove in Phase 1.
+ */
+await import('../spike/admin_routes.js')

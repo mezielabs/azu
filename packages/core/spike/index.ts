@@ -3,4 +3,5 @@
  * so the demo app consumes them across a real package boundary.
  */
 export * from './type_inference.ts'
+export * from './admin_inertia.ts'
 export * from './vine_introspection.ts'
