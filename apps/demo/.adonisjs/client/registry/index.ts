@@ -6,6 +6,12 @@ import type { ApiDefinition } from './tree.d.ts'
 const placeholder: any = {}
 
 const routes = {
+  'azu.dashboard': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin',
+    tokens: [{"old":"/admin","type":0,"val":"admin","end":""}],
+    types: placeholder as Registry['azu.dashboard']['types'],
+  },
   'home': {
     methods: ["GET","HEAD"],
     pattern: '/',

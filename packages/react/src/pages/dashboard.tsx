@@ -1,23 +1,16 @@
-import { AdminLayout, Head, Link } from '@mezielabs/azu-react'
+import { AdminLayout, Head, type DashboardPageProps } from '@mezielabs/azu-react'
 
-type Props = { resources: { name: string; label: string }[] }
-
-export default function Dashboard({ resources }: Props) {
+export default function Dashboard({ azu }: DashboardPageProps) {
   return (
-    <AdminLayout title="Dashboard">
+    <AdminLayout azu={azu} title="Dashboard">
       <Head title="Dashboard" />
-      <h1 className="mb-4 text-2xl font-semibold" data-azu-page="package-dashboard">
+      <h1 className="azu-page-title" data-azu-page="dashboard">
         Dashboard
       </h1>
-      <ul className="space-y-2">
-        {resources.map((resource) => (
-          <li key={resource.name}>
-            <Link className="text-azu-brand underline" href={`/admin/resources/${resource.name}`}>
-              {resource.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="azu-empty">
+        <p>Azu is installed.</p>
+        <p>Resources you add in app/admin/resources will show up here.</p>
+      </div>
     </AdminLayout>
   )
 }

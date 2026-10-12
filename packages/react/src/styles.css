@@ -2,24 +2,64 @@
 @source './';
 
 /*
- * Azu's palette as CSS variables. Phase 1 generates these from
- * `brand.color` in config/admin.ts; the spike hard-codes them.
+ * Azu's stylesheet targets Azu's own classes, data attributes, and CSS
+ * variables, never a component library's, so a future Vue front end can
+ * share it. Brand colours from config/admin.ts arrive with FR-14.
  */
-@theme {
-  --color-azu-brand: #2563eb;
-  --color-azu-surface: #ffffff;
-  --color-azu-subtle: #f4f4f5;
-  --color-azu-text: #18181b;
-  --color-azu-muted: #71717a;
-  --color-azu-border: #e4e4e7;
+:root {
+  --azu-brand: #2563eb;
+  --azu-surface: #ffffff;
+  --azu-subtle: #f4f4f5;
+  --azu-text: #18181b;
+  --azu-muted: #52525b;
+  --azu-border: #e4e4e7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-azu-surface: #09090b;
-    --color-azu-subtle: #18181b;
-    --color-azu-text: #fafafa;
-    --color-azu-muted: #a1a1aa;
-    --color-azu-border: #27272a;
+    --azu-brand: #60a5fa;
+    --azu-surface: #09090b;
+    --azu-subtle: #18181b;
+    --azu-text: #fafafa;
+    --azu-muted: #a1a1aa;
+    --azu-border: #27272a;
+  }
+}
+
+@layer components {
+  .azu-shell {
+    @apply min-h-screen;
+    background: var(--azu-surface);
+    color: var(--azu-text);
+  }
+
+  .azu-header {
+    @apply flex items-center gap-4 border-b px-6 py-3;
+    border-color: var(--azu-border);
+  }
+
+  .azu-brand {
+    @apply font-semibold;
+    color: var(--azu-brand);
+  }
+
+  .azu-header-title {
+    @apply text-sm;
+    color: var(--azu-muted);
+  }
+
+  .azu-main {
+    @apply p-6;
+  }
+
+  .azu-page-title {
+    @apply mb-4 text-2xl font-semibold;
+  }
+
+  .azu-empty {
+    @apply space-y-1 rounded-lg border p-6 text-sm;
+    border-color: var(--azu-border);
+    background: var(--azu-subtle);
+    color: var(--azu-muted);
   }
 }

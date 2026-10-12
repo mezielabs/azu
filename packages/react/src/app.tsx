@@ -6,13 +6,13 @@ import { RegistryProvider, type ComponentModules } from './components/registry.t
 
 export type CreateAzuAppOptions = {
   /**
-   * The app's page overrides, from
-   * `import.meta.glob('./pages/**\/*.tsx')`. Keys are file paths relative
-   * to `inertia/admin/`.
+   * The app's page overrides: `import.meta.glob('./pages/**\/*.tsx')`
+   * from `inertia/admin/app.tsx`.
    */
   pages?: Record<string, () => Promise<unknown>>
+
   /**
-   * The app's custom components, from
+   * The app's custom components:
    * `import.meta.glob('./components/**\/*.tsx', { eager: true })`.
    */
   components?: Record<string, unknown>
@@ -21,13 +21,14 @@ export type CreateAzuAppOptions = {
 /**
  * `./pages/resource/index.tsx` → `resource/index`
  */
-function pageKey(path: string) {
+export function pageKey(path: string) {
   return path.replace(/^\.\/pages\//, '').replace(/\.[jt]sx?$/, '')
 }
 
 /**
- * Boots the admin Inertia app. Server pages are named `azu/<page>`; the
- * app's copy wins over the package's.
+ * Boots the admin Inertia app. The server renders pages named
+ * `azu/<page>`; the app's copy in `inertia/admin/pages` wins over the
+ * package's.
  */
 export function createAzuApp(options: CreateAzuAppOptions = {}) {
   const overrides = Object.fromEntries(
