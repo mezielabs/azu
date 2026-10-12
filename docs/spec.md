@@ -203,12 +203,12 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 
 **Styling:** Azu ships its own prebuilt stylesheet, built with Tailwind inside `@mezielabs/azu-react`. The app doesn't need Tailwind. App components can use Azu's CSS variables, or the app's own Tailwind with an `@source` pointing at the package.
 
-**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object: schema, data, abilities.
+**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object (schema, data, abilities), typed in `@mezielabs/azu`.
 
 **Overrides, smallest first:**
 
 1. **Config:** labels, icons, colours, page size in the resource or `config/admin.ts`.
-2. **Component swap:** `field.text('sku').component('SkuInput')` or `column.custom('stock', 'StockBar')` resolves a React component from `inertia/admin/components`, registered by file name (`sku_input.tsx` → `SkuInput`). Field components receive `value`, `onChange`, `field`, `errors`, `record`. Export the prop types from `@mezielabs/azu-react` (`FieldProps<T>`).
+2. **Component swap:** `field.text('sku').component('SkuInput')` or `column.custom('stock', 'StockBar')` resolves a React component from `inertia/admin/components`, registered by file name (`sku_input.tsx` → `SkuInput`). Field components receive `value`, `onChange`, `field`, `errors`, `record`. The contract (`FieldProps<T>`) is defined in `@mezielabs/azu` and re-exported from `@mezielabs/azu-react`, so `import type { FieldProps } from '@mezielabs/azu-react'` works.
 3. **Page publish:** `admin:publish resource/index` copies the page to `inertia/admin/pages/resource/index.tsx`; Azu renders the app's copy. `Resource/Index` is accepted too.
 
 Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cover cases between levels 2 and 3.

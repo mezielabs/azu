@@ -19,7 +19,7 @@ If the code forces a change to the API in `README.md` or `docs/spec.md`, update 
 ## Stack
 
 - AdonisJS 7, Lucid, Bouncer, VineJS, Drive, Inertia
-- React 19, Tailwind, a headless component library (decide in the spike)
+- React 19, React Aria Components, Tiptap 3 (lazy, optional peer), Tailwind for Azu's own prebuilt stylesheet
 - TypeScript (strict), ESM, Node 24+
 - Tests: Japa (unit, API client, browser client)
 - Databases: Postgres (primary), MySQL, SQLite
@@ -58,6 +58,13 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 6. **Admin code stays on `/admin`.** Separate Vite entry; zero weight on the app's public pages.
 7. **Everything overridable** without forking: config, component swap, page publish.
 8. **Core never imports Pro code.** Expose extension points instead.
+
+These keep a Vue front end (`@mezielabs/azu-vue`) cheap to add later:
+
+9. **Style Azu's own hooks.** Azu's stylesheet targets Azu's own classes, data attributes, and CSS variables, never React Aria's data attributes.
+10. **Contracts live in core.** Page prop types and the field component contract (`FieldProps`) live in `@mezielabs/azu`. `@mezielabs/azu-react` re-exports them; it doesn't define them.
+11. **Logic outside components.** Formatting, URL state, and filter encoding live in plain TypeScript modules, not inside React components.
+12. **No React Aria or Tiptap types in the public API.**
 
 ## Verify, don't recall
 
