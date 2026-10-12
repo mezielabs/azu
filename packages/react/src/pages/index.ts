@@ -8,5 +8,7 @@ export type PageModule = { default: ComponentType<any> }
  * Vite needs no `import.meta.glob` inside node_modules.
  */
 export const packagePages: Record<string, () => Promise<PageModule>> = {
-  dashboard: () => import('./dashboard.tsx'),
+  'dashboard': () => import('./dashboard.tsx'),
+  // SPIKE (Phase 1 UI check): remove with src/spike/
+  'spike/ui_check': () => import('../spike/ui_check/page.tsx'),
 }

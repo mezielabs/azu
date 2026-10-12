@@ -22,7 +22,15 @@
       "default": "./build/index.js"
     },
     "./styles.css": "./build/azu.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./rich-text-editor": {
+      "types": "./build/rich_text/editor.d.ts",
+      "default": "./build/rich_text/editor.js"
+    },
+    "./rich-text-missing": {
+      "types": "./build/rich_text/missing.d.ts",
+      "default": "./build/rich_text/missing.js"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -39,6 +47,10 @@
     "@inertiajs/react": "^3.9.1",
     "@mezielabs/azu": "workspace:^",
     "@tailwindcss/cli": "^4.3.3",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^10.11.0",
@@ -53,6 +65,10 @@
   "peerDependencies": {
     "@inertiajs/react": "^3.0.0",
     "@mezielabs/azu": "workspace:^",
+    "@tiptap/core": "^3.0.0",
+    "@tiptap/pm": "^3.0.0",
+    "@tiptap/react": "^3.0.0",
+    "@tiptap/starter-kit": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -60,5 +76,46 @@
     "access": "public",
     "provenance": true
   },
-  "prettier": "@adonisjs/prettier-config"
+  "prettier": "@adonisjs/prettier-config",
+  "dependencies": {
+    "@internationalized/date": "^3.12.4",
+    "react-aria-components": "^1.22.1"
+  },
+  "peerDependenciesMeta": {
+    "@tiptap/core": {
+      "optional": true
+    },
+    "@tiptap/pm": {
+      "optional": true
+    },
+    "@tiptap/react": {
+      "optional": true
+    },
+    "@tiptap/starter-kit": {
+      "optional": true
+    }
+  },
+  "azu": {
+    "optimizeDeps": [
+      "react-aria-components",
+      "@internationalized/date"
+    ],
+    "optionalFeatures": [
+      {
+        "name": "rich text",
+        "specifier": "@mezielabs/azu-react/rich-text-editor",
+        "fallback": "@mezielabs/azu-react/rich-text-missing",
+        "requires": [
+          "@tiptap/core",
+          "@tiptap/pm",
+          "@tiptap/react",
+          "@tiptap/starter-kit"
+        ],
+        "optimizeDeps": [
+          "@tiptap/react",
+          "@tiptap/starter-kit"
+        ]
+      }
+    ]
+  }
 }

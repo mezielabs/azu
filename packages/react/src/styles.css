@@ -63,3 +63,112 @@
     color: var(--azu-muted);
   }
 }
+
+/*
+ * SPIKE (Phase 1 UI check): styles for src/spike/ui_check. Throwaway.
+ * State comes from React Aria render props mapped to azu-is-* classes,
+ * never from React Aria's own data attributes.
+ */
+@layer components {
+  .azu-section {
+    @apply mb-8 space-y-3;
+  }
+  .azu-section h2 {
+    @apply text-lg font-semibold;
+  }
+  .azu-check {
+    @apply space-y-2;
+  }
+  .azu-check-meta,
+  .azu-flash {
+    @apply font-mono text-xs;
+    color: var(--azu-muted);
+  }
+  .azu-label {
+    @apply block text-sm font-medium;
+  }
+  .azu-input,
+  .azu-date-field {
+    @apply rounded border px-2 py-1;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+  }
+  .azu-combobox-field,
+  .azu-date-field {
+    @apply inline-flex items-center gap-1;
+  }
+  .azu-date-input {
+    @apply inline-flex;
+  }
+  .azu-date-segment {
+    @apply rounded px-0.5 tabular-nums outline-none;
+  }
+  .azu-button,
+  .azu-icon-button {
+    @apply rounded border px-2 py-1 text-sm;
+    border-color: var(--azu-border);
+  }
+  .azu-button.azu-is-primary {
+    background: var(--azu-brand);
+    color: white;
+  }
+  .azu-button[disabled],
+  .azu-button[aria-disabled='true'] {
+    @apply opacity-50;
+  }
+  .azu-popover,
+  .azu-modal {
+    @apply rounded border p-2 shadow-lg;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+  }
+  .azu-option,
+  .azu-calendar-cell {
+    @apply cursor-default rounded px-2 py-1 text-sm outline-none;
+  }
+  .azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: -2px;
+  }
+  .azu-is-selected {
+    background: var(--azu-subtle);
+    font-weight: 600;
+  }
+  .azu-calendar-header,
+  .azu-toolbar {
+    @apply flex items-center gap-2;
+  }
+  .azu-table-container {
+    @apply overflow-auto rounded border;
+    border-color: var(--azu-border);
+  }
+  .azu-table {
+    @apply w-full text-sm;
+  }
+  .azu-th {
+    @apply px-3 py-2 text-left font-medium;
+    background: var(--azu-subtle);
+  }
+  .azu-th-inner {
+    @apply flex items-center justify-between gap-2;
+  }
+  .azu-column-resizer {
+    @apply h-5 w-1 cursor-col-resize;
+    background: var(--azu-border);
+  }
+  .azu-td {
+    @apply px-3 py-2;
+  }
+  .azu-row {
+    @apply border-t outline-none;
+    border-color: var(--azu-border);
+  }
+  .azu-checkbox-box {
+    @apply inline-flex h-4 w-4 items-center justify-center rounded border text-xs;
+    border-color: var(--azu-muted);
+  }
+  .azu-rich-text-content {
+    @apply min-h-24 rounded border p-2;
+    border-color: var(--azu-border);
+  }
+}

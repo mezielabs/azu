@@ -29,3 +29,8 @@ router
     router.post('logout', [controllers.Session, 'destroy'])
   })
   .use(middleware.auth())
+
+/**
+ * SPIKE (Phase 1 UI check): remove with apps/demo/spike/ui_check_routes.ts.
+ */
+await import('../spike/ui_check_routes.js')
