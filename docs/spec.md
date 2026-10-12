@@ -255,7 +255,7 @@ export default defineConfig({
 
 | Phase | Scope | Exit criteria |
 | --- | --- | --- |
-| 0. Spike (2–3 days) | Monorepo skeleton, demo app, and three risk checks (below) | Written findings in `docs/spike-findings.md`; owner approves Phase 1 |
+| 0. Spike (2–3 days) | Monorepo skeleton, demo app, and three risk checks (below) | Written findings in `docs/spike-findings.md`; owner approves Phase 1 (approved 2026-10-12) |
 | 1. Weeks 1–3 | FR-01 to FR-08: install, access gate, resources, generator, list/forms/detail, core fields, belongsTo/hasMany | Generated Product resource works end to end in the demo app |
 | 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass; v0.x preview published |
 | 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | README quickstart works on a fresh app in under five minutes |
@@ -269,8 +269,20 @@ export default defineConfig({
 
 For each: what works, what doesn't, the recommended approach, and any spec changes it forces.
 
+**Phase 1, week one.** Phase 1 starts by closing the risks the spike left open, before building on them:
+
+1. **`azu()` Vite plugin (FR-01).** Adds the admin entry and `resolve.dedupe`, and is installed with the assembler's `addVitePlugin` codemod. This is the one part of install the spike didn't verify.
+2. **Postgres in CI.** Settle whether `decimal` columns arrive as strings (the generated schema types them as `number`) before building number fields and currency formatting.
+3. **UI check of the riskiest components,** on React Aria Components and Tiptap:
+   - an async `belongsTo` combobox
+   - a timezone-aware date picker
+   - the list table with keyboard row selection and a bulk action
+   - a lazily loaded Tiptap editor
+
+   React Aria and Tiptap stay approved only if this check passes (see `docs/decisions.md`).
+
 ## 12. Open technical questions
 
 - Does the free core include read-only CSV export? (Currently Pro.)
 - Design the React component contract so a Vue front end can follow later without changing resource definitions.
-- Which headless component library and rich text editor version to standardise on (proposal: Radix or React Aria; Tiptap).
+- ~~Which headless component library and rich text editor version to standardise on.~~ Closed 2026-10-12: React Aria Components (including its table) and Tiptap 3 as a lazily loaded optional peer, pending the week-one check in §11. See `docs/decisions.md`.
