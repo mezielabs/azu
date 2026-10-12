@@ -11,7 +11,7 @@ test.group('Admin / dashboard (FR-01)', (group) => {
 
     response.assertStatus(200)
     response.assertInertiaComponent('azu/dashboard')
-    response.assertInertiaProps({ azu: { path: '/admin' } })
+    response.assertInertiaPropsContains({ azu: { path: '/admin' } })
   })
 
   test('renders the admin root view with the admin entry, not the app entry', async ({

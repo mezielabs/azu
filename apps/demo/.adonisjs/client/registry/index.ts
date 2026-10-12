@@ -12,6 +12,12 @@ const routes = {
     tokens: [{"old":"/admin","type":0,"val":"admin","end":""}],
     types: placeholder as Registry['azu.dashboard']['types'],
   },
+  'azu.resources.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource',
+    tokens: [{"old":"/admin/resources/:resource","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource","type":1,"val":"resource","end":""}],
+    types: placeholder as Registry['azu.resources.index']['types'],
+  },
   'home': {
     methods: ["GET","HEAD"],
     pattern: '/',

@@ -4,6 +4,9 @@ import type { routes } from './index.ts'
 export interface ApiDefinition {
   azu: {
     dashboard: typeof routes['azu.dashboard']
+    resources: {
+      index: typeof routes['azu.resources.index']
+    }
   }
   home: typeof routes['home']
   newAccount: {
