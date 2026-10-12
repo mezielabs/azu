@@ -2,6 +2,9 @@
  * Public types for Azu. Front-end packages (`@mezielabs/azu-react`, and
  * later `@mezielabs/azu-vue`) re-export these; they don't define their own.
  */
+import type { NavigationGroup, ResourceSchema } from './schema.ts'
+
+export type * from './schema.ts'
 
 /**
  * Options accepted by `defineConfig` in `config/admin.ts`.
@@ -35,13 +38,24 @@ export type AzuConfigInput = {
    * @default '/login'
    */
   loginUrl?: string
+
+  /**
+   * Resource discovery. Files in `autoload` load at boot; set it to
+   * `false` and register resources in `start/admin.ts` instead.
+   *
+   * @default { autoload: 'app/admin/resources' }
+   */
+  resources?: { autoload?: string | false }
 }
 
 /**
  * The config object `defineConfig` returns, with defaults applied.
  * `guard` stays undefined to mean the app's default guard.
  */
-export type AzuConfig = Required<Omit<AzuConfigInput, 'guard'>> & { guard?: string }
+export type AzuConfig = Required<Omit<AzuConfigInput, 'guard' | 'resources'>> & {
+  guard?: string
+  resources: { autoload: string | false }
+}
 
 /**
  * Props shared with every admin page.
@@ -50,6 +64,8 @@ export type AzuSharedProps = {
   azu: {
     /** The admin URL prefix, e.g. `/admin` */
     path: string
+    /** Resources the user may list, grouped */
+    navigation: NavigationGroup[]
   }
 }
 
@@ -68,9 +84,21 @@ export type ForbiddenPageProps = AzuSharedProps
  * Every page Azu renders, keyed by its Inertia page name. Names are
  * snake_case paths under `azu/`, like AdonisJS's own pages.
  */
+/**
+ * Props for the `azu/resource/index` page. FR-05 adds the records.
+ */
+export type ResourceIndexPageProps = AzuSharedProps & { resource: ResourceSchema }
+
+/**
+ * Props for the `azu/errors/not_found` page.
+ */
+export type NotFoundPageProps = AzuSharedProps
+
 export interface AzuPages {
   'azu/dashboard': DashboardPageProps
+  'azu/resource/index': ResourceIndexPageProps
   'azu/errors/forbidden': ForbiddenPageProps
+  'azu/errors/not_found': NotFoundPageProps
 }
 
 /**
