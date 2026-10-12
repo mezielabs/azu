@@ -36,7 +36,7 @@ export class OrderItemSchema extends BaseModel {
   @column()
   declare quantity: number
   @column()
-  declare unitPrice: number
+  declare unitPrice: string
 }
 
 export class OrderSchema extends BaseModel {
@@ -53,7 +53,7 @@ export class OrderSchema extends BaseModel {
   @column()
   declare status: 'pending' | 'paid' | 'shipped' | 'cancelled'
   @column()
-  declare total: number
+  declare total: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
@@ -87,7 +87,7 @@ export class ProductSchema extends BaseModel {
   @column()
   declare name: string
   @column()
-  declare price: number
+  declare price: string
   @column.dateTime()
   declare publishedAt: DateTime | null
   @column()

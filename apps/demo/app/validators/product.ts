@@ -3,7 +3,14 @@ import vine from '@vinejs/vine'
 const fields = {
   name: vine.string().trim().minLength(2).maxLength(160),
   description: vine.string().trim().nullable().optional(),
-  price: vine.number().min(0).max(1_000_000).decimal([0, 2]),
+  /**
+   * A decimal column: kept as an exact string end to end, so validate
+   * the format instead of parsing it into a float.
+   */
+  price: vine
+    .string()
+    .trim()
+    .regex(/^\d{1,10}(\.\d{1,2})?$/),
   stock: vine.number().withoutDecimals().min(0),
   status: vine.enum(['draft', 'published'] as const),
   isFeatured: vine.boolean().optional(),

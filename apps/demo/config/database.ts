@@ -33,13 +33,12 @@ const dbConfig = defineConfig({
       },
 
       /**
-       * database/schema.ts is generated from SQLite. Postgres types
-       * decimal columns differently (see docs/decisions.md), so
-       * generation stays on this connection only.
+       * database/schema.ts is generated from Postgres, the primary
+       * database, so SQLite never regenerates it (SQLite types decimal
+       * columns as numbers; see docs/decisions.md).
        */
       schemaGeneration: {
-        enabled: true,
-        rulesPaths: ['./database/schema_rules.js'],
+        enabled: false,
       },
     },
 
@@ -57,7 +56,8 @@ const dbConfig = defineConfig({
         paths: ['database/migrations'],
       },
       schemaGeneration: {
-        enabled: false,
+        enabled: true,
+        rulesPaths: ['./database/schema_rules.js'],
       },
     },
   },

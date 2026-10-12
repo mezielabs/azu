@@ -7,6 +7,15 @@ import Tag from '#models/tag'
 import User from '#models/user'
 
 /**
+ * Decimal columns hold exact strings (Postgres returns them as strings),
+ * so money is computed in integer minor units and formatted without
+ * going through floating point: 175050 → '1750.50'.
+ */
+function toDecimal(minor: number) {
+  return `${Math.trunc(minor / 100)}.${String(minor % 100).padStart(2, '0')}`
+}
+
+/**
  * Deterministic seed data for the demo store. Every login uses the
  * password "password".
  */
@@ -33,15 +42,16 @@ export default class MainSeeder extends BaseSeeder {
       ['new', 'sale', 'handmade', 'bestseller', 'gift'].map((name) => ({ name, slug: name }))
     )
 
-    const products: Product[] = []
+    const products: { product: Product; priceMinor: number }[] = []
     for (let i = 1; i <= 40; i++) {
       const category = categories[i % categories.length]
+      const priceMinor = (1500 + i * 250) * 100
       const product = await Product.create({
         categoryId: category.id,
         name: `${category.name} item ${i}`,
         sku: `SKU-${String(i).padStart(4, '0')}`,
         description: i % 3 === 0 ? null : `<p>Description for ${category.name} item ${i}</p>`,
-        price: 1500 + i * 250,
+        price: toDecimal(priceMinor),
         stock: (i * 7) % 50,
         status: i % 4 === 0 ? 'draft' : 'published',
         isFeatured: i % 10 === 0,
@@ -51,7 +61,7 @@ export default class MainSeeder extends BaseSeeder {
       await product
         .related('tags')
         .attach([tags[i % tags.length].id, tags[(i + 2) % tags.length].id])
-      products.push(product)
+      products.push({ product, priceMinor })
     }
 
     const statuses = ['pending', 'paid', 'shipped', 'cancelled'] as const
@@ -62,14 +72,16 @@ export default class MainSeeder extends BaseSeeder {
         userId: customer.id,
         number: `AZU-${String(1000 + i)}`,
         status: statuses[i % statuses.length],
-        total: lines.reduce((sum, product) => sum + product.price, 0),
+        total: toDecimal(lines.reduce((sum, line) => sum + line.priceMinor, 0)),
         placedAt: DateTime.utc(2026, 10, 1).plus({ hours: i * 5 }),
       })
-      await order
-        .related('items')
-        .createMany(
-          lines.map((product) => ({ productId: product.id, quantity: 1, unitPrice: product.price }))
-        )
+      await order.related('items').createMany(
+        lines.map((line) => ({
+          productId: line.product.id,
+          quantity: 1,
+          unitPrice: line.product.price,
+        }))
+      )
     }
   }
 }

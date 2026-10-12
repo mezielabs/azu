@@ -93,3 +93,9 @@ jobs:
 
       # The tests roll their migrations back; also prove the seeder runs
       - run: pnpm demo:seed
+
+      # On Postgres, migration:fresh regenerates database/schema.ts. The
+      # committed file must match the primary database's types.
+      - name: Check database/schema.ts matches Postgres
+        if: matrix.db == 'pg'
+        run: git diff --exit-code -- apps/demo/database/schema.ts
