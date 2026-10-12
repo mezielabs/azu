@@ -22,7 +22,16 @@
     "./azu_provider": {
       "types": "./build/providers/azu_provider.d.ts",
       "default": "./build/providers/azu_provider.js"
-    }
+    },
+    "./vite": {
+      "types": "./build/vite.d.ts",
+      "default": "./build/vite.js"
+    },
+    "./types": {
+      "types": "./build/src/types.d.ts",
+      "default": "./build/src/types.js"
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "copy:templates": "copyfiles \"stubs/**/*.stub\" \"resources/**/*.edge\" build",
@@ -46,6 +55,7 @@
     "@adonisjs/tsconfig": "^2.0.0",
     "@adonisjs/vite": "^6.0.3",
     "@japa/assert": "^4.2.0",
+    "@japa/file-system": "^3.0.0",
     "@japa/runner": "^5.3.0",
     "@poppinss/ts-exec": "^1.4.4",
     "@types/luxon": "^3.7.5",
@@ -59,7 +69,8 @@
     "luxon": "^3.7.2",
     "prettier": "^3.9.9",
     "tsdown": "^0.23.1",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4"
   },
   "peerDependencies": {
     "@adonisjs/core": "^7.0.0",
@@ -67,7 +78,8 @@
     "@adonisjs/lucid": "^22.0.0",
     "@adonisjs/vite": "^6.0.0",
     "@vinejs/vine": "^4.0.0",
-    "edge.js": "^6.0.0"
+    "edge.js": "^6.0.0",
+    "vite": "^8.0.0"
   },
   "publishConfig": {
     "access": "public",
@@ -77,7 +89,9 @@
     "entry": [
       "./index.ts",
       "./configure.ts",
-      "./providers/azu_provider.ts"
+      "./vite.ts",
+      "./providers/azu_provider.ts",
+      "./src/types.ts"
     ],
     "outDir": "./build",
     "clean": true,
@@ -99,5 +113,10 @@
       "tests/**"
     ]
   },
-  "prettier": "@adonisjs/prettier-config"
+  "prettier": "@adonisjs/prettier-config",
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  }
 }
