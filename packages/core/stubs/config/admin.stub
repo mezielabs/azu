@@ -8,6 +8,12 @@ const adminConfig = defineConfig({
    * URL prefix the admin panel is mounted at
    */
   path: '/admin',
+
+  /**
+   * Where guests are sent to sign in. Admin routes use your app's default
+   * auth guard; set "guard" to use another one.
+   */
+  loginUrl: '/login',
 })
 
 export default adminConfig

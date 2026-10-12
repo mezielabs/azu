@@ -163,7 +163,13 @@ Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('crea
 
 ## 6. Auth, permissions, validation
 
-**Auth:** `config/admin.ts` names the guard (default: app default) and `loginUrl`. The installer adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`.
+**Auth:** `config/admin.ts` names the guard (default: app default) and `loginUrl` (default `/login`). The installer adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`. If the app has no Bouncer yet, the installer doesn't install it (AdonisJS presets don't install their dependencies either); it explains how to add it, and the gate denies everyone until then.
+
+The access gate runs on every admin route, after the admin root view is set up:
+
+- Guests get a 302 to `loginUrl`. Inertia visits get a 409 location response instead, so the browser loads the app's login page rather than rendering it inside the admin app.
+- Signed-in users must pass `accessAdmin`, or they get a 403 and the `azu/errors/forbidden` page.
+- It fails closed. Without auth, without Bouncer, or without an `accessAdmin` ability, everyone is denied. The reason is logged for the developer, never shown to the user.
 
 **Permissions:** policy methods checked per resource. A missing method means denied.
 
@@ -184,7 +190,7 @@ The server computes abilities once per request and sends them as Inertia props. 
 
 | Command | Behaviour |
 | --- | --- |
-| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin`, mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
+| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
 | `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
@@ -205,7 +211,7 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 
 **Styling:** Azu ships its own prebuilt stylesheet, built with Tailwind inside `@mezielabs/azu-react`. The app doesn't need Tailwind. App components can use Azu's CSS variables, or the app's own Tailwind with an `@source` pointing at the package.
 
-**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object (schema, data, abilities), typed in `@mezielabs/azu`.
+**Pages:** `azu/dashboard`, `azu/resource/index`, `azu/resource/create`, `azu/resource/edit`, `azu/resource/show`, `azu/errors/forbidden`. Names are snake_case paths, like AdonisJS 7's own Inertia pages. Each page receives one typed props object (schema, data, abilities), typed in `@mezielabs/azu`.
 
 **Overrides, smallest first:**
 
