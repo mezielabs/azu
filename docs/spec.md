@@ -182,7 +182,7 @@ The server computes abilities once per request and sends them as Inertia props. 
 
 | Command | Behaviour |
 | --- | --- |
-| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin`, mounts routes at `/admin`, adds the admin Vite entry |
+| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts`, adds `accessAdmin`, mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
 | `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
@@ -240,8 +240,12 @@ export default defineConfig({
   perPage: 25,
   defaultDisk: 's3',
   resources: { autoload: 'app/admin/resources' },
+  // Optional; must match azu({ entry }) in vite.config.ts
+  entry: 'inertia/admin/app.tsx',
 })
 ```
+
+`path` can't be `/`; `defineConfig` throws so the panel never replaces the app's homepage.
 
 ## 10. Testing
 
