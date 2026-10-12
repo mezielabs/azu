@@ -48,6 +48,7 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 - Run demo: `pnpm dev` (`node ace serve --hmr`), then open http://localhost:3333/admin. Needs Node 24.21 or later; `--hmr` crashes on 24.3.0. `.nvmrc` pins 24.
 - Reset and seed the demo DB: `pnpm demo:seed`. Logins are in `apps/demo/database/seeders/main_seeder.ts`.
 - Regenerate `apps/demo/database/schema.ts` after a migration change: run migrations against Postgres (`DB_CONNECTION=pg … node ace migration:run`). Schema generation is on for Postgres only, so its types match the primary database, and CI fails if the committed file differs.
+- Admin bundle budget: `pnpm budget` (production build of the demo, then `scripts/check_admin_bundle.mjs`; CI runs it)
 - Format: `pnpm format`
 
 ## Non-negotiables

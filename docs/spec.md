@@ -45,7 +45,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | Accessibility | WCAG 2.1 AA on core screens: keyboard navigation, focus states, labelled inputs, 4.5:1 contrast in both themes. |
 | Compatibility | AdonisJS 7, Node 24+, Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
 | Type safety | Resource definitions typed against the model: a misspelled column or field name fails `tsc`. |
-| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. |
+| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), and ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS). |
 | Upgrades | Semver. Published components carry a version stamp; `admin:doctor` flags drift. |
 | i18n | All UI strings go through AdonisJS i18n; English only in v1. |
 | Mobile | Usable at 375 px: tables scroll horizontally, forms stack. |

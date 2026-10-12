@@ -13,7 +13,8 @@
     "test": "pnpm build && pnpm -r run test",
     "dev": "pnpm build && pnpm --filter demo run dev",
     "format": "prettier --write .",
-    "demo:seed": "pnpm --filter demo exec node ace migration:fresh --seed"
+    "demo:seed": "pnpm --filter demo exec node ace migration:fresh --seed",
+    "budget": "pnpm build && NODE_ENV=production pnpm --filter demo exec vite build && node scripts/check_admin_bundle.mjs"
   },
   "devDependencies": {
     "@adonisjs/prettier-config": "^1.5.0",

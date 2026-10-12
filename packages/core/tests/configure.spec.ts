@@ -32,9 +32,10 @@ async function createApp(fs: FileSystem, viteConfig: string) {
 
 test.group('configure', (group) => {
   /**
-   * Each test boots an app, which is slow under coverage
+   * Each test boots an app and loads ts-morph, which is slow on a cold
+   * start and under coverage
    */
-  group.each.timeout(15_000)
+  group.each.timeout(30_000)
 
   test('writes config and the admin entry, registers the provider and Vite plugin', async ({
     assert,
