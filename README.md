@@ -30,7 +30,7 @@ If your API rejects a request, Azu rejects it too. There's one source of truth, 
 
 ## Requirements
 
-- AdonisJS 7 with Lucid
+- AdonisJS 7 with Lucid, Auth, and Bouncer
 - Inertia with React
 - Node.js 24 or later
 - PostgreSQL, MySQL, or SQLite
@@ -56,6 +56,8 @@ export const accessAdmin = Bouncer.ability((user: User) => {
   return user.role === 'admin' || user.role === 'staff'
 })
 ```
+
+If your app doesn't use Bouncer yet, run `node ace add @adonisjs/bouncer` first, then `node ace configure @mezielabs/azu`. Without Bouncer, Azu denies everyone.
 
 Note: Azu uses your app's existing auth guard. Guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403.
 
