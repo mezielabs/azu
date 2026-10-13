@@ -167,6 +167,45 @@ test.group('Admin / list screen (FR-05)', (group) => {
     assert.equal(await search(`${prefix} nothing`), 0)
   })
 
+  test('search matches % and _ literally, on every database', async ({ client, assert }) => {
+    const admin = await createUser('admin')
+    const prefix = `t${randomUUID().slice(0, 6)}`
+    const category = await Category.create({ name: `${prefix} cat`, slug: `${prefix}-cat` })
+    const product = (name: string, sku: string) =>
+      Product.create({
+        categoryId: category.id,
+        name: `${prefix} ${name}`,
+        sku,
+        price: '1.00',
+        stock: 1,
+        status: 'published',
+        isFeatured: false,
+      })
+    await product('Mug 50% off', `${prefix}-1`)
+    await product('Mug 500 ml', `${prefix}-2`)
+    await product('Wow! Bowl', `${prefix}-3`)
+    await product('Plate', `${prefix.toUpperCase()}_AB_12`)
+    await product('Cup', `${prefix.toUpperCase()}_ABX12`)
+
+    const titles = async (term: string) => {
+      const response = await client
+        .get(`/admin/resources/products?search=${encodeURIComponent(term)}`)
+        .loginAs(admin)
+        .withInertia()
+      return response
+        .body()
+        .props.list.rows.map((row: { title: string }) => row.title)
+        .sort()
+    }
+
+    // Unescaped, "50%" would also match "500 ml" and "AB_1" would match "ABX1"
+    assert.deepEqual(await titles(`${prefix} mug 50%`), [`${prefix} Mug 50% off`])
+    assert.deepEqual(await titles(`${prefix.toUpperCase()}_AB_1`), [`${prefix} Plate`])
+    assert.deepEqual(await titles(`${prefix} wow!`), [`${prefix} Wow! Bowl`])
+    // Still case-insensitive
+    assert.deepEqual(await titles(`${prefix} MUG 50%`), [`${prefix} Mug 50% off`])
+  })
+
   test('partial reloads return only the list', async ({ client, assert }) => {
     const admin = await createUser('admin')
     const prefix = await createCatalog(3)

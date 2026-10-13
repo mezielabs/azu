@@ -12,6 +12,21 @@ function columnName(model: LucidModel, attribute: string): string {
 }
 
 /**
+ * The LIKE escape character. Not a backslash: backslashes need escaping
+ * in MySQL string literals and SQLite has no default escape, so an
+ * explicit `ESCAPE '!'` means the same thing on every database.
+ */
+const LIKE_ESCAPE = '!'
+
+/**
+ * Makes a search term match literally: `50%` finds "50%", not "50"
+ * followed by anything, and `_` matches only an underscore.
+ */
+export function escapeLike(term: string): string {
+  return term.replace(/[!%_]/g, (character) => `${LIKE_ESCAPE}${character}`)
+}
+
+/**
  * Plain values only: Luxon dates become ISO strings, decimals stay the
  * exact strings the driver returns (or become strings, on SQLite).
  */
@@ -71,9 +86,17 @@ export async function listRecords(
   }
 
   if (state.search && schema.search.length > 0) {
-    const term = `%${state.search}%`
+    const term = `%${escapeLike(state.search)}%`
+    // Postgres LIKE is case-sensitive; SQLite LIKE (ASCII) and MySQL's
+    // default collations are not
+    const operator = query.client.dialect.name === 'postgres' ? 'ILIKE' : 'LIKE'
     query.where((group) => {
-      for (const attribute of schema.search) group.orWhereILike(columnName(model, attribute), term)
+      for (const attribute of schema.search) {
+        group.orWhereRaw(`?? ${operator} ? ESCAPE '${LIKE_ESCAPE}'`, [
+          columnName(model, attribute),
+          term,
+        ])
+      }
     })
   }
 
