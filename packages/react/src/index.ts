@@ -10,6 +10,10 @@ export { Head, Link } from '@inertiajs/react'
 export { createAzuApp, type CreateAzuAppOptions } from './app.tsx'
 export { AdminLayout, type AdminLayoutProps } from './components/admin_layout.tsx'
 export { useComponent } from './components/registry.tsx'
+export { DataTable, selectedIds } from './components/list/data_table.tsx'
+export { ListCell } from './components/list/cell.tsx'
+export { ListToolbar } from './components/list/list_toolbar.tsx'
+export { Pagination } from './components/list/pagination.tsx'
 
 /**
  * Contracts are defined in `@mezielabs/azu`, so a future Vue package

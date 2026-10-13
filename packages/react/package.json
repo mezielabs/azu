@@ -60,5 +60,8 @@
     "access": "public",
     "provenance": true
   },
-  "prettier": "@adonisjs/prettier-config"
+  "prettier": "@adonisjs/prettier-config",
+  "dependencies": {
+    "react-aria-components": "^1.22.1"
+  }
 }

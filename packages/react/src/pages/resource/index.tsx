@@ -1,12 +1,31 @@
-import { AdminLayout, Head, type ResourceIndexPageProps } from '@mezielabs/azu-react'
-
-const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
+import { router } from '@inertiajs/react'
+import { useState } from 'react'
+import { listStateUrl, nextListState, type ListState } from '@mezielabs/azu/shared'
+import {
+  AdminLayout,
+  DataTable,
+  Head,
+  ListToolbar,
+  Pagination,
+  type ResourceIndexPageProps,
+} from '@mezielabs/azu-react'
 
 /**
- * The resource list. FR-03 renders a placeholder from the schema; the
- * list itself (records, sorting, search, pagination) arrives with FR-05.
+ * The resource list (FR-05). Every change (page, size, sort, search)
+ * is a URL change through an Inertia partial reload of `list`, so the
+ * state survives reload and the server does all the work.
  */
-export default function ResourceIndex({ azu, resource }: ResourceIndexPageProps) {
+export default function ResourceIndex({ azu, resource, list }: ResourceIndexPageProps) {
+  const [selected, setSelected] = useState<(string | number)[]>([])
+  const path = `${azu.path}/resources/${resource.name}`
+
+  function go(change: Partial<ListState>, replace = false) {
+    const url = listStateUrl(path, nextListState(list.state, change), {
+      defaultPerPage: list.defaultPerPage,
+    })
+    router.get(url, {}, { only: ['list'], preserveState: true, preserveScroll: true, replace })
+  }
+
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={resource.label} />
@@ -17,14 +36,29 @@ export default function ResourceIndex({ azu, resource }: ResourceIndexPageProps)
       >
         {resource.label}
       </h1>
-      <div className="azu-empty">
-        <p>The {resource.singularLabel.toLowerCase()} list arrives with FR-05.</p>
-        <p>
-          {count(resource.columns.length, 'column')}, {count(resource.fields.length, 'field')},{' '}
-          {count(resource.filters.length, 'filter')} and {count(resource.actions.length, 'action')}{' '}
-          are defined.
+      <ListToolbar
+        state={list.state}
+        label={resource.label}
+        searchable={resource.search.length > 0}
+        onSearch={(search) => go({ search }, true)}
+        onPerPage={(perPage) => go({ perPage })}
+      />
+      {selected.length > 0 && (
+        <p className="azu-selection-summary" role="status">
+          {selected.length} selected
         </p>
-      </div>
+      )}
+      <DataTable
+        label={resource.label}
+        columns={resource.columns}
+        titleColumn={resource.title}
+        rows={list.rows}
+        state={list.state}
+        timezone={azu.timezone}
+        onSort={(sort, direction) => go({ sort, direction })}
+        onSelectionChange={setSelected}
+      />
+      <Pagination meta={list.meta} onPage={(page) => go({ page })} />
     </AdminLayout>
   )
 }
