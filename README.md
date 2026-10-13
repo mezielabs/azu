@@ -79,7 +79,7 @@ A resource is one file that points at a Lucid model and borrows its policy and v
 
 ```ts
 // app/admin/resources/product_resource.ts
-import { defineResource, column, field, filter, action } from '@mezielabs/azu'
+import { defineResource, column, field, filter } from '@mezielabs/azu'
 import Product from '#models/product'
 import ProductPolicy from '#policies/product_policy'
 import { createProductValidator, updateProductValidator } from '#validators/product'
