@@ -2,7 +2,17 @@
  * Public types for Azu. Front-end packages (`@mezielabs/azu-react`, and
  * later `@mezielabs/azu-vue`) re-export these; they don't define their own.
  */
-import type { ListMeta, ListRow, NavigationGroup, ResourceSchema } from './schema.ts'
+import type {
+  FieldSchema,
+  FieldValue,
+  FormErrors,
+  FormFieldSchema,
+  ListMeta,
+  ListRow,
+  NavigationGroup,
+  RecordData,
+  ResourceSchema,
+} from './schema.ts'
 import type { ListState, PageSize } from './shared/list_state.ts'
 
 export type * from './schema.ts'
@@ -91,10 +101,6 @@ export type DashboardPageProps = AzuSharedProps
 export type ForbiddenPageProps = AzuSharedProps
 
 /**
- * Every page Azu renders, keyed by its Inertia page name. Names are
- * snake_case paths under `azu/`, like AdonisJS's own pages.
- */
-/**
  * Props for the `azu/resource/index` page: the schema, one page of
  * rows, and the URL state that produced it.
  */
@@ -107,6 +113,52 @@ export type ResourceIndexPageProps = AzuSharedProps & {
     /** The page size the URL leaves out */
     defaultPerPage: PageSize
   }
+  /** What the user may do on this resource, from the policy */
+  abilities: { create: boolean }
+}
+
+/**
+ * The form both `azu/resource/create` and `azu/resource/edit` render:
+ * the fields this user may edit, their starting values, and the
+ * validation errors from the last submit.
+ */
+export type ResourceFormData = {
+  fields: FormFieldSchema[]
+  /** Keyed by field name */
+  values: Record<string, FieldValue>
+}
+
+/**
+ * Props for the `azu/resource/create` page. A failed submit renders it
+ * again with a 422 and `errors`.
+ */
+export type ResourceCreatePageProps = AzuSharedProps & {
+  resource: ResourceSchema
+  form: ResourceFormData
+  errors: FormErrors
+}
+
+/**
+ * Props for the `azu/resource/edit` page. A failed submit renders it
+ * again with a 422 and `errors`.
+ */
+export type ResourceEditPageProps = AzuSharedProps & {
+  resource: ResourceSchema
+  record: Omit<RecordData, 'values'>
+  form: ResourceFormData
+  errors: FormErrors
+}
+
+/**
+ * Props for the `azu/resource/show` page: the record's fields, read-only.
+ */
+export type ResourceShowPageProps = AzuSharedProps & {
+  resource: ResourceSchema
+  /** The fields this user may see */
+  fields: FieldSchema[]
+  record: RecordData
+  /** What the user may do with this record, from the policy */
+  abilities: { update: boolean }
 }
 
 /**
@@ -114,9 +166,16 @@ export type ResourceIndexPageProps = AzuSharedProps & {
  */
 export type NotFoundPageProps = AzuSharedProps
 
+/**
+ * Every page Azu renders, keyed by its Inertia page name. Names are
+ * snake_case paths under `azu/`, like AdonisJS's own pages.
+ */
 export interface AzuPages {
   'azu/dashboard': DashboardPageProps
   'azu/resource/index': ResourceIndexPageProps
+  'azu/resource/create': ResourceCreatePageProps
+  'azu/resource/edit': ResourceEditPageProps
+  'azu/resource/show': ResourceShowPageProps
   'azu/errors/forbidden': ForbiddenPageProps
   'azu/errors/not_found': NotFoundPageProps
 }

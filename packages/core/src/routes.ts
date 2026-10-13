@@ -4,9 +4,7 @@ import type { AdminAccessMiddleware } from './middleware/admin_access_middleware
 import type { AzuConfig } from './types.ts'
 import type { Azu } from './azu.ts'
 import { renderPage } from './render.ts'
-import { canList } from './resources/navigation.ts'
-import { listRecords } from './list/list_records.ts'
-import { listStateUrl, parseListState } from './shared/list_state.ts'
+import { ResourcesController } from './controllers/resources_controller.ts'
 
 /**
  * Mounts the admin routes under `config.path`. Route names are prefixed
@@ -20,53 +18,28 @@ export function registerRoutes(
   middleware: { adminInertia: AdminInertiaMiddleware; access: AdminAccessMiddleware }
 ) {
   const context = { config, azu }
+  const resources = new ResourcesController(context)
 
   router
     .group(() => {
       router.get('/', (ctx) => renderPage(ctx, context, 'azu/dashboard', {})).as('azu.dashboard')
 
-      /**
-       * The list screen (FR-05): server-side pagination, sorting and
-       * search, all in the URL. The policy check runs on every request,
-       * partial reloads included.
-       */
       router
-        .get('/resources/:resource', async (ctx) => {
-          const resource = azu.resources.get(ctx.params.resource)
-          if (!resource) {
-            ctx.response.status(404)
-            return renderPage(ctx, context, 'azu/errors/not_found', {})
-          }
-          if (!(await canList(ctx, resource))) {
-            ctx.response.status(403)
-            return renderPage(ctx, context, 'azu/errors/forbidden', {})
-          }
-          const schema = resource.toSchema()
-          const options = {
-            defaultPerPage: config.perPage,
-            sortable: schema.columns
-              .filter((column) => column.sortable)
-              .map((column) => column.name),
-          }
-          const state = parseListState(ctx.request.qs(), options)
-          const { rows, meta } = await listRecords(resource, state)
-
-          // Past the last page (say, after deleting rows): go to the last one
-          if (state.page > meta.lastPage && meta.lastPage >= 1) {
-            const path = `${config.path}/resources/${resource.name}`
-            // withQs(false): apps can forward the query string on redirects by default
-            return ctx.response
-              .redirect()
-              .withQs(false)
-              .toPath(listStateUrl(path, { ...state, page: meta.lastPage }, options))
-          }
-
-          return renderPage(ctx, context, 'azu/resource/index', {
-            resource: schema,
-            list: { rows, meta, state, defaultPerPage: config.perPage },
-          })
+        .group(() => {
+          router.get('/', (ctx) => resources.index(ctx)).as('index')
+          /**
+           * Forms submit to their own URL, so a 422 that renders the form
+           * again keeps the address bar on the form. Before `/:id`, so
+           * "create" isn't read as an id.
+           */
+          router.get('/create', (ctx) => resources.create(ctx)).as('create')
+          router.post('/create', (ctx) => resources.store(ctx)).as('store')
+          router.get('/:id', (ctx) => resources.show(ctx)).as('show')
+          router.get('/:id/edit', (ctx) => resources.edit(ctx)).as('edit')
+          router.put('/:id/edit', (ctx) => resources.update(ctx)).as('update')
         })
-        .as('azu.resources.index')
+        .prefix('/resources/:resource')
+        .as('azu.resources')
     })
     .prefix(config.path)
     .use([

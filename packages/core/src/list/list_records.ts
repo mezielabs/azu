@@ -1,4 +1,6 @@
+import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import type { CellValue, ColumnSchema, ListMeta, ListRow } from '../schema.ts'
 import type { ListState } from '../shared/list_state.ts'
@@ -69,9 +71,11 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
  *
  * Relations shown in `belongsTo` columns are preloaded with
  * `preloadOnce`, which keeps a preload the resource's `query` hook
- * already set up (with its callback), so a list is never N+1.
+ * already set up (with its callback), so a list is never N+1. Each row
+ * says whether the user may open it (the policy's `view`).
  */
 export async function listRecords(
+  ctx: HttpContext,
   resource: Resource<any, any>,
   state: ListState
 ): Promise<{ rows: ListRow[]; meta: ListMeta }> {
@@ -107,16 +111,19 @@ export async function listRecords(
   const page = await query.paginate(state.page, state.perPage)
   const title = schema.title
 
-  const rows = page.all().map((record) => {
-    const titleValue = title ? (record as unknown as Record<string, unknown>)[title] : null
-    return {
-      id: record.$primaryKeyValue as string | number,
-      title: titleValue === null || titleValue === undefined ? null : String(titleValue),
-      cells: Object.fromEntries(
-        schema.columns.map((column) => [column.name, cellValue(record, column)])
-      ),
-    }
-  })
+  const rows = await Promise.all(
+    page.all().map(async (record): Promise<ListRow> => {
+      const titleValue = title ? (record as unknown as Record<string, unknown>)[title] : null
+      return {
+        id: record.$primaryKeyValue as string | number,
+        title: titleValue === null || titleValue === undefined ? null : String(titleValue),
+        cells: Object.fromEntries(
+          schema.columns.map((column) => [column.name, cellValue(record, column)])
+        ),
+        abilities: { view: await allows(ctx, resource, 'view', record) },
+      }
+    })
+  )
 
   return {
     rows,

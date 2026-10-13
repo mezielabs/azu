@@ -1,27 +1,14 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NavigationGroup } from '../schema.ts'
 import type { Resource } from './define_resource.ts'
-
-type PolicyBouncer = {
-  with(policy: unknown): { allows(action: string, ...args: unknown[]): Promise<boolean> }
-}
+import { allows } from './abilities.ts'
 
 /**
  * Whether the user may list a resource: its policy's `viewList`. A
  * missing method, a missing policy, or no Bouncer at all means no.
  */
-export async function canList(ctx: HttpContext, resource: Resource<any, any>): Promise<boolean> {
-  const bouncer = (ctx as HttpContext & { bouncer?: PolicyBouncer }).bouncer
-  if (!bouncer) return false
-  try {
-    return await bouncer.with(resource.options.policy).allows('viewList')
-  } catch (error) {
-    ctx.logger.warn(
-      { err: error },
-      `Azu hid "${resource.name}": its policy's viewList couldn't be checked`
-    )
-    return false
-  }
+export function canList(ctx: HttpContext, resource: Resource<any, any>): Promise<boolean> {
+  return allows(ctx, resource, 'viewList')
 }
 
 /**
