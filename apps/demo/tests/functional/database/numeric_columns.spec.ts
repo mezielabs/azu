@@ -11,14 +11,22 @@ import Product from '#models/product'
  * "decimal columns" entry in docs/decisions.md.
  *
  * database/schema.ts is generated from Postgres, so the models declare
- * decimals as `string`. SQLite still returns numbers at runtime, so these
- * assertions read values through `unknown` rather than trusting the
- * declared type.
+ * decimals as `string`, as Postgres and MySQL return them. SQLite still
+ * returns numbers at runtime, so these assertions read values through
+ * `unknown` rather than trusting the declared type.
  */
 test.group('Numeric columns', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  const dialect = () => db.connection().dialect.name
+  /**
+   * The value this database is known to return
+   */
+  function expected(values: { postgres: unknown; mysql: unknown; sqlite: unknown }): unknown {
+    const name = db.connection().dialect.name
+    if (name === 'postgres') return values.postgres
+    if (name === 'mysql') return values.mysql
+    return values.sqlite
+  }
 
   async function createProduct(price: string) {
     // Unique values, so the test also passes against a seeded database
@@ -40,22 +48,15 @@ test.group('Numeric columns', (group) => {
     const product = await Product.findOrFail(id)
     const price: unknown = product.price
 
-    if (dialect() === 'postgres') {
-      assert.strictEqual(price, '1750.50')
-    } else {
-      assert.strictEqual(price, 1750.5)
-    }
+    // Strings with the scale kept on Postgres and MySQL; a number on SQLite
+    assert.strictEqual(price, expected({ postgres: '1750.50', mysql: '1750.50', sqlite: 1750.5 }))
   })
 
   test('decimal(12,2) through the query builder', async ({ assert }) => {
     const { id } = await createProduct('99.90')
     const row = await db.from('products').where('id', id).select('price').firstOrFail()
 
-    if (dialect() === 'postgres') {
-      assert.strictEqual(row.price, '99.90')
-    } else {
-      assert.strictEqual(row.price, 99.9)
-    }
+    assert.strictEqual(row.price, expected({ postgres: '99.90', mysql: '99.90', sqlite: 99.9 }))
   })
 
   test('count(*) and sum() aggregates', async ({ assert }) => {
@@ -67,14 +68,10 @@ test.group('Numeric columns', (group) => {
       .sum('price as revenue')
       .firstOrFail()
 
-    if (dialect() === 'postgres') {
-      // bigint and numeric: both strings from node-postgres
-      assert.strictEqual(row.total, '1')
-      assert.strictEqual(row.revenue, '10.25')
-    } else {
-      assert.strictEqual(row.total, 1)
-      assert.strictEqual(row.revenue, 10.25)
-    }
+    // node-postgres returns bigint counts as strings; mysql2 returns numbers
+    assert.strictEqual(row.total, expected({ postgres: '1', mysql: 1, sqlite: 1 }))
+    // A decimal sum is a string wherever decimals are
+    assert.strictEqual(row.revenue, expected({ postgres: '10.25', mysql: '10.25', sqlite: 10.25 }))
   })
 
   test('paginator totals are numbers on every database', async ({ assert }) => {
