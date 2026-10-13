@@ -1,0 +1,116 @@
+import { Link, router } from '@inertiajs/react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
+import type { FieldValue, FormErrors, ResourceFormData } from '@mezielabs/azu/types'
+import { showToast } from '../toast.tsx'
+import { toWireDateTime } from './date_values.ts'
+import { FormField } from './form_field.tsx'
+import { UnsavedChanges } from './unsaved_changes.tsx'
+
+type Values = Record<string, FieldValue>
+
+function sameValues(a: Values, b: Values) {
+  return Object.keys(a).every((name) => a[name] === b[name])
+}
+
+/**
+ * The create and edit form (FR-06). It submits to its own URL; the
+ * server validates through the resource's validator and either
+ * redirects to the detail page or renders the form again with a 422
+ * and `errors`. Form state survives that render (`preserveState`).
+ */
+export function ResourceForm(props: {
+  form: ResourceFormData
+  errors: FormErrors
+  /** The form's own URL, which it submits to */
+  action: string
+  method: 'post' | 'put'
+  timezone: string
+  submitLabel: string
+  cancelHref: string
+  /** Shown as a toast once the record is saved */
+  successMessage: string
+}) {
+  const { form, errors, timezone } = props
+  const [initial] = useState(form.values)
+  const [values, setValues] = useState(form.values)
+  const [processing, setProcessing] = useState(false)
+  // Fields edited since the last submit: their old errors no longer apply
+  const [edited, setEdited] = useState<ReadonlySet<string>>(new Set())
+  useEffect(() => setEdited(new Set()), [errors])
+  const element = useRef<HTMLFormElement>(null)
+  const summary = useRef<HTMLDivElement>(null)
+
+  const dirty = !sameValues(values, initial)
+  const other = unmatchedErrors(
+    errors,
+    form.fields.map((field) => field.name)
+  )
+
+  /**
+   * After a 422, focus the first invalid field, or the summary when
+   * only errors without a field came back.
+   */
+  function focusFirstError() {
+    requestAnimationFrame(() => {
+      const invalid = element.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
+      ;(invalid ?? summary.current)?.focus()
+    })
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    const data = Object.fromEntries(
+      form.fields.map((field) => {
+        const value = values[field.name] ?? null
+        return [
+          field.name,
+          field.kind === 'datetime' ? toWireDateTime(value as string | null, timezone) : value,
+        ]
+      })
+    )
+    router[props.method](props.action, data, {
+      preserveState: true,
+      preserveScroll: true,
+      onStart: () => setProcessing(true),
+      onFinish: () => setProcessing(false),
+      onSuccess: () => showToast(props.successMessage),
+      onError: focusFirstError,
+    })
+  }
+
+  return (
+    <form ref={element} className="azu-form" onSubmit={submit} noValidate>
+      {other.length > 0 && (
+        <div ref={summary} className="azu-form-errors" role="alert" tabIndex={-1}>
+          {other.map((message, index) => (
+            <p key={index}>{message}</p>
+          ))}
+        </div>
+      )}
+      {form.fields.map((field) => (
+        <FormField
+          key={field.name}
+          field={field}
+          value={values[field.name] ?? null}
+          onChange={(value) => {
+            setValues((current) => ({ ...current, [field.name]: value }))
+            setEdited((current) => new Set(current).add(field.name))
+          }}
+          errors={edited.has(field.name) ? [] : fieldErrors(errors, field.name)}
+          timezone={timezone}
+          values={values}
+        />
+      ))}
+      <div className="azu-form-actions">
+        <button type="submit" className="azu-button azu-button-primary" disabled={processing}>
+          {props.submitLabel}
+        </button>
+        <Link href={props.cancelHref} className="azu-button">
+          Cancel
+        </Link>
+      </div>
+      <UnsavedChanges when={dirty && !processing} />
+    </form>
+  )
+}

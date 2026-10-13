@@ -5,6 +5,7 @@ import {
   AdminLayout,
   DataTable,
   Head,
+  Link,
   ListToolbar,
   Pagination,
   type ResourceIndexPageProps,
@@ -15,7 +16,7 @@ import {
  * is a URL change through an Inertia partial reload of `list`, so the
  * state survives reload and the server does all the work.
  */
-export default function ResourceIndex({ azu, resource, list }: ResourceIndexPageProps) {
+export default function ResourceIndex({ azu, resource, list, abilities }: ResourceIndexPageProps) {
   const [selected, setSelected] = useState<(string | number)[]>([])
   const path = `${azu.path}/resources/${resource.name}`
 
@@ -29,13 +30,20 @@ export default function ResourceIndex({ azu, resource, list }: ResourceIndexPage
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={resource.label} />
-      <h1
-        className="azu-page-title"
-        data-azu-page="resource/index"
-        data-azu-resource={resource.name}
-      >
-        {resource.label}
-      </h1>
+      <div className="azu-page-header">
+        <h1
+          className="azu-page-title"
+          data-azu-page="resource/index"
+          data-azu-resource={resource.name}
+        >
+          {resource.label}
+        </h1>
+        {abilities.create && (
+          <Link href={`${path}/create`} className="azu-button azu-button-primary">
+            New {resource.singularLabel.toLowerCase()}
+          </Link>
+        )}
+      </div>
       <ListToolbar
         state={list.state}
         label={resource.label}
@@ -57,6 +65,9 @@ export default function ResourceIndex({ azu, resource, list }: ResourceIndexPage
         timezone={azu.timezone}
         onSort={(sort, direction) => go({ sort, direction })}
         onSelectionChange={setSelected}
+        rowHref={(row) =>
+          row.abilities.view ? `${path}/${encodeURIComponent(String(row.id))}` : undefined
+        }
       />
       <Pagination meta={list.meta} onPage={(page) => go({ page })} />
     </AdminLayout>
