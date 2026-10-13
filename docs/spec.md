@@ -151,7 +151,7 @@ Rules:
 | `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
-| `date`, `datetime` | Date picker in the app's timezone | Formatted, relative on hover | Luxon `DateTime` |
+| `date`, `datetime` | Date picker in the app's timezone. Submits `YYYY-MM-DD`, or `YYYY-MM-DD HH:mm:ss` as wall-clock time in the app's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
 | `belongsTo` | Searchable async select | Related title, linked | Foreign key |
@@ -159,6 +159,8 @@ Rules:
 | `manyToMany` | Searchable picker | Count | Lucid relation |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
+
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` as of FR-06. Until FR-07 and FR-08 land, `richText`, `file`, `image` and relation fields are left out of forms, detail pages and writes.
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 
@@ -188,6 +190,15 @@ The access gate runs on every admin route, after the admin root view is set up:
 The server computes abilities once per request and sends them as Inertia props. The UI hides what the server would reject, but the server always checks.
 
 **Validation:** payload limited to declared fields, then passed to the named VineJS validator with metadata (`{ record }` by default, or the result of `validators.meta`; see §4). `E_VALIDATION_ERROR` messages map to fields by path, including nested and array paths (`tags.0`). File fields validate size and MIME on upload, then the record validates through the resource validator.
+
+How a save works (FR-06, FR-10):
+
+1. The policy check runs first: `create`, or `update` with the record. Then the payload is cut down to the fields the form showed this user, minus `readOnly` ones. A field is shown when its `visibleOn` matches the form and the user passes its `ability`, which is checked with the record on edit.
+2. The payload goes through the validator with the metadata. Update uses `validators.update`, falling back to `validators.create`. A resource with no validator for the operation can't save: the request fails with an error naming the missing validator, because Azu never writes unvalidated input.
+3. Only the validator's output is written, limited to the same fields. `beforeSave`, the save and `afterSave` share a transaction.
+4. Success redirects (303) to the detail page, and the form shows a toast. A validation failure renders the form again with a 422 and `errors`, keyed by path, and the form keeps what the user typed. Messages for paths no shown field covers, such as an attribute the resource doesn't declare as a field, appear in a summary at the top of the form.
+
+Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /admin/resources/<name>/<id>/edit`. A 422 then leaves the address bar on the form. An id that can't exist, such as `abc` for an integer key, is a 404.
 
 ## 7. Commands
 
@@ -227,6 +238,8 @@ Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cove
 **Theming:** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, and `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+
+**Records:** clicking a list row opens its detail page when the policy's `view` allows it; selection stays on the checkboxes. Forms render required markers and limits (lengths, `min`/`max`/`step`, enum choices) from the operation's validator (§4). Leaving a form with unsaved changes asks first: a dialog for in-app navigation, and the browser's prompt for reloads and closing the tab. The browser's back button between admin pages can't be intercepted. Toasts appear in Azu's own `aria-live` region, rendered once beside the Inertia app so they survive the page change after a save.
 
 ## 9. Packages and config
 
