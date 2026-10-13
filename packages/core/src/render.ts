@@ -4,6 +4,13 @@ import type { Azu } from './azu.ts'
 import { buildNavigation } from './resources/navigation.ts'
 
 /**
+ * The server's timezone: the app's, since AdonisJS apps set `TZ`.
+ */
+export function appTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
+/**
  * Renders an Azu page with the shared `azu` props: the admin path and
  * this user's navigation. Pass `navigation: false` where the user isn't
  * allowed in at all.
@@ -14,13 +21,19 @@ export async function renderPage<Page extends keyof AzuPages>(
   page: Page,
   props: Omit<AzuPages[Page], 'azu'>
 ) {
-  const navigation =
-    context.navigation === false
-      ? []
-      : await buildNavigation(ctx, context.azu.resources.all(), context.config.path)
-
   return ctx.inertia.render(page, {
     ...props,
-    azu: { path: context.config.path, navigation },
+    /**
+     * Lazy, so partial reloads that don't ask for `azu` (paging,
+     * sorting, searching) skip the per-resource policy checks
+     */
+    azu: async () => ({
+      path: context.config.path,
+      timezone: appTimezone(),
+      navigation:
+        context.navigation === false
+          ? []
+          : await buildNavigation(ctx, context.azu.resources.all(), context.config.path),
+    }),
   } as never)
 }

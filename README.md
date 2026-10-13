@@ -122,6 +122,8 @@ export default defineResource(Product, {
 
 Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo.
 
+The list screen pages, sorts and searches on the server, and keeps it all in the URL, so a reload or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
+
 Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/admin.ts` and register resources in `start/admin.ts`:
 
 ```ts

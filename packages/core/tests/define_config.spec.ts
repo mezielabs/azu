@@ -9,7 +9,13 @@ test.group('defineConfig', () => {
       guard: undefined,
       loginUrl: '/login',
       resources: { autoload: 'app/admin/resources' },
+      perPage: 25,
     })
+  })
+
+  test('accepts only the list page sizes', ({ assert }) => {
+    assert.equal(defineConfig({ perPage: 50 }).perPage, 50)
+    assert.throws(() => defineConfig({ perPage: 30 as never }), /must be 10, 25, 50 or 100/)
   })
 
   test('turns resource autoload off', ({ assert }) => {

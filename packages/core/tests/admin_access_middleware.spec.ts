@@ -107,7 +107,13 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
     assert.equal(result.status, 403)
     assert.deepEqual(result.rendered, {
       page: 'azu/errors/forbidden',
-      props: { azu: { path: '/admin', navigation: [] } },
+      props: {
+        azu: {
+          path: '/admin',
+          navigation: [],
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      },
     })
     assert.equal(result.sent, '<rendered azu/errors/forbidden>')
     assert.isFalse(result.nextCalled)

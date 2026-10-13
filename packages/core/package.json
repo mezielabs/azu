@@ -27,6 +27,10 @@
       "types": "./build/services/main.d.ts",
       "default": "./build/services/main.js"
     },
+    "./shared": {
+      "types": "./build/shared.d.ts",
+      "default": "./build/shared.js"
+    },
     "./vite": {
       "types": "./build/vite.d.ts",
       "default": "./build/vite.js"
@@ -98,6 +102,7 @@
     "entry": [
       "./index.ts",
       "./configure.ts",
+      "./shared.ts",
       "./vite.ts",
       "./providers/azu_provider.ts",
       "./services/main.ts",
