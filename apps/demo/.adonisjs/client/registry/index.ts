@@ -18,6 +18,36 @@ const routes = {
     tokens: [{"old":"/admin/resources/:resource","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource","type":1,"val":"resource","end":""}],
     types: placeholder as Registry['azu.resources.index']['types'],
   },
+  'azu.resources.create': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource/create',
+    tokens: [{"old":"/admin/resources/:resource/create","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/create","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"create","end":""}],
+    types: placeholder as Registry['azu.resources.create']['types'],
+  },
+  'azu.resources.store': {
+    methods: ["POST"],
+    pattern: '/admin/resources/:resource/create',
+    tokens: [{"old":"/admin/resources/:resource/create","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/create","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"create","end":""}],
+    types: placeholder as Registry['azu.resources.store']['types'],
+  },
+  'azu.resources.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource/:id',
+    tokens: [{"old":"/admin/resources/:resource/:id","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/:id","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/:id","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['azu.resources.show']['types'],
+  },
+  'azu.resources.edit': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource/:id/edit',
+    tokens: [{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"id","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"edit","end":""}],
+    types: placeholder as Registry['azu.resources.edit']['types'],
+  },
+  'azu.resources.update': {
+    methods: ["PUT"],
+    pattern: '/admin/resources/:resource/:id/edit',
+    tokens: [{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"id","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"edit","end":""}],
+    types: placeholder as Registry['azu.resources.update']['types'],
+  },
   'home': {
     methods: ["GET","HEAD"],
     pattern: '/',

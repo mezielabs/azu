@@ -14,9 +14,18 @@ const CATALOG = {
     { name: 'products', label: 'Products', icon: 'package', href: '/admin/resources/products' },
   ],
 }
+const COUPONS = {
+  name: 'coupons',
+  label: 'Coupons',
+  icon: 'ticket',
+  href: '/admin/resources/coupons',
+}
 const SALES = {
   label: 'Sales',
-  items: [{ name: 'orders', label: 'Orders', icon: 'receipt', href: '/admin/resources/orders' }],
+  items: [
+    COUPONS,
+    { name: 'orders', label: 'Orders', icon: 'receipt', href: '/admin/resources/orders' },
+  ],
 }
 
 /**
@@ -41,7 +50,9 @@ test.group('Admin / resources (FR-03)', (group) => {
     const response = await client.get('/admin').loginAs(staff).withInertia()
 
     response.assertStatus(200)
-    response.assertInertiaPropsContains({ azu: { navigation: [CATALOG] } })
+    response.assertInertiaPropsContains({
+      azu: { navigation: [CATALOG, { label: 'Sales', items: [COUPONS] }] },
+    })
   })
 
   test('a resource link renders the placeholder with the plain-JSON schema', async ({

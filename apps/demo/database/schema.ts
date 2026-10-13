@@ -24,6 +24,48 @@ export class CategorySchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class CouponSchema extends BaseModel {
+  static $columns = [
+    'amount',
+    'code',
+    'createdAt',
+    'currency',
+    'description',
+    'expiresAt',
+    'id',
+    'isActive',
+    'kind',
+    'startsOn',
+    'updatedAt',
+    'usageLimit',
+  ] as const
+  $columns = CouponSchema.$columns
+  @column()
+  declare amount: string
+  @column()
+  declare code: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currency: string
+  @column()
+  declare description: string | null
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare kind: string
+  @column.date()
+  declare startsOn: DateTime
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare usageLimit: number | null
+}
+
 export class OrderItemSchema extends BaseModel {
   static $columns = ['id', 'orderId', 'productId', 'quantity', 'unitPrice'] as const
   $columns = OrderItemSchema.$columns
@@ -40,7 +82,16 @@ export class OrderItemSchema extends BaseModel {
 }
 
 export class OrderSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'number', 'placedAt', 'status', 'total', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'number',
+    'placedAt',
+    'status',
+    'total',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = OrderSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -72,7 +123,21 @@ export class ProductTagSchema extends BaseModel {
 }
 
 export class ProductSchema extends BaseModel {
-  static $columns = ['categoryId', 'createdAt', 'description', 'id', 'isFeatured', 'name', 'price', 'publishedAt', 'sku', 'status', 'stock', 'thumbnail', 'updatedAt'] as const
+  static $columns = [
+    'categoryId',
+    'createdAt',
+    'description',
+    'id',
+    'isFeatured',
+    'name',
+    'price',
+    'publishedAt',
+    'sku',
+    'status',
+    'stock',
+    'thumbnail',
+    'updatedAt',
+  ] as const
   $columns = ProductSchema.$columns
   @column()
   declare categoryId: number
@@ -118,7 +183,15 @@ export class TagSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
+  static $columns = [
+    'createdAt',
+    'email',
+    'fullName',
+    'id',
+    'password',
+    'role',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
