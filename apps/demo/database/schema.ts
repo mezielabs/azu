@@ -25,20 +25,7 @@ export class CategorySchema extends BaseModel {
 }
 
 export class CouponSchema extends BaseModel {
-  static $columns = [
-    'amount',
-    'code',
-    'createdAt',
-    'currency',
-    'description',
-    'expiresAt',
-    'id',
-    'isActive',
-    'kind',
-    'startsOn',
-    'updatedAt',
-    'usageLimit',
-  ] as const
+  static $columns = ['amount', 'code', 'createdAt', 'currency', 'description', 'expiresAt', 'id', 'isActive', 'kind', 'startsOn', 'updatedAt', 'usageLimit'] as const
   $columns = CouponSchema.$columns
   @column()
   declare amount: string
@@ -82,16 +69,7 @@ export class OrderItemSchema extends BaseModel {
 }
 
 export class OrderSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'id',
-    'number',
-    'placedAt',
-    'status',
-    'total',
-    'updatedAt',
-    'userId',
-  ] as const
+  static $columns = ['createdAt', 'id', 'number', 'placedAt', 'status', 'total', 'updatedAt', 'userId'] as const
   $columns = OrderSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -123,21 +101,7 @@ export class ProductTagSchema extends BaseModel {
 }
 
 export class ProductSchema extends BaseModel {
-  static $columns = [
-    'categoryId',
-    'createdAt',
-    'description',
-    'id',
-    'isFeatured',
-    'name',
-    'price',
-    'publishedAt',
-    'sku',
-    'status',
-    'stock',
-    'thumbnail',
-    'updatedAt',
-  ] as const
+  static $columns = ['categoryId', 'createdAt', 'description', 'id', 'isFeatured', 'name', 'price', 'publishedAt', 'sku', 'status', 'stock', 'thumbnail', 'updatedAt'] as const
   $columns = ProductSchema.$columns
   @column()
   declare categoryId: number
@@ -183,15 +147,7 @@ export class TagSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'email',
-    'fullName',
-    'id',
-    'password',
-    'role',
-    'updatedAt',
-  ] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
