@@ -40,7 +40,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 
 | Area | Requirement |
 | --- | --- |
-| Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. |
+| Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. Searches use `ILIKE '%term%'`, so on Postgres the search columns need trigram (`pg_trgm`) GIN indexes; a B-tree can't serve a leading wildcard. Measured 2026-10-13 on 100,000 demo products, Postgres 18, production mode, sequential requests: worst p95 40 ms across first page, sorts, a 101-match search, deep pages and 100 per page; 162 ms for a search matching every row. Without trigram indexes, search was 598 ms. Check with `pnpm bench:list` before each release. |
 | Security | Every admin route and action authorises server-side, never only by hiding UI. CSRF on all writes. Mass assignment limited to declared fields. Uploads restricted by MIME type and size per field. |
 | Accessibility | WCAG 2.1 AA on core screens: keyboard navigation, focus states, labelled inputs, 4.5:1 contrast in both themes. |
 | Compatibility | AdonisJS 7, Node 24+, Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
@@ -138,6 +138,7 @@ Rules:
 - **Names and labels.** A resource's URL name and labels come from the model: `OrderItem` → `order-items`, "Order items", "Order item". `label` and `singularLabel` override the labels.
 - **Builders fit their kind.** Kind-specific methods only compile on the kinds they belong to: `format()` on number and decimal columns, `colors()` on badges, `options()` on select fields, `min`/`max`/`step` on number and decimal fields, `disk`/`maxSize` on file and image fields, `searchable()` on relation fields. `filter.custom`'s query and an action's records are typed against the model, and a row action's handler gets one record.
 - **Hooks.** `beforeSave`, `afterSave`, `beforeDelete` receive the model instance and the HTTP context.
+- **Preloading.** The list preloads every `belongsTo` column's relation with `preloadOnce`, so a `query` hook's own preload (and its callback) wins and nothing is loaded twice. A list never runs a query per row.
 - **Defaults.** Omitting `columns` or `fields` falls back to what the generator would produce. This arrives with the generator (FR-04): types are erased at runtime, so the defaults need the database's column metadata. Until then, omitted lists are empty.
 
 ## 5. Fields, columns, filters, actions
@@ -225,7 +226,7 @@ Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cove
 
 **Theming:** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
 
-**URL state:** search, sort, filters, page, and page size are query parameters. Inertia partial reloads refresh only table data.
+**URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, and `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 
 ## 9. Packages and config
 
