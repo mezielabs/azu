@@ -1,0 +1,107 @@
+import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import type { Resource } from '../resources/define_resource.ts'
+import type { CellValue, ColumnSchema, ListMeta, ListRow } from '../schema.ts'
+import type { ListState } from '../shared/list_state.ts'
+
+/**
+ * The database column behind a model attribute (`createdAt` →
+ * `created_at`).
+ */
+function columnName(model: LucidModel, attribute: string): string {
+  return model.$getColumn(attribute)?.columnName ?? attribute
+}
+
+/**
+ * Plain values only: Luxon dates become ISO strings, decimals stay the
+ * exact strings the driver returns (or become strings, on SQLite).
+ */
+function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
+  const value = (record as unknown as Record<string, unknown>)[column.name]
+
+  if (column.kind === 'belongsTo') {
+    const related = value as LucidRow | null | undefined
+    if (!related) return null
+    const title = (related as unknown as Record<string, unknown>)[column.relationTitle ?? '']
+    return {
+      id: related.$primaryKeyValue as string | number,
+      title: title === null || title === undefined ? null : String(title),
+    }
+  }
+
+  if (value === null || value === undefined) return column.kind === 'image' ? { url: null } : null
+
+  if (column.kind === 'image') {
+    // Drive URLs arrive with FR-07; until then only ready-made URLs show
+    const url = String(value)
+    return { url: /^(https?:)?\/\//.test(url) || url.startsWith('/') ? url : null }
+  }
+  if (column.kind === 'date' || column.kind === 'datetime') {
+    const date = value as { toISO?: () => string | null }
+    return typeof date.toISO === 'function' ? date.toISO() : String(value)
+  }
+  if (column.kind === 'decimal') return String(value)
+  if (column.kind === 'number') return typeof value === 'number' ? value : Number(value)
+  if (column.kind === 'boolean') return Boolean(value)
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value
+  }
+  return String(value)
+}
+
+/**
+ * One page of a resource's records, searched, sorted and serialised to
+ * plain JSON rows.
+ *
+ * Relations shown in `belongsTo` columns are preloaded with
+ * `preloadOnce`, which keeps a preload the resource's `query` hook
+ * already set up (with its callback), so a list is never N+1.
+ */
+export async function listRecords(
+  resource: Resource<any, any>,
+  state: ListState
+): Promise<{ rows: ListRow[]; meta: ListMeta }> {
+  const model: LucidModel = resource.model
+  const schema = resource.toSchema()
+  const query = model.query()
+
+  resource.options.query?.(query)
+
+  for (const column of schema.columns) {
+    if (column.kind === 'belongsTo') query.preloadOnce(column.name as never)
+  }
+
+  if (state.search && schema.search.length > 0) {
+    const term = `%${state.search}%`
+    query.where((group) => {
+      for (const attribute of schema.search) group.orWhereILike(columnName(model, attribute), term)
+    })
+  }
+
+  if (state.sort) query.orderBy(columnName(model, state.sort), state.direction)
+  // A stable tie-break, so a page always holds the same rows
+  query.orderBy(columnName(model, model.primaryKey), state.sort ? 'asc' : 'desc')
+
+  const page = await query.paginate(state.page, state.perPage)
+  const title = schema.title
+
+  const rows = page.all().map((record) => {
+    const titleValue = title ? (record as unknown as Record<string, unknown>)[title] : null
+    return {
+      id: record.$primaryKeyValue as string | number,
+      title: titleValue === null || titleValue === undefined ? null : String(titleValue),
+      cells: Object.fromEntries(
+        schema.columns.map((column) => [column.name, cellValue(record, column)])
+      ),
+    }
+  })
+
+  return {
+    rows,
+    meta: {
+      total: page.total,
+      perPage: page.perPage,
+      currentPage: page.currentPage,
+      lastPage: page.lastPage,
+    },
+  }
+}

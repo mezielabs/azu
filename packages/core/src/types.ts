@@ -2,7 +2,8 @@
  * Public types for Azu. Front-end packages (`@mezielabs/azu-react`, and
  * later `@mezielabs/azu-vue`) re-export these; they don't define their own.
  */
-import type { NavigationGroup, ResourceSchema } from './schema.ts'
+import type { ListMeta, ListRow, NavigationGroup, ResourceSchema } from './schema.ts'
+import type { ListState, PageSize } from './shared/list_state.ts'
 
 export type * from './schema.ts'
 
@@ -46,6 +47,13 @@ export type AzuConfigInput = {
    * @default { autoload: 'app/admin/resources' }
    */
   resources?: { autoload?: string | false }
+
+  /**
+   * Rows per list page when the URL doesn't say: 10, 25, 50 or 100.
+   *
+   * @default 25
+   */
+  perPage?: PageSize
 }
 
 /**
@@ -66,6 +74,8 @@ export type AzuSharedProps = {
     path: string
     /** Resources the user may list, grouped */
     navigation: NavigationGroup[]
+    /** The app's timezone, for formatting dates */
+    timezone: string
   }
 }
 
@@ -85,9 +95,19 @@ export type ForbiddenPageProps = AzuSharedProps
  * snake_case paths under `azu/`, like AdonisJS's own pages.
  */
 /**
- * Props for the `azu/resource/index` page. FR-05 adds the records.
+ * Props for the `azu/resource/index` page: the schema, one page of
+ * rows, and the URL state that produced it.
  */
-export type ResourceIndexPageProps = AzuSharedProps & { resource: ResourceSchema }
+export type ResourceIndexPageProps = AzuSharedProps & {
+  resource: ResourceSchema
+  list: {
+    rows: ListRow[]
+    meta: ListMeta
+    state: ListState
+    /** The page size the URL leaves out */
+    defaultPerPage: PageSize
+  }
+}
 
 /**
  * Props for the `azu/errors/not_found` page.

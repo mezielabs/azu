@@ -127,3 +127,31 @@ export type NavigationGroup = {
   label: string | null
   items: NavigationItem[]
 }
+
+/**
+ * One list cell, by column kind. Decimals stay exact strings; dates are
+ * ISO strings; `belongsTo` gives the related record's id and title.
+ */
+export type CellValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { id: string | number; title: string | null }
+  | { url: string | null }
+
+export type ListRow = {
+  /** The record's primary key */
+  id: string | number
+  /** The resource's `title` attribute, for accessible row labels */
+  title: string | null
+  /** Keyed by column name */
+  cells: Record<string, CellValue>
+}
+
+export type ListMeta = {
+  total: number
+  perPage: number
+  currentPage: number
+  lastPage: number
+}

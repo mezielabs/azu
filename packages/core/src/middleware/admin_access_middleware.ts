@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import type { AzuConfig } from '../types.ts'
+import { appTimezone } from '../render.ts'
 
 /**
  * The Bouncer ability that decides who can open the admin panel.
@@ -75,7 +76,7 @@ export class AdminAccessMiddleware {
    */
   protected async forbid(ctx: HttpContext) {
     const page = await ctx.inertia.render('azu/errors/forbidden', {
-      azu: { path: this.config.path, navigation: [] },
+      azu: { path: this.config.path, navigation: [], timezone: appTimezone() },
     })
     ctx.response.status(403).send(page)
   }

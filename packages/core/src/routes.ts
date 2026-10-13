@@ -5,6 +5,8 @@ import type { AzuConfig } from './types.ts'
 import type { Azu } from './azu.ts'
 import { renderPage } from './render.ts'
 import { canList } from './resources/navigation.ts'
+import { listRecords } from './list/list_records.ts'
+import { listStateUrl, parseListState } from './shared/list_state.ts'
 
 /**
  * Mounts the admin routes under `config.path`. Route names are prefixed
@@ -24,8 +26,9 @@ export function registerRoutes(
       router.get('/', (ctx) => renderPage(ctx, context, 'azu/dashboard', {})).as('azu.dashboard')
 
       /**
-       * The list screen arrives with FR-05; FR-03 renders a placeholder.
-       * The policy check is real: the server always checks.
+       * The list screen (FR-05): server-side pagination, sorting and
+       * search, all in the URL. The policy check runs on every request,
+       * partial reloads included.
        */
       router
         .get('/resources/:resource', async (ctx) => {
@@ -38,7 +41,30 @@ export function registerRoutes(
             ctx.response.status(403)
             return renderPage(ctx, context, 'azu/errors/forbidden', {})
           }
-          return renderPage(ctx, context, 'azu/resource/index', { resource: resource.toSchema() })
+          const schema = resource.toSchema()
+          const options = {
+            defaultPerPage: config.perPage,
+            sortable: schema.columns
+              .filter((column) => column.sortable)
+              .map((column) => column.name),
+          }
+          const state = parseListState(ctx.request.qs(), options)
+          const { rows, meta } = await listRecords(resource, state)
+
+          // Past the last page (say, after deleting rows): go to the last one
+          if (state.page > meta.lastPage && meta.lastPage >= 1) {
+            const path = `${config.path}/resources/${resource.name}`
+            // withQs(false): apps can forward the query string on redirects by default
+            return ctx.response
+              .redirect()
+              .withQs(false)
+              .toPath(listStateUrl(path, { ...state, page: meta.lastPage }, options))
+          }
+
+          return renderPage(ctx, context, 'azu/resource/index', {
+            resource: schema,
+            list: { rows, meta, state, defaultPerPage: config.perPage },
+          })
         })
         .as('azu.resources.index')
     })

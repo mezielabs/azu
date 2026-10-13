@@ -1,4 +1,5 @@
 import type { AzuConfig, AzuConfigInput } from './types.ts'
+import { isPageSize } from './shared/list_state.ts'
 
 /**
  * Default URL prefix and admin Vite entry.
@@ -8,6 +9,7 @@ export const defaults: AzuConfig = {
   entry: 'inertia/admin/app.tsx',
   loginUrl: '/login',
   resources: { autoload: 'app/admin/resources' },
+  perPage: 25,
 }
 
 /**
@@ -21,6 +23,9 @@ export const defaults: AzuConfig = {
  * ```
  */
 export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
+  if (config.perPage !== undefined && !isPageSize(config.perPage)) {
+    throw new Error(`"perPage" in config/admin.ts must be 10, 25, 50 or 100, not ${config.perPage}`)
+  }
   const path = `/${(config.path ?? defaults.path).replace(/^\/+|\/+$/g, '')}`
   if (path === '/') {
     throw new Error('Azu can\'t be mounted at "/". Set "path" in config/admin.ts, e.g. "/admin"')
@@ -30,6 +35,7 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     entry: config.entry ?? defaults.entry,
     guard: config.guard,
     loginUrl: config.loginUrl ?? defaults.loginUrl,
+    perPage: config.perPage ?? defaults.perPage,
     resources: {
       autoload:
         config.resources?.autoload === undefined
