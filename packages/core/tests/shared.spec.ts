@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import { escapeLike } from '../src/list/list_records.ts'
 import {
   formatDateTime,
   formatDecimal,
@@ -122,5 +123,14 @@ test.group('Formatting', () => {
     const cut = truncate('x'.repeat(80))
     assert.lengthOf([...cut], 60)
     assert.isTrue(cut.endsWith('…'))
+  })
+})
+
+test.group('Search escaping', () => {
+  test('escapes LIKE wildcards and the escape character itself', ({ assert }) => {
+    assert.equal(escapeLike('50%'), '50!%')
+    assert.equal(escapeLike('AB_12'), 'AB!_12')
+    assert.equal(escapeLike('wow!'), 'wow!!')
+    assert.equal(escapeLike('plain text'), 'plain text')
   })
 })

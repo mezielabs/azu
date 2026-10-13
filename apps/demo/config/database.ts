@@ -6,7 +6,7 @@ const dbConfig = defineConfig({
   /**
    * Default connection. SQLite needs no server, so it's the local
    * default; CI also runs the suite against Postgres (the primary
-   * target) with DB_CONNECTION=pg.
+   * target) with DB_CONNECTION=pg, and MySQL with DB_CONNECTION=mysql.
    */
   connection: env.get('DB_CONNECTION', 'sqlite'),
 
@@ -58,6 +58,24 @@ const dbConfig = defineConfig({
       schemaGeneration: {
         enabled: true,
         rulesPaths: ['./database/schema_rules.js'],
+      },
+    },
+
+    mysql: {
+      client: 'mysql2',
+      connection: {
+        host: env.get('DB_HOST', '127.0.0.1'),
+        port: env.get('DB_PORT', 3306),
+        user: env.get('DB_USER', 'root'),
+        password: env.get('DB_PASSWORD', ''),
+        database: env.get('DB_DATABASE', 'azu_demo'),
+      },
+      migrations: {
+        naturalSort: true,
+        paths: ['database/migrations'],
+      },
+      schemaGeneration: {
+        enabled: false,
       },
     },
   },

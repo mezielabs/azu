@@ -50,11 +50,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db: [pg, sqlite]
+        include:
+          - db: pg
+            port: 5432
+          - db: mysql
+            port: 3306
+          - db: sqlite
+            port: 0
 
     services:
       postgres:
-        # An empty image skips the service, so only the pg leg starts it
+        # An empty image skips the service, so each leg starts only its own
         image: ${{ matrix.db == 'pg' && 'postgres:18' || '' }}
         env:
           POSTGRES_USER: azu
@@ -68,10 +74,25 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      mysql:
+        image: ${{ matrix.db == 'mysql' && 'mysql:8.4' || '' }}
+        env:
+          MYSQL_ROOT_PASSWORD: azu
+          MYSQL_DATABASE: azu_test
+          MYSQL_USER: azu
+          MYSQL_PASSWORD: azu
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -uazu -pazu --silent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     env:
       DB_CONNECTION: ${{ matrix.db }}
       DB_HOST: 127.0.0.1
-      DB_PORT: 5432
+      DB_PORT: ${{ matrix.port }}
       DB_USER: azu
       DB_PASSWORD: azu
       DB_DATABASE: azu_test

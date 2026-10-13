@@ -25,8 +25,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   // Session
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'database'] as const),
 
-  // Database (SQLite by default; set DB_CONNECTION=pg for Postgres)
-  DB_CONNECTION: Env.schema.enum.optional(['sqlite', 'pg'] as const),
+  // Database (SQLite by default; DB_CONNECTION=pg or mysql for the others)
+  DB_CONNECTION: Env.schema.enum.optional(['sqlite', 'pg', 'mysql'] as const),
   DB_HOST: Env.schema.string.optional({ format: 'host' }),
   DB_PORT: Env.schema.number.optional(),
   DB_USER: Env.schema.string.optional(),
