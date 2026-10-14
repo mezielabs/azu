@@ -39,7 +39,7 @@ docs/            spec, decisions, spike findings
 Run from the repo root. Root scripts build `packages/*` first, because the demo consumes their built output.
 
 - Install: `pnpm install`
-- First-time demo setup: `cp apps/demo/.env.example apps/demo/.env && pnpm --filter demo exec node ace generate:key`, then `pnpm demo:seed`
+- First-time demo setup: `pnpm build` (the demo loads Azu's Ace commands from the built package), then `cp apps/demo/.env.example apps/demo/.env && pnpm --filter demo exec node ace generate:key`, then `pnpm demo:seed`
 - Build packages: `pnpm build`
 - Typecheck: `pnpm typecheck` (packages, then the demo; the demo runs `node ace codegen` first)
 - Lint: `pnpm lint`

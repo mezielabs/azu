@@ -32,6 +32,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Ace commands (codegen in typecheck) validate the demo's env
+      # The demo's adonisrc.ts loads Azu's commands from the built package,
+      # and ace loads every command, even for generate:key
+      - run: pnpm build
+
       - name: Create demo .env
         working-directory: apps/demo
         run: cp .env.example .env && node ace generate:key
@@ -110,6 +114,10 @@ jobs:
           package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
+
+      # The demo's adonisrc.ts loads Azu's commands from the built package,
+      # and ace loads every command, even for generate:key
+      - run: pnpm build
 
       - name: Create demo .env
         working-directory: apps/demo
