@@ -12,5 +12,10 @@ export default defineResource(Category, {
   validators: { create: createCategoryValidator, update: updateCategoryValidator },
 
   columns: [column.text('name').sortable(), column.text('slug')],
-  fields: [field.text('name'), field.text('slug'), field.textarea('description')],
+  fields: [
+    field.text('name'),
+    field.text('slug'),
+    field.textarea('description'),
+    field.hasMany('products'),
+  ],
 })

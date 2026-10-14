@@ -11,7 +11,11 @@ const fields = {
     .string()
     .trim()
     .regex(/^\d{1,10}(\.\d{1,2})?$/),
-  stock: vine.number().withoutDecimals().min(0),
+  /**
+   * Optional: the README's ProductResource has no stock field, and the
+   * column defaults to 0
+   */
+  stock: vine.number().withoutDecimals().min(0).optional(),
   status: vine.enum(['draft', 'published'] as const),
   isFeatured: vine.boolean().optional(),
   categoryId: vine.number().exists({ table: 'categories', column: 'id' }),

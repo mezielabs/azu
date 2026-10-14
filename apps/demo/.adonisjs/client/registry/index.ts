@@ -30,6 +30,12 @@ const routes = {
     tokens: [{"old":"/admin/resources/:resource/create","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/create","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"create","end":""}],
     types: placeholder as Registry['azu.resources.store']['types'],
   },
+  'azu.resources.fields.options': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource/fields/:field/options',
+    tokens: [{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"fields","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":1,"val":"field","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"options","end":""}],
+    types: placeholder as Registry['azu.resources.fields.options']['types'],
+  },
   'azu.resources.show': {
     methods: ["GET","HEAD"],
     pattern: '/admin/resources/:resource/:id',

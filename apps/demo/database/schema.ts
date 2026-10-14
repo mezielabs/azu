@@ -25,10 +25,12 @@ export class CategorySchema extends BaseModel {
 }
 
 export class CouponSchema extends BaseModel {
-  static $columns = ['amount', 'code', 'createdAt', 'currency', 'description', 'expiresAt', 'id', 'isActive', 'kind', 'startsOn', 'updatedAt', 'usageLimit'] as const
+  static $columns = ['amount', 'categoryId', 'code', 'createdAt', 'currency', 'description', 'expiresAt', 'id', 'isActive', 'kind', 'startsOn', 'updatedAt', 'usageLimit'] as const
   $columns = CouponSchema.$columns
   @column()
   declare amount: string
+  @column()
+  declare categoryId: number | null
   @column()
   declare code: string
   @column.dateTime({ autoCreate: true })
