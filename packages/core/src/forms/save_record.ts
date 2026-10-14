@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { generators } from '@adonisjs/core/app'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import type { Resource } from '../resources/define_resource.ts'
@@ -52,6 +53,31 @@ function toAttributes(model: LucidModel, output: Record<string, unknown>, target
 }
 
 /**
+ * Why a save can't happen without a validator, and the two ways to fix
+ * it: name an existing validator on the resource, or generate one with
+ * AdonisJS's `make:validator` (names as its `--resource` stub writes
+ * them).
+ */
+export function missingValidatorMessage(resource: Resource<any, any>, mode: FormMode): string {
+  const model = resource.model.name
+  const action = mode === 'create' ? 'create' : 'update'
+  const validator = generators.validatorActionName(model, action)
+  const file = generators.validatorFileName(model).replace(/\.ts$/, '')
+  const option =
+    mode === 'create'
+      ? `validators: { create: ${validator} }`
+      : `validators: { update: ${validator} } (or a create validator, which update falls back to)`
+
+  return [
+    `Azu can't ${action} ${model} records: the "${resource.name}" resource has no ${action} validator, ` +
+      'and Azu only saves input that has been through one of your VineJS validators.',
+    'Fix it in either of two ways:',
+    `  - Name an existing validator in the resource: ${option}`,
+    `  - Generate one, then name it in the resource: node ace make:validator ${file} --resource`,
+  ].join('\n')
+}
+
+/**
  * Validates a create or update request and writes it (FR-06, FR-10).
  *
  * 1. The payload is limited to the fields the form showed this user,
@@ -80,10 +106,7 @@ export async function saveRecord(
 ): Promise<{ record: LucidRow; errors?: never } | { errors: FormErrors; record?: never }> {
   const validator = validatorFor(resource, mode)
   if (!validator) {
-    throw new RuntimeException(
-      `Resource "${resource.name}" has no ${mode === 'create' ? 'create' : 'create or update'} validator. ` +
-        'Azu writes only through the VineJS validators named in the resource\'s "validators" option.'
-    )
+    throw new RuntimeException(missingValidatorMessage(resource, mode))
   }
 
   const { record } = options

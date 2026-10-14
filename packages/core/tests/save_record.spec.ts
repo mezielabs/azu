@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 import { formFields } from '../src/forms/form_fields.ts'
-import { saveRecord } from '../src/forms/save_record.ts'
+import { missingValidatorMessage, saveRecord } from '../src/forms/save_record.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 
@@ -242,5 +242,32 @@ test.group('Saving a record', () => {
     const ctx = request({ name: 'Pot' })
 
     await assert.rejects(() => saveRecord(ctx, resource, 'create', []), /has no create validator/)
+  })
+
+  test('the error names the resource and operation, and both fixes', ({ assert }) => {
+    const resource = defineResource(
+      { name: 'OrderItem' } as unknown as LucidModel,
+      {
+        policy: ProductPolicy,
+      } as never
+    )
+
+    assert.equal(
+      missingValidatorMessage(resource, 'create'),
+      [
+        'Azu can\'t create OrderItem records: the "order-items" resource has no create validator, and Azu only saves input that has been through one of your VineJS validators.',
+        'Fix it in either of two ways:',
+        '  - Name an existing validator in the resource: validators: { create: createOrderItemValidator }',
+        '  - Generate one, then name it in the resource: node ace make:validator order_item --resource',
+      ].join('\n')
+    )
+    assert.include(
+      missingValidatorMessage(resource, 'edit'),
+      'can\'t update OrderItem records: the "order-items" resource has no update validator'
+    )
+    assert.include(
+      missingValidatorMessage(resource, 'edit'),
+      'validators: { update: updateOrderItemValidator } (or a create validator, which update falls back to)'
+    )
   })
 })
