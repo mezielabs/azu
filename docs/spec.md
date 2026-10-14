@@ -154,13 +154,13 @@ Rules:
 | `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
-| `belongsTo` | Searchable async select | Related title, linked | Foreign key |
-| `hasMany` | Paginated table on detail page | Count | Lucid relation |
+| `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
+| `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
 | `manyToMany` | Searchable picker | Count | Lucid relation |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
 
-Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` as of FR-06. Until FR-07 and FR-08 land, `richText`, `file`, `image` and relation fields are left out of forms, detail pages and writes.
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), and `belongsTo` (FR-08). Detail pages show `hasMany` tables (FR-08). Until FR-07 and FR-09 land, `richText`, `file`, `image` and `manyToMany` fields are left out of forms, detail pages and writes.
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 
@@ -181,7 +181,7 @@ The access gate runs on every admin route, after the admin root view is set up:
 | Policy method | Gates | When checked |
 | --- | --- | --- |
 | `viewList(user)` | Nav item and list page | Every admin page (to build the navigation) and every list request |
-| `view(user, record)` | Detail page, row link | Detail request; per row for links |
+| `view(user, record)` | Detail page, row link | Detail request; per row for links, including `hasMany` tables and `belongsTo` links |
 | `create(user)` | Create button and form | Form load and submit |
 | `update(user, record)` | Edit button, form | Form load and submit |
 | `delete(user, record)` | Delete action | Action run |
@@ -197,6 +197,11 @@ How a save works (FR-06, FR-10):
 2. The payload goes through the validator with the metadata. Update uses `validators.update`, falling back to `validators.create`. A resource with no validator for the operation can't save: the request fails with an error naming the missing validator, because Azu never writes unvalidated input.
 3. Only the validator's output is written, limited to the same fields. `beforeSave`, the save and `afterSave` share a transaction.
 4. Success redirects (303) to the detail page, and the form shows a toast. A validation failure renders the form again with a 422 and `errors`, keyed by path, and the form keeps what the user typed. Messages for paths no shown field covers, such as an attribute the resource doesn't declare as a field, appear in a summary at the top of the form.
+
+Relations (FR-08):
+
+- **`belongsTo` options** come from `GET /admin/resources/<name>/fields/<field>/options?search=…`, as JSON. It's gated like the form it serves: `create`, or `update` with the record named by `?record=<id>`, and the field must be on that form for the user (its `visibleOn` and `ability`, not `readOnly`). It returns up to 20 records whose title attribute (`searchable()`, else the related resource's `title`) contains the search, literally, sorted by title, through the related resource's `query` hook when there is one.
+- **`hasMany` tables** show only when the user passes the related resource's `viewList`. They use the related resource's columns, `query` hook and preloads, and check `view` per row for links. Each table's page is a query parameter (`productsPage`), and paging is a partial reload of `relations`.
 
 Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /admin/resources/<name>/<id>/edit`. A 422 then leaves the address bar on the form. An id that can't exist, such as `abc` for an integer key, is a 404.
 
