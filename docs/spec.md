@@ -15,7 +15,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-01 | Install with `node ace add @mezielabs/azu` | On a fresh AdonisJS 7 Inertia + React starter, `/admin` loads with no manual file edits | P0 |
 | FR-02 | Access gate on the app's existing auth guard | Guests redirect to the app's login; signed-in users failing the `accessAdmin` ability get a 403 | P0 |
 | FR-03 | Resource classes in `app/admin/resources` | A resource declaring a model, columns, and fields appears in navigation with no registration step | P0 |
-| FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles and renders list and forms with zero edits | P0 |
+| FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles, renders list and forms, and saves through the generated validator, with zero edits | P0 |
 | FR-05 | List screen: pagination, sorting, search | Server-side; page sizes 10/25/50/100; sort, search, and page survive reload via the URL | P0 |
 | FR-06 | Create, edit, and detail screens | Save redirects to detail with a success toast; unsaved-changes warning on navigate away | P0 |
 | FR-07 | Core field types | text, textarea, number, decimal, boolean, select, date, datetime, richText, file, image (via Drive) | P0 |
@@ -151,7 +151,7 @@ Rules:
 | `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
-| `date`, `datetime` | Date picker in the app's timezone | Formatted, relative on hover | Luxon `DateTime` |
+| `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
 | `belongsTo` | Searchable async select | Related title, linked | Foreign key |
@@ -159,6 +159,8 @@ Rules:
 | `manyToMany` | Searchable picker | Count | Lucid relation |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
+
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` as of FR-06. Until FR-07 and FR-08 land, `richText`, `file`, `image` and relation fields are left out of forms, detail pages and writes.
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 
@@ -189,12 +191,21 @@ The server computes abilities once per request and sends them as Inertia props. 
 
 **Validation:** payload limited to declared fields, then passed to the named VineJS validator with metadata (`{ record }` by default, or the result of `validators.meta`; see §4). `E_VALIDATION_ERROR` messages map to fields by path, including nested and array paths (`tags.0`). File fields validate size and MIME on upload, then the record validates through the resource validator.
 
+How a save works (FR-06, FR-10):
+
+1. The policy check runs first: `create`, or `update` with the record. Then the payload is cut down to the fields the form showed this user, minus `readOnly` ones. A field is shown when its `visibleOn` matches the form and the user passes its `ability`, which is checked with the record on edit.
+2. The payload goes through the validator with the metadata. Update uses `validators.update`, falling back to `validators.create`. A resource with no validator for the operation can't save: the request fails with an error naming the missing validator, because Azu never writes unvalidated input.
+3. Only the validator's output is written, limited to the same fields. `beforeSave`, the save and `afterSave` share a transaction.
+4. Success redirects (303) to the detail page, and the form shows a toast. A validation failure renders the form again with a 422 and `errors`, keyed by path, and the form keeps what the user typed. Messages for paths no shown field covers, such as an attribute the resource doesn't declare as a field, appear in a summary at the top of the form.
+
+Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /admin/resources/<name>/<id>/edit`. A 422 then leaves the address bar on the form. An id that can't exist, such as `abc` for an integer key, is a 404.
+
 ## 7. Commands
 
 | Command | Behaviour |
 | --- | --- |
 | `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
-| `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
+| `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
 | `node ace admin:doctor` | Checks config, missing policy methods, validators not covering declared fields, drifted published files |
@@ -207,6 +218,23 @@ Generator mapping:
 - foreign key with a `belongsTo` relation → `belongsTo`, titled by the related model's first string column
 - skip `password`, `rememberMeToken`, and `serializeAs: null` columns
 - search defaults to the first two string columns; `title` defaults to `name`, `title`, or `email`
+
+Generated validator (unless `--no-validator`). Azu's rule is that a resource with no validator for an operation can't save, so the generator writes one rather than leaving a resource that can't save:
+
+- **File and names:** `app/validators/<model>.ts` (snake_case, e.g. `order_item.ts`), exporting `create<Model>Validator` and `update<Model>Validator`. These are the names AdonisJS's `make:validator --resource` uses. The resource imports both and sets `validators: { create, update }`.
+- **Which keys:** the same columns the resource gets as form fields. That leaves out the primary key, auto-managed timestamps (`autoCreate`/`autoUpdate`), and `password`, `rememberMeToken` and `serializeAs: null` columns. A `belongsTo` relation's key is its foreign key (`categoryId`).
+- **Rules, from the column's database type:**
+  - `varchar(n)` → `vine.string().trim().maxLength(n)`; text → `vine.string().trim()`
+  - integer → `vine.number().withoutDecimals()`; float → `vine.number()`
+  - `decimal(p, s)` → `vine.string().trim().regex(…)` allowing up to `p - s` integer digits and `s` decimal places, so the value stays an exact string, like `field.decimal()`
+  - boolean → `vine.boolean()`; date, datetime and timestamp → `vine.date()`, which accepts what Azu's forms send (§5)
+  - enum → `vine.enum([...])`
+- **Optional and nullable:** a nullable column gets `.nullable().optional()`, and a column with a default gets `.optional()`. Everything else is required.
+- **Database rules:**
+  - A unique index adds `.unique({ table, column })`. The update validator's version skips the record being edited through `field.meta.record`, Azu's default metadata (§4), so no `validators.meta` is needed.
+  - A foreign key adds `.exists({ table, column })` on the related key.
+- **Existing files:** never overwritten. If `app/validators/<model>.ts` already exists, the generator warns and leaves `validators` out of the resource, so the app wires its own validators. Until it does, saving fails with the missing-validator error.
+- **The validator is the app's code from then on.** It's a starting point to edit, like the resource, and Azu never regenerates it.
 
 ## 8. Frontend
 
@@ -227,6 +255,8 @@ Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cove
 **Theming:** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, and `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+
+**Records:** clicking a list row opens its detail page when the policy's `view` allows it; selection stays on the checkboxes. Forms render required markers and limits (lengths, `min`/`max`/`step`, enum choices) from the operation's validator (§4). Leaving a form with unsaved changes asks first: a dialog for in-app navigation, and the browser's prompt for reloads and closing the tab. The browser's back button between admin pages can't be intercepted. Toasts appear in Azu's own `aria-live` region, rendered once beside the Inertia app so they survive the page change after a save.
 
 ## 9. Packages and config
 
@@ -250,6 +280,8 @@ export default defineConfig({
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
+  // IANA name; defaults to the server process's timezone (TZ)
+  timezone: 'Africa/Lagos',
   resources: { autoload: 'app/admin/resources' },
   // Optional; must match azu({ entry }) in vite.config.ts
   entry: 'inertia/admin/app.tsx',

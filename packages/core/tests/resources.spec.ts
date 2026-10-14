@@ -15,8 +15,12 @@ import { ResourceRegistry } from '../src/resources/registry.ts'
  * models. Typing against real models is tested in apps/demo.
  */
 const model = (name: string) => ({ name }) as unknown as LucidModel
-class CatalogPolicy {}
-class SalesPolicy {}
+class CatalogPolicy {
+  viewList() {}
+}
+class SalesPolicy {
+  viewList() {}
+}
 
 const resource = (name: string, options: Record<string, unknown> = {}) =>
   defineResource(model(name), { policy: CatalogPolicy, ...options } as never)
@@ -179,9 +183,9 @@ test.group('loadResources', () => {
 })
 
 /**
- * A request whose Bouncer allows `viewList` per policy.
+ * A request whose Bouncer allows `viewList` per policy, or throws.
  */
-function requestWith(allowed: Map<unknown, boolean | 'missing'> | undefined) {
+function requestWith(allowed: Map<unknown, boolean | 'throws'> | undefined) {
   const warnings: string[] = []
   const ctx = {
     logger: { warn: (...args: unknown[]) => warnings.push(String(args.at(-1))) },
@@ -189,7 +193,7 @@ function requestWith(allowed: Map<unknown, boolean | 'missing'> | undefined) {
       with: (policy: unknown) => ({
         allows: async (method: string) => {
           const answer = allowed.get(policy)
-          if (answer === 'missing') throw new Error(`Cannot find method "${method}"`)
+          if (answer === 'throws') throw new Error(`viewList failed`)
           return method === 'viewList' && answer === true
         },
       }),
@@ -264,7 +268,16 @@ test.group('Navigation', () => {
   })
 
   test('hides a resource whose policy has no viewList method', async ({ assert }) => {
-    const { ctx, warnings } = requestWith(new Map([[CatalogPolicy, 'missing']]))
+    class EmptyPolicy {}
+    const { ctx, warnings } = requestWith(new Map([[EmptyPolicy, true]]))
+    const empty = defineResource(model('Empty'), { policy: EmptyPolicy } as never)
+
+    assert.isFalse(await canList(ctx, empty))
+    assert.lengthOf(warnings, 0)
+  })
+
+  test('hides a resource whose viewList throws, and logs why', async ({ assert }) => {
+    const { ctx, warnings } = requestWith(new Map([[CatalogPolicy, 'throws']]))
 
     assert.isFalse(await canList(ctx, products))
     assert.match(warnings[0], /viewList/)

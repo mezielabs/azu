@@ -1,8 +1,10 @@
-import { createInertiaApp } from '@inertiajs/react'
+import { createInertiaApp, router } from '@inertiajs/react'
+import { RouterProvider } from 'react-aria-components'
 import type { ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { packagePages, type PageModule } from './pages/index.ts'
 import { RegistryProvider, type ComponentModules } from './components/registry.tsx'
+import { ToastRegion } from './components/toast.tsx'
 
 export type CreateAzuAppOptions = {
   /**
@@ -52,7 +54,11 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
     setup({ el, App, props }) {
       createRoot(el).render(
         <RegistryProvider modules={(options.components ?? {}) as ComponentModules}>
-          <App {...props} />
+          {/* React Aria links (table rows with an href) navigate through Inertia */}
+          <RouterProvider navigate={(href) => router.visit(href)}>
+            <App {...props} />
+            <ToastRegion />
+          </RouterProvider>
         </RegistryProvider>
       )
     },

@@ -24,6 +24,35 @@ export class CategorySchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class CouponSchema extends BaseModel {
+  static $columns = ['amount', 'code', 'createdAt', 'currency', 'description', 'expiresAt', 'id', 'isActive', 'kind', 'startsOn', 'updatedAt', 'usageLimit'] as const
+  $columns = CouponSchema.$columns
+  @column()
+  declare amount: string
+  @column()
+  declare code: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currency: string
+  @column()
+  declare description: string | null
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare kind: string
+  @column.date()
+  declare startsOn: DateTime
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare usageLimit: number | null
+}
+
 export class OrderItemSchema extends BaseModel {
   static $columns = ['id', 'orderId', 'productId', 'quantity', 'unitPrice'] as const
   $columns = OrderItemSchema.$columns

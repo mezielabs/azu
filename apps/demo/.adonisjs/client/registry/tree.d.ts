@@ -6,6 +6,11 @@ export interface ApiDefinition {
     dashboard: typeof routes['azu.dashboard']
     resources: {
       index: typeof routes['azu.resources.index']
+      create: typeof routes['azu.resources.create']
+      store: typeof routes['azu.resources.store']
+      show: typeof routes['azu.resources.show']
+      edit: typeof routes['azu.resources.edit']
+      update: typeof routes['azu.resources.update']
     }
   }
   home: typeof routes['home']

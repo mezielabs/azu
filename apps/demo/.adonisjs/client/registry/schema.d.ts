@@ -31,6 +31,66 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.resources.create': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/resources/:resource/create'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { resource: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'azu.resources.store': {
+    methods: ["POST"]
+    pattern: '/admin/resources/:resource/create'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { resource: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'azu.resources.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/resources/:resource/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { resource: ParamValue; id: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'azu.resources.edit': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/resources/:resource/:id/edit'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { resource: ParamValue; id: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'azu.resources.update': {
+    methods: ["PUT"]
+    pattern: '/admin/resources/:resource/:id/edit'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { resource: ParamValue; id: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'home': {
     methods: ["GET","HEAD"]
     pattern: '/'

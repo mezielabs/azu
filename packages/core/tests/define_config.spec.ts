@@ -1,5 +1,5 @@
 import { test } from '@japa/runner'
-import { defineConfig } from '../src/define_config.ts'
+import { defineConfig, processTimezone } from '../src/define_config.ts'
 
 test.group('defineConfig', () => {
   test('applies defaults', ({ assert }) => {
@@ -10,7 +10,13 @@ test.group('defineConfig', () => {
       loginUrl: '/login',
       resources: { autoload: 'app/admin/resources' },
       perPage: 25,
+      timezone: processTimezone(),
     })
+  })
+
+  test('takes an IANA timezone, and refuses anything else', ({ assert }) => {
+    assert.equal(defineConfig({ timezone: 'Africa/Lagos' }).timezone, 'Africa/Lagos')
+    assert.throws(() => defineConfig({ timezone: 'Lagos' }), /must be an IANA timezone/)
   })
 
   test('accepts only the list page sizes', ({ assert }) => {

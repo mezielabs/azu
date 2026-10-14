@@ -46,6 +46,10 @@ export function selectedIds(selection: Selection, rows: ListRow[]): (string | nu
  * selectable for the bulk actions FR-12 adds. The selection is cleared
  * whenever the rows change (a new page, sort or search), so it never
  * holds rows that aren't on screen.
+ *
+ * A row the user may view links to its detail page: clicking it (or
+ * Enter) opens the record, and selection stays on the checkboxes (or
+ * Space), React Aria's "toggle" behaviour with row actions.
  */
 export function DataTable(props: {
   label: string
@@ -57,6 +61,8 @@ export function DataTable(props: {
   timezone: string
   onSort: (column: string, direction: 'asc' | 'desc') => void
   onSelectionChange?: (ids: (string | number)[]) => void
+  /** The detail page URL for a row, or `undefined` when it has none */
+  rowHref?: (row: ListRow) => string | undefined
 }) {
   const { columns, rows, state, onSort, onSelectionChange } = props
   const visible = columns.filter((column) => !column.hiddenByDefault)
@@ -122,8 +128,14 @@ export function DataTable(props: {
             <Row
               id={row.id as Key}
               textValue={row.title ?? String(row.id)}
+              href={props.rowHref?.(row)}
               className={({ isSelected, isFocusVisible }) =>
-                cx('azu-row', isSelected && 'azu-is-selected', isFocusVisible && 'azu-is-focused')
+                cx(
+                  'azu-row',
+                  props.rowHref?.(row) && 'azu-is-link',
+                  isSelected && 'azu-is-selected',
+                  isFocusVisible && 'azu-is-focused'
+                )
               }
             >
               <Cell className="azu-td azu-td-selection">

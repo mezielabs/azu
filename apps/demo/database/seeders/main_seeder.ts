@@ -1,6 +1,7 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { DateTime } from 'luxon'
 import Category from '#models/category'
+import Coupon from '#models/coupon'
 import Order from '#models/order'
 import Product from '#models/product'
 import Tag from '#models/tag'
@@ -83,5 +84,41 @@ export default class MainSeeder extends BaseSeeder {
         }))
       )
     }
+
+    await Coupon.createMany([
+      {
+        code: 'WELCOME10',
+        description: 'Ten percent off a first order',
+        kind: 'percent',
+        amount: '10.00',
+        currency: 'NGN',
+        usageLimit: null,
+        isActive: true,
+        startsOn: DateTime.fromISO('2026-10-01'),
+        expiresAt: null,
+      },
+      {
+        code: 'DETTY-DECEMBER',
+        description: null,
+        kind: 'fixed',
+        amount: '5000.00',
+        currency: 'NGN',
+        usageLimit: 500,
+        isActive: true,
+        startsOn: DateTime.fromISO('2026-12-01'),
+        expiresAt: DateTime.utc(2027, 1, 1, 0, 0),
+      },
+      {
+        code: 'SHIPFREE',
+        description: 'Free delivery in Lagos',
+        kind: 'free_shipping',
+        amount: '0.00',
+        currency: 'NGN',
+        usageLimit: 100,
+        isActive: false,
+        startsOn: DateTime.fromISO('2026-09-01'),
+        expiresAt: DateTime.utc(2026, 9, 30, 22, 59),
+      },
+    ])
   }
 }

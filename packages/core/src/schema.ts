@@ -147,6 +147,8 @@ export type ListRow = {
   title: string | null
   /** Keyed by column name */
   cells: Record<string, CellValue>
+  /** What the user may do with this record, from the policy */
+  abilities: { view: boolean }
 }
 
 export type ListMeta = {
@@ -154,4 +156,39 @@ export type ListMeta = {
   perPage: number
   currentPage: number
   lastPage: number
+}
+
+/**
+ * A form or detail value, by field kind. Decimals stay exact strings;
+ * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset.
+ */
+export type FieldValue = string | number | boolean | null
+
+/**
+ * A field as a form renders it: the resource's field, with hints from
+ * the operation's VineJS validator. Explicit field hints (`min`, `max`,
+ * `step`, `options`) win over the validator's, for the UI only.
+ */
+export type FormFieldSchema = FieldSchema & {
+  /** Not optional and not nullable in the validator, with no conditional rule */
+  required: boolean
+  minLength: number | null
+  maxLength: number | null
+}
+
+/**
+ * Validation messages keyed by field path, as VineJS reports them:
+ * `name`, `variants.1.sku`, `tags.0`.
+ */
+export type FormErrors = Record<string, string[]>
+
+/**
+ * A record as the detail and edit pages see it.
+ */
+export type RecordData = {
+  id: string | number
+  /** The resource's `title` attribute */
+  title: string | null
+  /** Keyed by field name */
+  values: Record<string, FieldValue>
 }

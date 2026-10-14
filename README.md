@@ -69,7 +69,7 @@ Generate a resource from an existing model:
 node ace make:admin-resource Product
 ```
 
-Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`. Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
+Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`, plus a create and update validator in `app/validators/product.ts` derived from the model's columns (pass `--no-validator` to skip it). Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
 
 The generated resource is a starting point. Open it and adjust what's wrong.
 
@@ -148,7 +148,7 @@ azu.register(productResource)
 | `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step` |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
-| `date`, `datetime` | Date picker | Uses your app's timezone |
+| `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |
 | `richText` | Rich text editor | Output is sanitised |
 | `file`, `image` | Drag-and-drop upload | Stored with Drive |
 | `belongsTo` | Searchable select | Loads options as you type |
@@ -199,6 +199,8 @@ Buttons, fields, and actions a user can't use are hidden in the UI, but hiding i
 ## Validation
 
 Create and update forms submit through the validators named on the resource. Azu only passes declared fields to the validator, so mass assignment stays limited to what you listed.
+
+A resource with no validator for an operation can't save, by design: Azu never writes input that hasn't been through one of your validators.
 
 Validation errors show up under the field that caused them, including nested and array fields like `tags.0`.
 
@@ -289,6 +291,8 @@ export default defineConfig({
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
+  // Dates are entered and shown in this timezone. Defaults to the server's (TZ)
+  timezone: 'Africa/Lagos',
 })
 ```
 
@@ -299,7 +303,7 @@ Dark mode follows the user's system setting, with a toggle in the panel.
 | Command | What it does |
 | --- | --- |
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
-| `node ace make:admin-resource <Model>` | Generates a resource from a model. Add `--policy` or `--validator` to create those too |
+| `node ace make:admin-resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy too |
 | `node ace make:admin-action <Name>` | Creates a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into your app for editing |
 | `node ace admin:doctor` | Checks config, missing policy methods, and drifted published files |

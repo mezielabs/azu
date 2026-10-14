@@ -251,3 +251,339 @@
     color: var(--azu-muted);
   }
 }
+
+/*
+ * Forms, detail pages and toasts (FR-06). State comes from React Aria
+ * render props mapped to azu-is-* classes (non-negotiable 9).
+ */
+@layer components {
+  .azu-page-header {
+    @apply mb-4 flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .azu-page-header .azu-page-title {
+    @apply mb-0;
+  }
+
+  .azu-breadcrumbs {
+    @apply mb-1 text-sm;
+    color: var(--azu-muted);
+  }
+
+  .azu-breadcrumbs a:hover {
+    @apply underline;
+  }
+
+  .azu-button {
+    @apply inline-flex items-center justify-center;
+  }
+
+  .azu-button-primary {
+    border-color: var(--azu-brand);
+    background: var(--azu-brand);
+    color: var(--azu-surface);
+  }
+
+  .azu-button-danger {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #ffffff;
+  }
+
+  .azu-row.azu-is-link {
+    @apply cursor-pointer;
+  }
+
+  .azu-row.azu-is-link:hover {
+    background: var(--azu-subtle);
+  }
+
+  .azu-form {
+    @apply max-w-2xl space-y-5;
+  }
+
+  .azu-form-errors {
+    @apply space-y-1 rounded-lg border p-3 text-sm;
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .azu-field {
+    @apply flex flex-col gap-1;
+  }
+
+  .azu-label {
+    @apply text-sm font-medium;
+  }
+
+  .azu-required {
+    color: #dc2626;
+  }
+
+  .azu-description {
+    @apply text-xs;
+    color: var(--azu-muted);
+  }
+
+  .azu-field-error {
+    @apply flex flex-col text-sm;
+    color: #dc2626;
+  }
+
+  .azu-field .azu-input {
+    @apply w-full py-1.5;
+  }
+
+  .azu-input:focus-visible,
+  .azu-button:focus-visible,
+  .azu-toast-close:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-field .azu-input[aria-invalid='true'] {
+    border-color: #dc2626;
+  }
+
+  .azu-input-group {
+    @apply flex items-stretch;
+  }
+
+  .azu-affix {
+    @apply flex items-center border px-2 text-sm;
+    border-color: var(--azu-border);
+    background: var(--azu-subtle);
+    color: var(--azu-muted);
+  }
+
+  .azu-affix:first-child {
+    @apply rounded-l border-r-0;
+  }
+
+  .azu-affix:last-child {
+    @apply rounded-r border-l-0;
+  }
+
+  .azu-textarea {
+    @apply min-h-24;
+    field-sizing: content;
+  }
+
+  .azu-switch {
+    @apply inline-flex cursor-pointer items-center gap-2;
+  }
+
+  .azu-switch-track {
+    @apply relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors;
+    background: var(--azu-border);
+  }
+
+  .azu-switch-track.azu-is-selected {
+    background: var(--azu-brand);
+  }
+
+  .azu-switch-thumb {
+    @apply absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform;
+  }
+
+  .azu-switch-track.azu-is-selected .azu-switch-thumb {
+    @apply translate-x-4;
+  }
+
+  .azu-switch-track.azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 2px;
+  }
+
+  .azu-radios {
+    @apply flex flex-wrap gap-4;
+  }
+
+  .azu-radio {
+    @apply inline-flex cursor-pointer items-center gap-2 text-sm;
+  }
+
+  .azu-radio-dot {
+    @apply inline-block h-4 w-4 rounded-full border;
+    border-color: var(--azu-muted);
+  }
+
+  .azu-radio-dot.azu-is-selected {
+    border-width: 5px;
+    border-color: var(--azu-brand);
+  }
+
+  .azu-radio-dot.azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 2px;
+  }
+
+  .azu-select-button {
+    @apply flex items-center justify-between gap-2 text-left;
+  }
+
+  .azu-popover {
+    @apply rounded-lg border shadow-lg;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+    color: var(--azu-text);
+  }
+
+  .azu-listbox {
+    @apply max-h-72 min-w-(--trigger-width) overflow-auto p-1 outline-none;
+  }
+
+  .azu-option {
+    @apply cursor-pointer rounded px-2 py-1 text-sm outline-none;
+  }
+
+  .azu-option.azu-is-focused {
+    background: var(--azu-subtle);
+  }
+
+  .azu-option.azu-is-selected {
+    @apply font-semibold;
+    color: var(--azu-brand);
+  }
+
+  .azu-date-group {
+    @apply flex items-center gap-1;
+  }
+
+  .azu-date-input {
+    @apply flex flex-1 flex-wrap;
+  }
+
+  .azu-date-segment {
+    @apply rounded px-0.5 tabular-nums outline-none;
+  }
+
+  .azu-date-segment.azu-is-placeholder {
+    color: var(--azu-muted);
+  }
+
+  .azu-date-segment.azu-is-focused {
+    background: var(--azu-brand);
+    color: var(--azu-surface);
+  }
+
+  .azu-date-button {
+    @apply rounded px-1;
+    color: var(--azu-muted);
+  }
+
+  .azu-calendar-dialog {
+    @apply p-3 outline-none;
+  }
+
+  .azu-calendar-header {
+    @apply mb-2 flex items-center justify-between gap-2;
+  }
+
+  .azu-calendar-heading {
+    @apply text-sm font-semibold;
+  }
+
+  .azu-calendar-grid {
+    @apply text-sm;
+    border-collapse: collapse;
+  }
+
+  .azu-calendar-cell {
+    @apply flex h-8 w-8 cursor-pointer items-center justify-center rounded outline-none;
+  }
+
+  .azu-calendar-cell.azu-is-outside {
+    color: var(--azu-muted);
+  }
+
+  .azu-calendar-cell.azu-is-selected {
+    background: var(--azu-brand);
+    color: var(--azu-surface);
+  }
+
+  .azu-calendar-cell.azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+  }
+
+  .azu-form-actions {
+    @apply flex items-center gap-2 pt-2;
+  }
+
+  .azu-details {
+    @apply max-w-2xl divide-y rounded-lg border;
+    border-color: var(--azu-border);
+  }
+
+  .azu-detail {
+    @apply grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4;
+    border-color: var(--azu-border);
+  }
+
+  .azu-detail-label {
+    @apply text-sm font-medium;
+    color: var(--azu-muted);
+  }
+
+  .azu-detail-value {
+    @apply text-sm sm:col-span-2;
+  }
+
+  .azu-multiline {
+    @apply whitespace-pre-wrap;
+  }
+
+  .azu-modal-overlay {
+    @apply fixed inset-0 z-40 flex items-center justify-center p-4;
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .azu-modal {
+    @apply w-full max-w-md rounded-lg border shadow-xl;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+    color: var(--azu-text);
+  }
+
+  .azu-dialog {
+    @apply space-y-3 p-5 outline-none;
+  }
+
+  .azu-dialog-title {
+    @apply text-lg font-semibold;
+  }
+
+  .azu-dialog-body {
+    @apply text-sm;
+    color: var(--azu-muted);
+  }
+
+  .azu-dialog-actions {
+    @apply flex justify-end gap-2;
+  }
+
+  .azu-toast-region {
+    @apply fixed right-4 bottom-4 z-50 flex flex-col gap-2;
+  }
+
+  .azu-toast {
+    @apply flex items-center gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+    color: var(--azu-text);
+  }
+
+  .azu-toast[data-azu-tone='success'] {
+    border-left: 4px solid #16a34a;
+  }
+
+  .azu-toast[data-azu-tone='error'] {
+    border-left: 4px solid #dc2626;
+  }
+
+  .azu-toast-close {
+    @apply rounded px-1 text-base leading-none;
+    color: var(--azu-muted);
+  }
+}
