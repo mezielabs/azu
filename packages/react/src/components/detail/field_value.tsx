@@ -1,6 +1,6 @@
 import { formatDateTime, formatDecimal, formatNumber } from '@mezielabs/azu/shared'
 import { Link } from '@inertiajs/react'
-import type { FieldSchema, FieldValue, RelationValue } from '@mezielabs/azu/types'
+import type { FieldSchema, FieldValue, FileValue, RelationValue } from '@mezielabs/azu/types'
 
 const EMPTY = <span className="azu-cell-empty">—</span>
 
@@ -17,6 +17,34 @@ export function FieldValueView(props: { field: FieldSchema; value: FieldValue; t
       const related = value as RelationValue
       const label = related.title ?? String(related.id)
       return related.href ? <Link href={related.href}>{label}</Link> : <>{label}</>
+    }
+    case 'richText':
+      // Sanitised on the server, on the way in and again on the way out
+      return (
+        <div
+          className="azu-rich-text-content"
+          dangerouslySetInnerHTML={{ __html: String(value) }}
+        />
+      )
+    case 'image': {
+      const file = value as FileValue
+      return file.url ? (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          <img className="azu-detail-image" src={file.url} alt={`${field.label}: ${file.name}`} />
+        </a>
+      ) : (
+        <>{file.name}</>
+      )
+    }
+    case 'file': {
+      const file = value as FileValue
+      return file.url ? (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          {file.name}
+        </a>
+      ) : (
+        <>{file.name}</>
+      )
     }
     case 'number':
       return <>{formatNumber(value as number, null)}</>

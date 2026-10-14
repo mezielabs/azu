@@ -20,6 +20,8 @@ export { UnsavedChanges } from './components/form/unsaved_changes.tsx'
 export { FieldValueView } from './components/detail/field_value.tsx'
 export { RelationTableView } from './components/detail/relation_table.tsx'
 export { RelationControl } from './components/form/relation_control.tsx'
+export { FileControl } from './components/form/file_control.tsx'
+export { RichTextControl } from './components/form/rich_text_control.tsx'
 export { showToast, ToastRegion } from './components/toast.tsx'
 
 /**
@@ -39,6 +41,7 @@ export type {
   FieldValue,
   RecordData,
   RelationValue,
+  FileValue,
   RelationOption,
   RelationTable,
   RelationOptionsResponse,

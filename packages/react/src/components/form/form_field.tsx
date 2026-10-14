@@ -1,4 +1,4 @@
-import type { FieldProps, FieldValue, FormFieldSchema } from '@mezielabs/azu/types'
+import type { FieldProps, FieldValue, FileValue, FormFieldSchema } from '@mezielabs/azu/types'
 import { useComponent } from '../registry.tsx'
 import {
   BooleanControl,
@@ -9,7 +9,9 @@ import {
   TextControl,
   type ControlProps,
 } from './controls.tsx'
+import { FileControl } from './file_control.tsx'
 import { RelationControl } from './relation_control.tsx'
+import { RichTextControl } from './rich_text_control.tsx'
 
 /**
  * One form field, by kind, or the app's component when the field names
@@ -46,6 +48,17 @@ export function FormField(props: ControlProps & { values: Record<string, FieldVa
       return <DateTimeControl {...props} />
     case 'belongsTo':
       return <RelationControl {...props} />
+    case 'richText':
+      return <RichTextControl {...props} />
+    case 'file':
+    case 'image':
+      return (
+        <FileControl
+          {...props}
+          value={props.value as FileValue | File | null}
+          onChange={props.onChange as (value: FileValue | File | null) => void}
+        />
+      )
     default:
       return <TextControl {...props} />
   }
