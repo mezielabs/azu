@@ -2,24 +2,18 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidRow } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
 import type { Resource, ValidatorLike } from '../resources/define_resource.ts'
+import { DEFAULT_FILE_TYPES, DEFAULT_IMAGE_TYPES, DEFAULT_MAX_SIZE } from '../files/file_types.ts'
+import { sanitizeRichText } from '../files/sanitize_html.ts'
 import { relationKeys } from '../records/relations.ts'
-import type {
-  FieldKind,
-  FieldSchema,
-  FieldValue,
-  FormFieldSchema,
-  RecordData,
-  RelationValue,
-} from '../schema.ts'
+import type { FieldKind, FieldSchema, FieldValue, FormFieldSchema, RecordData } from '../schema.ts'
 import { introspectValidator, isIntrospectable, type FieldHints } from './introspect.ts'
 
 export type FormMode = 'create' | 'edit'
 
 /**
- * Field kinds the forms and detail page render. FR-07 adds rich text
- * and uploads, and FR-09 `manyToMany`; until then those fields are left
- * out of forms, detail pages and writes. `hasMany` is a table on the
- * detail page, never a form field.
+ * Field kinds the forms and detail page render. `manyToMany` arrives
+ * with FR-09; until then it's left out of forms, detail pages and
+ * writes. `hasMany` is a table on the detail page, never a form field.
  */
 export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'text',
@@ -31,6 +25,9 @@ export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'date',
   'datetime',
   'belongsTo',
+  'richText',
+  'file',
+  'image',
 ])
 
 /**
@@ -104,6 +101,14 @@ export function withHints(
     options:
       field.options ??
       (hints?.choices ? Object.fromEntries(hints.choices.map((value) => [value, value])) : null),
+    // Uploads show the limits the server applies, defaults included
+    ...(field.kind === 'file' || field.kind === 'image'
+      ? {
+          accept:
+            field.accept ?? (field.kind === 'image' ? DEFAULT_IMAGE_TYPES : DEFAULT_FILE_TYPES),
+          maxSize: field.maxSize ?? DEFAULT_MAX_SIZE[field.kind],
+        }
+      : {}),
     required: hints?.required ?? false,
     minLength: hints?.minLength ?? null,
     maxLength: hints?.maxLength ?? null,
@@ -159,6 +164,9 @@ export function fieldValue(record: LucidRow, field: FieldSchema): FieldValue {
     case 'boolean':
       // MySQL and SQLite return 1 and 0
       return Boolean(value)
+    case 'richText':
+      // Again on the way out, so HTML written outside Azu is safe too
+      return sanitizeRichText(String(value))
     default:
       return String(value)
   }
@@ -171,8 +179,8 @@ export function recordData(
   resource: Resource<any, any>,
   record: LucidRow,
   fields: FieldSchema[],
-  /** `belongsTo` values, which need a query (see `relationValues`) */
-  relations: Record<string, RelationValue | null> = {}
+  /** Values that need a query or Drive: relations and files */
+  resolved: Record<string, FieldValue> = {}
 ): RecordData {
   const title = resource.options.title
     ? (record as unknown as Record<string, unknown>)[resource.options.title]
@@ -183,7 +191,7 @@ export function recordData(
     values: Object.fromEntries(
       fields.map((field) => [
         field.name,
-        field.kind === 'belongsTo' ? (relations[field.name] ?? null) : fieldValue(record, field),
+        Object.hasOwn(resolved, field.name) ? resolved[field.name] : fieldValue(record, field),
       ])
     ),
   }
@@ -196,12 +204,12 @@ export function recordData(
 export function formValues(
   fields: FormFieldSchema[],
   record?: LucidRow,
-  /** `belongsTo` values, which need a query (see `relationValues`) */
-  relations: Record<string, RelationValue | null> = {}
+  /** Values that need a query or Drive: relations and files */
+  resolved: Record<string, FieldValue> = {}
 ): Record<string, FieldValue> {
   return Object.fromEntries(
     fields.map((field) => {
-      if (field.kind === 'belongsTo') return [field.name, relations[field.name] ?? null]
+      if (Object.hasOwn(resolved, field.name)) return [field.name, resolved[field.name]]
       const value = record ? fieldValue(record, field) : field.default
       return [field.name, field.kind === 'boolean' ? Boolean(value) : value]
     })

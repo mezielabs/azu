@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
+import { diskFor, fileValue } from '../files/uploads.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import type { CellValue, ColumnSchema, ListMeta, ListRow } from '../schema.ts'
 import type { ListState } from '../shared/list_state.ts'
@@ -52,6 +53,10 @@ export function whereSearch(
   })
 }
 
+function read(record: LucidRow, attribute: string): unknown {
+  return (record as unknown as Record<string, unknown>)[attribute]
+}
+
 /**
  * Plain values only: Luxon dates become ISO strings, decimals stay the
  * exact strings the driver returns (or become strings, on SQLite).
@@ -71,11 +76,6 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
 
   if (value === null || value === undefined) return column.kind === 'image' ? { url: null } : null
 
-  if (column.kind === 'image') {
-    // Drive URLs arrive with FR-07; until then only ready-made URLs show
-    const url = String(value)
-    return { url: /^(https?:)?\/\//.test(url) || url.startsWith('/') ? url : null }
-  }
   if (column.kind === 'date' || column.kind === 'datetime') {
     const date = value as { toISO?: () => string | null }
     return typeof date.toISO === 'function' ? date.toISO() : String(value)
@@ -102,8 +102,12 @@ export async function listRecords(
   ctx: HttpContext,
   resource: Resource<any, any>,
   state: ListState,
-  /** Narrows the list further, e.g. to one parent's `hasMany` records */
-  scope?: (query: ModelQueryBuilderContract<LucidModel>) => void
+  options: {
+    /** Narrows the list further, e.g. to one parent's `hasMany` records */
+    scope?: (query: ModelQueryBuilderContract<LucidModel>) => void
+    /** `defaultDisk` from config/admin.ts, for image columns */
+    defaultDisk?: string
+  } = {}
 ): Promise<{ rows: ListRow[]; meta: ListMeta }> {
   const model: LucidModel = resource.model
   const schema = resource.toSchema()
@@ -115,7 +119,7 @@ export async function listRecords(
     if (column.kind === 'belongsTo') query.preloadOnce(column.name as never)
   }
 
-  scope?.(query)
+  options.scope?.(query)
   if (state.search) whereSearch(query, model, schema.search, state.search)
 
   if (state.sort) query.orderBy(columnName(model, state.sort), state.direction)
@@ -125,6 +129,17 @@ export async function listRecords(
   const page = await query.paginate(state.page, state.perPage)
   const title = schema.title
 
+  // An image column's disk: the same-named field's `disk()`, else the default
+  const diskOf = (name: string) => {
+    const field = schema.fields.find((item) => item.name === name)
+    return diskFor({ disk: field?.disk ?? null }, options.defaultDisk)
+  }
+
+  const imageCell = async (record: LucidRow, name: string) => {
+    const file = await fileValue(ctx, diskOf(name), read(record, name))
+    return { url: file?.url ?? null }
+  }
+
   const rows = await Promise.all(
     page.all().map(async (record): Promise<ListRow> => {
       const titleValue = title ? (record as unknown as Record<string, unknown>)[title] : null
@@ -132,7 +147,14 @@ export async function listRecords(
         id: record.$primaryKeyValue as string | number,
         title: titleValue === null || titleValue === undefined ? null : String(titleValue),
         cells: Object.fromEntries(
-          schema.columns.map((column) => [column.name, cellValue(record, column)])
+          await Promise.all(
+            schema.columns.map(async (column) => [
+              column.name,
+              column.kind === 'image'
+                ? await imageCell(record, column.name)
+                : cellValue(record, column),
+            ])
+          )
         ),
         abilities: { view: await allows(ctx, resource, 'view', record) },
       }

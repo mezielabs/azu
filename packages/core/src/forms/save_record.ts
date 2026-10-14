@@ -5,6 +5,8 @@ import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import type { Resource } from '../resources/define_resource.ts'
 import type { FormErrors, FormFieldSchema } from '../schema.ts'
 import { processTimezone } from '../define_config.ts'
+import { sanitizeRichText } from '../files/sanitize_html.ts'
+import { FILE_KINDS, deleteFiles, diskFor, planUploads, storeUploads } from '../files/uploads.ts'
 import { toValidatorDateTime } from './datetime_input.ts'
 import { validatorFor, type FormMode } from './form_fields.ts'
 
@@ -123,6 +125,8 @@ export async function saveRecord(
     record?: LucidRow
     /** The admin's timezone, which wall-clock datetimes are read in */
     timezone?: string
+    /** `defaultDisk` from config/admin.ts */
+    defaultDisk?: string
   } = {}
 ): Promise<{ record: LucidRow; errors?: never } | { errors: FormErrors; record?: never }> {
   const validator = validatorFor(resource, mode)
@@ -132,44 +136,103 @@ export async function saveRecord(
 
   const { record } = options
   const writable = fields.filter((field) => !field.readOnly)
-  const names = writable.map((field) => field.input)
-  const data = pick(ctx.request.body(), names)
+  const data = pick(
+    ctx.request.body(),
+    writable.map((field) => field.input)
+  )
 
   const timezones = { admin: options.timezone ?? processTimezone(), process: processTimezone() }
   for (const field of writable) {
-    if (field.kind === 'datetime' && Object.hasOwn(data, field.input)) {
-      data[field.input] = toValidatorDateTime(data[field.input], timezones)
+    if (!Object.hasOwn(data, field.input)) continue
+    const value = data[field.input]
+    if (field.kind === 'datetime') data[field.input] = toValidatorDateTime(value, timezones)
+    // The validator sees sanitised HTML, so its length rules apply to what's stored
+    if (field.kind === 'richText' && typeof value === 'string') {
+      data[field.input] = sanitizeRichText(value)
     }
   }
 
-  // Read-only fields aren't written, but the validator still sees the
-  // whole record: on edit they carry its current values, from the
-  // record, never the request
+  // Uploads are checked (size, type from the bytes) and given keys, but
+  // only stored once the record saves
+  const hasFiles = writable.some((field) => FILE_KINDS.has(field.kind))
+  const files = hasFiles
+    ? await planUploads(ctx, resource, writable, options.defaultDisk)
+    : { uploads: [], unchanged: [], errors: {} }
+  for (const planned of files.uploads) data[planned.field.input] = planned.key
+  // Sent with no file: a removal, whatever the body parser made of it
+  const uploaded = new Set(files.uploads.map((planned) => planned.field.input))
+  for (const field of writable) {
+    const input = field.input
+    if (FILE_KINDS.has(field.kind) && Object.hasOwn(data, input) && !uploaded.has(input)) {
+      data[input] = null
+    }
+  }
+
+  // Read-only fields, and files the request left alone, aren't written,
+  // but the validator still sees the whole record: on edit they carry
+  // its current values, from the record, never the request
+  const kept = new Set(files.unchanged.map((field) => field.input))
   if (record) {
     for (const field of fields) {
-      if (field.readOnly) data[field.input] = currentInput(record, field, timezones)
+      const failedUpload = Object.hasOwn(files.errors, field.input)
+      if (field.readOnly || kept.has(field.input) || failedUpload) {
+        data[field.input] = currentInput(record, field, timezones)
+      }
     }
   }
   const meta = resource.options.validators?.meta?.({ record, ctx }) ?? { record }
 
-  let output: Record<string, unknown>
+  let output: Record<string, unknown> = {}
+  let errors: FormErrors = {}
   try {
     output = await validator.validate(data, { meta })
   } catch (error) {
     const messages = validationMessages(error)
     if (!messages) throw error
-    return { errors: toFormErrors(messages) }
+    errors = toFormErrors(messages)
   }
+  // Upload problems come first under their field; the validator's follow
+  for (const [path, messages] of Object.entries(files.errors)) {
+    errors[path] = [...messages, ...(errors[path] ?? [])]
+  }
+  if (Object.keys(errors).length > 0) return { errors }
 
+  const names = writable.map((field) => field.input).filter((name) => !kept.has(name))
   const model: LucidModel = resource.model
   const target = record ?? new model()
-  await model.transaction(async (trx) => {
-    target.useTransaction(trx)
-    target.merge(toAttributes(model, pick(output, names), target))
-    await resource.options.beforeSave?.(target, ctx)
-    await target.save()
-    await resource.options.afterSave?.(target, ctx)
-  })
+  // Files this save replaces or removes, deleted once it commits
+  const replaced = writable
+    .filter((field) => FILE_KINDS.has(field.kind) && !kept.has(field.input) && record)
+    .map((field) => ({
+      key: (record as unknown as Record<string, unknown>)[field.input],
+      disk: diskFor(field, options.defaultDisk),
+    }))
+    .filter(
+      (file): file is { key: string; disk: string | undefined } =>
+        typeof file.key === 'string' && file.key !== ''
+    )
+
+  const stored = await storeUploads(ctx, files.uploads)
+  try {
+    await model.transaction(async (trx) => {
+      target.useTransaction(trx)
+      target.merge(toAttributes(model, pick(output, names), target))
+      await resource.options.beforeSave?.(target, ctx)
+      await target.save()
+      await resource.options.afterSave?.(target, ctx)
+    })
+  } catch (error) {
+    await stored.rollback()
+    throw error
+  }
+
+  const stillUsed = new Set(
+    names.map((name) => (target as unknown as Record<string, unknown>)[name])
+  )
+  await deleteFiles(
+    ctx,
+    replaced.filter((file) => !stillUsed.has(file.key))
+  )
 
   return { record: target }
 }

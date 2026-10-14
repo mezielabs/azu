@@ -49,6 +49,7 @@ export class Field<
     options: null,
     disk: null,
     maxSize: null,
+    accept: null,
     searchable: null,
   }
 
@@ -140,9 +141,25 @@ export class Field<
     return this
   }
 
-  /** e.g. `'2mb'` */
+  /**
+   * The largest upload, e.g. `'2mb'`. Checked on the server.
+   * Defaults to 5mb for images and 10mb for files.
+   */
   maxSize<F extends AnyField<'file' | 'image'>>(this: F, size: string): F {
     ;(this as AnyField<'file'>).#set('maxSize', size)
+    return this
+  }
+
+  /**
+   * The MIME types an upload may be, e.g. `'application/pdf'` or
+   * `'image/*'`. Checked on the server against the file's contents
+   * where the format has a signature, not the browser's claim. Defaults
+   * to JPEG, PNG, WebP, GIF and AVIF for images, plus PDF, text, CSV,
+   * Office documents and ZIP for files. SVG and HTML are never accepted
+   * unless listed here, because they can carry scripts.
+   */
+  accept<F extends AnyField<'file' | 'image'>>(this: F, ...types: string[]): F {
+    ;(this as AnyField<'file'>).#set('accept', types)
     return this
   }
 

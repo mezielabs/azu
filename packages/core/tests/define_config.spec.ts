@@ -7,6 +7,7 @@ test.group('defineConfig', () => {
       path: '/admin',
       entry: 'inertia/admin/app.tsx',
       guard: undefined,
+      defaultDisk: undefined,
       loginUrl: '/login',
       resources: { autoload: 'app/admin/resources' },
       perPage: 25,

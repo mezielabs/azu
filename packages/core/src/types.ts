@@ -68,6 +68,14 @@ export type AzuConfigInput = {
   perPage?: PageSize
 
   /**
+   * The Drive disk `file` and `image` fields store uploads on, unless a
+   * field sets `disk()`.
+   *
+   * @default Drive's default disk
+   */
+  defaultDisk?: string
+
+  /**
    * The timezone admins enter and read dates in, as an IANA name such
    * as `'Africa/Lagos'`. Set it when it differs from the server
    * process's timezone (`TZ`), for example with the server in UTC.
@@ -81,8 +89,10 @@ export type AzuConfigInput = {
  * The config object `defineConfig` returns, with defaults applied.
  * `guard` stays undefined to mean the app's default guard.
  */
-export type AzuConfig = Required<Omit<AzuConfigInput, 'guard' | 'resources'>> & {
+export type AzuConfig = Required<Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk'>> & {
   guard?: string
+  /** `undefined` means Drive's default disk */
+  defaultDisk?: string
   resources: { autoload: string | false }
 }
 

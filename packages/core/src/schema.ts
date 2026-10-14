@@ -75,6 +75,8 @@ export type FieldSchema = {
   /** `file` and `image` */
   disk: string | null
   maxSize: string | null
+  /** `file` and `image`: accepted MIME types, e.g. `image/*`, `application/pdf` */
+  accept: string[] | null
   /** Relation fields: the related model's attribute to search and show */
   searchable: string | null
 }
@@ -170,11 +172,23 @@ export type RelationValue = {
 }
 
 /**
+ * A stored upload, as `file` and `image` fields show it.
+ */
+export type FileValue = {
+  /** The Drive key */
+  key: string
+  /** The file name, from the key */
+  name: string
+  /** From the disk; `null` when it can't make one */
+  url: string | null
+}
+
+/**
  * A form or detail value, by field kind. Decimals stay exact strings;
  * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset;
- * `belongsTo` is the related record.
+ * `belongsTo` is the related record; `file` and `image` the stored upload.
  */
-export type FieldValue = string | number | boolean | null | RelationValue
+export type FieldValue = string | number | boolean | null | RelationValue | FileValue
 
 /**
  * A field as a form renders it: the resource's field, with hints from

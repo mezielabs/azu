@@ -10,6 +10,7 @@ import {
   type FormMode,
 } from '../forms/form_fields.ts'
 import { saveRecord } from '../forms/save_record.ts'
+import { fileValues } from '../files/uploads.ts'
 import { listRecords } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
 import {
@@ -96,7 +97,9 @@ export class ResourcesController {
       sortable: schema.columns.filter((column) => column.sortable).map((column) => column.name),
     }
     const state = parseListState(ctx.request.qs(), options)
-    const { rows, meta } = await listRecords(ctx, resource, state)
+    const { rows, meta } = await listRecords(ctx, resource, state, {
+      defaultDisk: config.defaultDisk,
+    })
 
     // Past the last page (say, after deleting rows): go to the last one
     if (state.page > meta.lastPage && meta.lastPage >= 1) {
@@ -143,6 +146,7 @@ export class ResourcesController {
     const fields = await this.#formFields(ctx, resource, 'create')
     const result = await saveRecord(ctx, resource, 'create', fields, {
       timezone: this.context.config.timezone,
+      defaultDisk: this.context.config.defaultDisk,
     })
     if (result.errors) {
       ctx.response.status(422)
@@ -161,7 +165,10 @@ export class ResourcesController {
     const { resource, record } = auth
 
     const fields = await detailFields(ctx, resource, record!)
-    const relations = await relationValues(ctx, this.context, resource.model, fields, record!)
+    const resolved = {
+      ...(await relationValues(ctx, this.context, resource.model, fields, record!)),
+      ...(await fileValues(ctx, fields, record!, this.context.config.defaultDisk)),
+    }
     const tables = []
     for (const field of resource.toSchema().fields) {
       if (field.kind === 'hasMany' && (await fieldAllowed(ctx, resource, field, record))) {
@@ -171,7 +178,7 @@ export class ResourcesController {
     return renderPage(ctx, this.context, 'azu/resource/show', {
       resource: resource.toSchema(),
       fields,
-      record: recordData(resource, record!, fields, relations),
+      record: recordData(resource, record!, fields, resolved),
       relations: await hasManyTables(ctx, this.context, resource, tables, record!),
       abilities: { update: await allows(ctx, resource, 'update', record) },
     })
@@ -207,6 +214,7 @@ export class ResourcesController {
     const result = await saveRecord(ctx, resource, 'edit', fields, {
       record,
       timezone: this.context.config.timezone,
+      defaultDisk: this.context.config.defaultDisk,
     })
     if (result.errors) {
       ctx.response.status(422)
@@ -298,11 +306,14 @@ export class ResourcesController {
     errors: FormErrors = {}
   ) {
     const { id, title } = recordData(resource, record, [])
-    const relations = await relationValues(ctx, this.context, resource.model, fields, record)
+    const resolved = {
+      ...(await relationValues(ctx, this.context, resource.model, fields, record)),
+      ...(await fileValues(ctx, fields, record, this.context.config.defaultDisk)),
+    }
     return renderPage(ctx, this.context, 'azu/resource/edit', {
       resource: resource.toSchema(),
       record: { id, title },
-      form: { fields, values: formValues(fields, record, relations) },
+      form: { fields, values: formValues(fields, record, resolved) },
       errors,
     })
   }
