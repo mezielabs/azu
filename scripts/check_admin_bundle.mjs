@@ -4,6 +4,9 @@
  *
  * - initial admin JS (the admin entry and its static imports) ≤ 120 kB gz
  * - each page's lazy chunk (what it loads beyond the initial JS) ≤ 160 kB gz
+ * - each azu() optional feature's chunk, such as the Tiptap editor, ≤ 200 kB gz.
+ *   Features are the front-end package's `azu.optionalFeatures`, and their
+ *   fallbacks, from its package.json.
  *
  * kB is 1,000 bytes, gzip at zlib's default level, as Vite reports sizes.
  *
@@ -15,7 +18,8 @@ import { gzipSync } from 'node:zlib'
 
 const assetsDir = process.argv[2] ?? 'apps/demo/public/assets'
 const entry = process.argv[3] ?? 'inertia/admin/app.tsx'
-const BUDGET = { initial: 120, lazy: 160 }
+const BUDGET = { initial: 120, lazy: 160, feature: 200 }
+const FRONT_END = process.argv[4] ?? 'packages/react/package.json'
 
 const manifest = JSON.parse(readFileSync(join(assetsDir, '.vite/manifest.json'), 'utf8'))
 if (!manifest[entry]?.isEntry) {
@@ -61,12 +65,26 @@ while (queue.length) {
   }
 }
 
+/**
+ * Built files of the front end's optional features and their fallbacks,
+ * e.g. `build/features/rich_text_editor.js`
+ */
+const frontEnd = JSON.parse(readFileSync(FRONT_END, 'utf8'))
+const featureFiles = (frontEnd.azu?.optionalFeatures ?? []).flatMap((feature) =>
+  [feature.specifier, feature.fallback].map((specifier) => {
+    const subpath = `.${specifier.slice(frontEnd.name.length)}`
+    const target = frontEnd.exports?.[subpath]
+    return String(typeof target === 'string' ? target : target?.default).replace(/^\.\//, '')
+  })
+)
+const isFeature = (key) => featureFiles.some((file) => key.endsWith(file))
+
 const rows = [
   ['initial admin JS', initialKb, BUDGET.initial],
   ...[...lazy].map(([key, kb]) => [
-    `lazy ${key.replace(/^.*node_modules\//, '').replace(/^(\.\.\/)+/, '')}`,
+    `${isFeature(key) ? 'feature' : 'lazy'} ${key.replace(/^.*node_modules\//, '').replace(/^(\.\.\/)+/, '')}`,
     kb,
-    BUDGET.lazy,
+    isFeature(key) ? BUDGET.feature : BUDGET.lazy,
   ]),
 ]
 

@@ -43,9 +43,9 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. Searches use `ILIKE '%term%'`, so on Postgres the search columns need trigram (`pg_trgm`) GIN indexes; a B-tree can't serve a leading wildcard. Measured 2026-10-13 on 100,000 demo products, Postgres 18, production mode, sequential requests: worst p95 40 ms across first page, sorts, a 101-match search, deep pages and 100 per page; 162 ms for a search matching every row. Without trigram indexes, search was 598 ms. Check with `pnpm bench:list` before each release. |
 | Security | Every admin route and action authorises server-side, never only by hiding UI. CSRF on all writes. Mass assignment limited to declared fields. Uploads restricted by MIME type and size per field. |
 | Accessibility | WCAG 2.1 AA on core screens: keyboard navigation, focus states, labelled inputs, 4.5:1 contrast in both themes. |
-| Compatibility | AdonisJS 7, Node 24+, Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
+| Compatibility | AdonisJS 7, Node 24.21+ (earlier 24.x releases crash loading some dependencies, see docs/decisions.md), Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
 | Type safety | Resource definitions typed against the model: a misspelled column or field name fails `tsc`. |
-| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), and ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS). |
+| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS), and ≤ 200 kB gz per optional-feature chunk (an `azu()` optional feature such as the Tiptap editor, loaded only when a form uses it; measured like a page, beyond the initial JS). |
 | Upgrades | Semver. Published components carry a version stamp; `admin:doctor` flags drift. |
 | i18n | All UI strings go through AdonisJS i18n; English only in v1. |
 | Mobile | Usable at 375 px: tables scroll horizontally, forms stack. |
@@ -314,7 +314,7 @@ export default defineConfig({
 | 1. Weeks 1–3 | FR-01 to FR-08: install, access gate, resources, generator, list/forms/detail, core fields, belongsTo/hasMany | Generated Product resource works end to end in the demo app |
 | 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass; v0.x preview published |
 | 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | README quickstart works on a fresh app in under five minutes |
-| v1.1 | P1 items: FR-09, FR-15, FR-16, FR-17 | |
+| v1.1 | P1 items: FR-09, FR-15, FR-16, FR-17. Private Drive disks: `file` and `image` URLs signed through Drive (`getSignedUrl`) instead of `getUrl`, which only suits public disks | |
 
 **Phase 0 risk checks:**
 
