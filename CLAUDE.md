@@ -45,7 +45,7 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 - Lint: `pnpm lint`
 - Test: `pnpm test` (core Japa suite, then the demo's `node ace test`)
 - Test on Postgres or MySQL: set `DB_CONNECTION=pg` (or `mysql`) and `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE` (see `apps/demo/.env.example`), then `pnpm test`. CI runs Postgres 18, MySQL 8.4 and SQLite (`.github/workflows/ci.yml`).
-- Run demo: `pnpm dev` (`node ace serve --hmr`), then open http://localhost:3333/admin. Needs Node 24.21 or later; `--hmr` crashes on 24.3.0. `.nvmrc` pins 24.
+- Run demo: `pnpm dev` (`node ace serve --hmr`), then open http://localhost:3333/admin. Needs Node 24.21 or later (`engines` in every package.json); `--hmr` and `sanitize-html` crash on 24.3.0. `.nvmrc` pins 24.21.
 - Reset and seed the demo DB: `pnpm demo:seed`. Logins are in `apps/demo/database/seeders/main_seeder.ts`.
 - Regenerate `apps/demo/database/schema.ts` after a migration change: run migrations against Postgres (`DB_CONNECTION=pg … node ace migration:run`). Schema generation is on for Postgres only, so its types match the primary database, and CI fails if the committed file differs.
 - Admin bundle budget: `pnpm budget` (production build of the demo, then `scripts/check_admin_bundle.mjs`; CI runs it)

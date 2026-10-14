@@ -32,7 +32,7 @@ If your API rejects a request, Azu rejects it too. There's one source of truth, 
 
 - AdonisJS 7 with Lucid, Auth, and Bouncer
 - Inertia with React
-- Node.js 24 or later
+- Node.js 24.21 or later
 - PostgreSQL, MySQL, or SQLite
 
 ## Installation
