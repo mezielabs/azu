@@ -8,6 +8,8 @@ import type {
   FormErrors,
   FormFieldSchema,
   ListMeta,
+  RelationOption,
+  RelationTable,
   ListRow,
   NavigationGroup,
   RecordData,
@@ -166,9 +168,16 @@ export type ResourceShowPageProps = AzuSharedProps & {
   /** The fields this user may see */
   fields: FieldSchema[]
   record: RecordData
+  /** `hasMany` fields whose related resource the user may list */
+  relations: RelationTable[]
   /** What the user may do with this record, from the policy */
   abilities: { update: boolean }
 }
+
+/**
+ * The JSON a `belongsTo` field's `optionsUrl` returns.
+ */
+export type RelationOptionsResponse = { options: RelationOption[] }
 
 /**
  * Props for the `azu/errors/not_found` page.

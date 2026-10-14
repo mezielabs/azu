@@ -1,5 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import type { CellValue, ColumnSchema, ListMeta, ListRow } from '../schema.ts'
@@ -9,7 +9,7 @@ import type { ListState } from '../shared/list_state.ts'
  * The database column behind a model attribute (`createdAt` →
  * `created_at`).
  */
-function columnName(model: LucidModel, attribute: string): string {
+export function columnName(model: LucidModel, attribute: string): string {
   return model.$getColumn(attribute)?.columnName ?? attribute
 }
 
@@ -26,6 +26,30 @@ const LIKE_ESCAPE = '!'
  */
 export function escapeLike(term: string): string {
   return term.replace(/[!%_]/g, (character) => `${LIKE_ESCAPE}${character}`)
+}
+
+/**
+ * Matches `term` anywhere in any of `attributes`, literally and
+ * case-insensitively: ILIKE on Postgres, LIKE elsewhere (SQLite's ASCII
+ * LIKE and MySQL's default collations ignore case).
+ */
+export function whereSearch(
+  query: ModelQueryBuilderContract<LucidModel>,
+  model: LucidModel,
+  attributes: string[],
+  term: string
+) {
+  if (attributes.length === 0) return
+  const pattern = `%${escapeLike(term)}%`
+  const operator = query.client.dialect.name === 'postgres' ? 'ILIKE' : 'LIKE'
+  query.where((group) => {
+    for (const attribute of attributes) {
+      group.orWhereRaw(`?? ${operator} ? ESCAPE '${LIKE_ESCAPE}'`, [
+        columnName(model, attribute),
+        pattern,
+      ])
+    }
+  })
 }
 
 /**
@@ -77,7 +101,9 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
 export async function listRecords(
   ctx: HttpContext,
   resource: Resource<any, any>,
-  state: ListState
+  state: ListState,
+  /** Narrows the list further, e.g. to one parent's `hasMany` records */
+  scope?: (query: ModelQueryBuilderContract<LucidModel>) => void
 ): Promise<{ rows: ListRow[]; meta: ListMeta }> {
   const model: LucidModel = resource.model
   const schema = resource.toSchema()
@@ -89,20 +115,8 @@ export async function listRecords(
     if (column.kind === 'belongsTo') query.preloadOnce(column.name as never)
   }
 
-  if (state.search && schema.search.length > 0) {
-    const term = `%${escapeLike(state.search)}%`
-    // Postgres LIKE is case-sensitive; SQLite LIKE (ASCII) and MySQL's
-    // default collations are not
-    const operator = query.client.dialect.name === 'postgres' ? 'ILIKE' : 'LIKE'
-    query.where((group) => {
-      for (const attribute of schema.search) {
-        group.orWhereRaw(`?? ${operator} ? ESCAPE '${LIKE_ESCAPE}'`, [
-          columnName(model, attribute),
-          term,
-        ])
-      }
-    })
-  }
+  scope?.(query)
+  if (state.search) whereSearch(query, model, schema.search, state.search)
 
   if (state.sort) query.orderBy(columnName(model, state.sort), state.direction)
   // A stable tie-break, so a page always holds the same rows

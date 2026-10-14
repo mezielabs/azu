@@ -35,4 +35,11 @@ export class ResourceRegistry {
   all(): Resource<any, any>[] {
     return [...this.#resources.values()]
   }
+
+  /**
+   * The first resource for a model, e.g. to link a related record.
+   */
+  forModel(model: unknown): Resource<any, any> | undefined {
+    return this.all().find((resource) => resource.model === model)
+  }
 }

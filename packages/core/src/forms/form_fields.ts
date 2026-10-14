@@ -2,15 +2,24 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidRow } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
 import type { Resource, ValidatorLike } from '../resources/define_resource.ts'
-import type { FieldKind, FieldSchema, FieldValue, FormFieldSchema, RecordData } from '../schema.ts'
+import { relationKeys } from '../records/relations.ts'
+import type {
+  FieldKind,
+  FieldSchema,
+  FieldValue,
+  FormFieldSchema,
+  RecordData,
+  RelationValue,
+} from '../schema.ts'
 import { introspectValidator, isIntrospectable, type FieldHints } from './introspect.ts'
 
 export type FormMode = 'create' | 'edit'
 
 /**
- * Field kinds the forms and detail page render. FR-07 and FR-08 add
- * rich text, uploads and relations; until then those fields are left
- * out of forms, detail pages and writes.
+ * Field kinds the forms and detail page render. FR-07 adds rich text
+ * and uploads, and FR-09 `manyToMany`; until then those fields are left
+ * out of forms, detail pages and writes. `hasMany` is a table on the
+ * detail page, never a form field.
  */
 export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'text',
@@ -21,7 +30,17 @@ export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'select',
   'date',
   'datetime',
+  'belongsTo',
 ])
+
+/**
+ * The payload key a field submits and its errors use: a `belongsTo`
+ * field writes its foreign key (`category` → `categoryId`).
+ */
+export function inputName(resource: Resource<any, any>, field: FieldSchema): string {
+  if (field.kind !== 'belongsTo') return field.name
+  return relationKeys(resource.model, field.name)?.foreignKey ?? field.name
+}
 
 /**
  * The validator for an operation. Update falls back to the create
@@ -37,7 +56,7 @@ export function validatorFor(resource: Resource<any, any>, mode: FormMode) {
  * Whether the user passes a field's own `ability`, if it has one. On
  * edit and detail, the policy method receives the record.
  */
-function fieldAllowed(
+export function fieldAllowed(
   ctx: HttpContext,
   resource: Resource<any, any>,
   field: FieldSchema,
@@ -70,9 +89,15 @@ export async function detailFields(
  * Explicit hints win; the validator fills the gaps. A select without
  * options takes the validator's enum choices.
  */
-export function withHints(field: FieldSchema, hints: FieldHints | undefined): FormFieldSchema {
+export function withHints(
+  field: FieldSchema,
+  hints: FieldHints | undefined,
+  input = field.name
+): FormFieldSchema {
   return {
     ...field,
+    input,
+    optionsUrl: null,
     min: field.min ?? hints?.min ?? null,
     max: field.max ?? hints?.max ?? null,
     step: field.step ?? hints?.step ?? null,
@@ -104,7 +129,8 @@ export async function formFields(
     if (!FORM_KINDS.has(field.kind)) continue
     if (field.visibleOn && field.visibleOn !== mode) continue
     if (!(await fieldAllowed(ctx, resource, field, record))) continue
-    fields.push(withHints(field, hints.get(field.name)))
+    const input = inputName(resource, field)
+    fields.push(withHints(field, hints.get(input), input))
   }
   return fields
 }
@@ -144,7 +170,9 @@ export function fieldValue(record: LucidRow, field: FieldSchema): FieldValue {
 export function recordData(
   resource: Resource<any, any>,
   record: LucidRow,
-  fields: FieldSchema[]
+  fields: FieldSchema[],
+  /** `belongsTo` values, which need a query (see `relationValues`) */
+  relations: Record<string, RelationValue | null> = {}
 ): RecordData {
   const title = resource.options.title
     ? (record as unknown as Record<string, unknown>)[resource.options.title]
@@ -152,7 +180,12 @@ export function recordData(
   return {
     id: record.$primaryKeyValue as string | number,
     title: title === null || title === undefined ? null : String(title),
-    values: Object.fromEntries(fields.map((field) => [field.name, fieldValue(record, field)])),
+    values: Object.fromEntries(
+      fields.map((field) => [
+        field.name,
+        field.kind === 'belongsTo' ? (relations[field.name] ?? null) : fieldValue(record, field),
+      ])
+    ),
   }
 }
 
@@ -162,10 +195,13 @@ export function recordData(
  */
 export function formValues(
   fields: FormFieldSchema[],
-  record?: LucidRow
+  record?: LucidRow,
+  /** `belongsTo` values, which need a query (see `relationValues`) */
+  relations: Record<string, RelationValue | null> = {}
 ): Record<string, FieldValue> {
   return Object.fromEntries(
     fields.map((field) => {
+      if (field.kind === 'belongsTo') return [field.name, relations[field.name] ?? null]
       const value = record ? fieldValue(record, field) : field.default
       return [field.name, field.kind === 'boolean' ? Boolean(value) : value]
     })

@@ -10,6 +10,7 @@ import {
   nextListState,
   parseListState,
   truncate,
+  withPageParam,
   type ListState,
 } from '../shared.ts'
 
@@ -132,5 +133,22 @@ test.group('Search escaping', () => {
     assert.equal(escapeLike('AB_12'), 'AB!_12')
     assert.equal(escapeLike('wow!'), 'wow!!')
     assert.equal(escapeLike('plain text'), 'plain text')
+  })
+})
+
+test.group('Relation table pages', () => {
+  test('sets one page parameter and keeps the others', ({ assert }) => {
+    assert.equal(
+      withPageParam('/admin/resources/categories/1', 'productsPage', 2),
+      '/admin/resources/categories/1?productsPage=2'
+    )
+    assert.equal(
+      withPageParam('/c/1?ordersPage=3&productsPage=2', 'productsPage', 4),
+      '/c/1?ordersPage=3&productsPage=4'
+    )
+  })
+
+  test('leaves page 1 out', ({ assert }) => {
+    assert.equal(withPageParam('/c/1?productsPage=2', 'productsPage', 1), '/c/1')
   })
 })

@@ -159,10 +159,22 @@ export type ListMeta = {
 }
 
 /**
- * A form or detail value, by field kind. Decimals stay exact strings;
- * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset.
+ * A related record, as a `belongsTo` field shows it: its key, its
+ * title, and its detail page when the user may open it.
  */
-export type FieldValue = string | number | boolean | null
+export type RelationValue = {
+  id: string | number
+  title: string | null
+  /** `null` without a resource for the related model, or without `view` */
+  href: string | null
+}
+
+/**
+ * A form or detail value, by field kind. Decimals stay exact strings;
+ * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset;
+ * `belongsTo` is the related record.
+ */
+export type FieldValue = string | number | boolean | null | RelationValue
 
 /**
  * A field as a form renders it: the resource's field, with hints from
@@ -170,6 +182,14 @@ export type FieldValue = string | number | boolean | null
  * `step`, `options`) win over the validator's, for the UI only.
  */
 export type FormFieldSchema = FieldSchema & {
+  /**
+   * The payload key the form submits and validation errors use: the
+   * field name, or a `belongsTo` field's foreign key (`category` →
+   * `categoryId`)
+   */
+  input: string
+  /** `belongsTo`: where the select searches for options */
+  optionsUrl: string | null
   /** Not optional and not nullable in the validator, with no conditional rule */
   required: boolean
   minLength: number | null
@@ -191,4 +211,28 @@ export type RecordData = {
   title: string | null
   /** Keyed by field name */
   values: Record<string, FieldValue>
+}
+
+/**
+ * One option in a `belongsTo` select.
+ */
+export type RelationOption = { id: string | number; title: string | null }
+
+/**
+ * A `hasMany` field on the detail page: one page of the related
+ * records, shown with the related resource's columns.
+ */
+export type RelationTable = {
+  /** The field (relation) name */
+  name: string
+  label: string
+  /** The related resource's URL name */
+  resource: string
+  columns: ColumnSchema[]
+  /** The related resource's title attribute */
+  titleColumn: string | null
+  rows: ListRow[]
+  meta: ListMeta
+  /** The query parameter holding this table's page, e.g. `productsPage` */
+  pageParam: string
 }

@@ -102,3 +102,17 @@ export function nextListState(state: ListState, change: Partial<ListState>): Lis
     'search' in change || 'sort' in change || 'direction' in change || 'perPage' in change
   return { ...state, ...change, page: change.page ?? (resetsPage ? 1 : state.page) }
 }
+
+/**
+ * The current URL with one page parameter changed, such as a detail
+ * page's `productsPage` for its `hasMany` table. Page 1 is left out,
+ * like list defaults. Other parameters are kept.
+ */
+export function withPageParam(url: string, param: string, page: number): string {
+  const [path, query = ''] = url.split('?', 2)
+  const params = new URLSearchParams(query)
+  if (page > 1) params.set(param, String(page))
+  else params.delete(param)
+  const search = params.toString()
+  return search ? `${path}?${search}` : path
+}

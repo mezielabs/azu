@@ -111,13 +111,13 @@ export async function saveRecord(
 
   const { record } = options
   const writable = fields.filter((field) => !field.readOnly)
-  const names = writable.map((field) => field.name)
+  const names = writable.map((field) => field.input)
   const data = pick(ctx.request.body(), names)
 
   const timezones = { admin: options.timezone ?? processTimezone(), process: processTimezone() }
   for (const field of writable) {
-    if (field.kind === 'datetime' && Object.hasOwn(data, field.name)) {
-      data[field.name] = toValidatorDateTime(data[field.name], timezones)
+    if (field.kind === 'datetime' && Object.hasOwn(data, field.input)) {
+      data[field.input] = toValidatorDateTime(data[field.input], timezones)
     }
   }
   const meta = resource.options.validators?.meta?.({ record, ctx }) ?? { record }
