@@ -17,6 +17,7 @@ const fields = {
   currency: vine.enum(CURRENCIES),
   usageLimit: vine.number().withoutDecimals().min(1).max(100000).nullable().optional(),
   isActive: vine.boolean(),
+  categoryId: vine.number().exists({ table: 'categories', column: 'id' }).nullable().optional(),
   startsOn: vine.date(),
   expiresAt: vine.date().nullable().optional(),
 }

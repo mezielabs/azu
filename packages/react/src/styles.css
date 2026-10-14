@@ -587,3 +587,47 @@
     color: var(--azu-muted);
   }
 }
+
+/*
+ * Relations (FR-08): the belongsTo select and hasMany tables.
+ */
+@layer components {
+  .azu-combobox .azu-input {
+    @apply rounded-r-none;
+  }
+
+  .azu-combobox-button {
+    @apply border border-l-0 px-2 text-sm;
+    border-color: var(--azu-border);
+    color: var(--azu-muted);
+  }
+
+  .azu-combobox-button:last-child {
+    @apply rounded-r;
+  }
+
+  .azu-combobox-button:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: -2px;
+  }
+
+  .azu-option-empty {
+    color: var(--azu-muted);
+  }
+
+  .azu-relation {
+    @apply mt-8 space-y-3;
+  }
+
+  .azu-section-title {
+    @apply text-lg font-semibold;
+  }
+
+  .azu-detail-value a {
+    color: var(--azu-brand);
+  }
+
+  .azu-detail-value a:hover {
+    @apply underline;
+  }
+}

@@ -1,16 +1,30 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidRow } from '@adonisjs/lucid/types/model'
 import type { Azu } from '../azu.ts'
-import { detailFields, formFields, formValues, recordData } from '../forms/form_fields.ts'
+import {
+  detailFields,
+  fieldAllowed,
+  formFields,
+  formValues,
+  recordData,
+  type FormMode,
+} from '../forms/form_fields.ts'
 import { saveRecord } from '../forms/save_record.ts'
 import { listRecords } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
+import {
+  canListRelated,
+  hasManyTables,
+  relationOptions,
+  relationValues,
+} from '../records/relations.ts'
 import { renderPage } from '../render.ts'
 import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import { canList } from '../resources/navigation.ts'
 import { listStateUrl, parseListState } from '../shared/list_state.ts'
-import type { AzuConfig } from '../types.ts'
+import type { FormErrors, FormFieldSchema } from '../schema.ts'
+import type { AzuConfig, RelationOptionsResponse } from '../types.ts'
 
 type Context = { config: AzuConfig; azu: Azu }
 
@@ -114,12 +128,7 @@ export class ResourcesController {
     if (!auth.ok) return auth.response
     const { resource } = auth
 
-    const fields = await formFields(ctx, resource, 'create')
-    return renderPage(ctx, this.context, 'azu/resource/create', {
-      resource: resource.toSchema(),
-      form: { fields, values: formValues(fields) },
-      errors: {},
-    })
+    return this.#renderCreate(ctx, resource, await this.#formFields(ctx, resource, 'create'))
   }
 
   /**
@@ -131,17 +140,13 @@ export class ResourcesController {
     if (!auth.ok) return auth.response
     const { resource } = auth
 
-    const fields = await formFields(ctx, resource, 'create')
+    const fields = await this.#formFields(ctx, resource, 'create')
     const result = await saveRecord(ctx, resource, 'create', fields, {
       timezone: this.context.config.timezone,
     })
     if (result.errors) {
       ctx.response.status(422)
-      return renderPage(ctx, this.context, 'azu/resource/create', {
-        resource: resource.toSchema(),
-        form: { fields, values: formValues(fields) },
-        errors: result.errors,
-      })
+      return this.#renderCreate(ctx, resource, fields, result.errors)
     }
 
     return this.#toDetail(ctx, resource, result.record)
@@ -156,10 +161,18 @@ export class ResourcesController {
     const { resource, record } = auth
 
     const fields = await detailFields(ctx, resource, record!)
+    const relations = await relationValues(ctx, this.context, resource.model, fields, record!)
+    const tables = []
+    for (const field of resource.toSchema().fields) {
+      if (field.kind === 'hasMany' && (await fieldAllowed(ctx, resource, field, record))) {
+        tables.push(field)
+      }
+    }
     return renderPage(ctx, this.context, 'azu/resource/show', {
       resource: resource.toSchema(),
       fields,
-      record: recordData(resource, record!, fields),
+      record: recordData(resource, record!, fields, relations),
+      relations: await hasManyTables(ctx, this.context, resource, tables, record!),
       abilities: { update: await allows(ctx, resource, 'update', record) },
     })
   }
@@ -172,7 +185,12 @@ export class ResourcesController {
     if (!auth.ok) return auth.response
     const { resource, record } = auth
 
-    return this.#renderEdit(ctx, resource, record!, await formFields(ctx, resource, 'edit', record))
+    return this.#renderEdit(
+      ctx,
+      resource,
+      record!,
+      await this.#formFields(ctx, resource, 'edit', record)
+    )
   }
 
   /**
@@ -185,7 +203,7 @@ export class ResourcesController {
     if (!auth.ok) return auth.response
     const { resource, record } = auth
 
-    const fields = await formFields(ctx, resource, 'edit', record)
+    const fields = await this.#formFields(ctx, resource, 'edit', record)
     const result = await saveRecord(ctx, resource, 'edit', fields, {
       record,
       timezone: this.context.config.timezone,
@@ -198,18 +216,93 @@ export class ResourcesController {
     return this.#toDetail(ctx, resource, result.record)
   }
 
-  #renderEdit(
+  /**
+   * Options for a `belongsTo` field's select (FR-08), as JSON. Gated
+   * like the form it serves: `create`, or `update` on the record named
+   * by `?record=`, and the field must be on that form for this user.
+   * The user must also pass the related resource's `viewList` (fails
+   * closed), and a read-only field has no options.
+   */
+  async options(ctx: HttpContext): Promise<RelationOptionsResponse | unknown> {
+    const resource = this.context.azu.resources.get(ctx.params.resource)
+    if (!resource) return ctx.response.status(404).send({ error: 'Not found' })
+
+    const { record: recordId, search } = ctx.request.qs()
+    let record: LucidRow | undefined
+    if (recordId !== undefined) {
+      record = (await findRecord(resource, String(recordId))) ?? undefined
+      if (!record) return ctx.response.status(404).send({ error: 'Not found' })
+      if (!(await allows(ctx, resource, 'update', record))) {
+        return ctx.response.status(403).send({ error: 'Forbidden' })
+      }
+    } else if (!(await allows(ctx, resource, 'create'))) {
+      return ctx.response.status(403).send({ error: 'Forbidden' })
+    }
+
+    const fields = await formFields(ctx, resource, record ? 'edit' : 'create', record)
+    const field = fields.find((item) => item.name === ctx.params.field && item.kind === 'belongsTo')
+    if (!field) return ctx.response.status(404).send({ error: 'Not found' })
+    if (field.readOnly || !(await canListRelated(ctx, this.context, resource.model, field))) {
+      return ctx.response.status(403).send({ error: 'Forbidden' })
+    }
+
+    const term = typeof search === 'string' ? search.trim().slice(0, 100) : ''
+    return { options: await relationOptions(this.context, resource.model, field, term) }
+  }
+
+  /**
+   * The form's fields, with each `belongsTo` field's options URL. A
+   * `belongsTo` field whose related resource the user can't list is
+   * read-only: it shows the current record, with no options.
+   */
+  async #formFields(
+    ctx: HttpContext,
+    resource: Resource<any, any>,
+    mode: FormMode,
+    record?: LucidRow
+  ): Promise<FormFieldSchema[]> {
+    const fields = await formFields(ctx, resource, mode, record)
+    const query = record ? `?record=${encodeURIComponent(String(record.$primaryKeyValue))}` : ''
+    const result: FormFieldSchema[] = []
+    for (const field of fields) {
+      if (field.kind !== 'belongsTo') {
+        result.push(field)
+      } else if (!(await canListRelated(ctx, this.context, resource.model, field))) {
+        result.push({ ...field, readOnly: true, optionsUrl: null })
+      } else {
+        const url = resourcePath(this.context, resource, 'fields', field.name, 'options')
+        result.push({ ...field, optionsUrl: field.readOnly ? null : `${url}${query}` })
+      }
+    }
+    return result
+  }
+
+  #renderCreate(
+    ctx: HttpContext,
+    resource: Resource<any, any>,
+    fields: FormFieldSchema[],
+    errors: FormErrors = {}
+  ) {
+    return renderPage(ctx, this.context, 'azu/resource/create', {
+      resource: resource.toSchema(),
+      form: { fields, values: formValues(fields) },
+      errors,
+    })
+  }
+
+  async #renderEdit(
     ctx: HttpContext,
     resource: Resource<any, any>,
     record: LucidRow,
-    fields: Awaited<ReturnType<typeof formFields>>,
-    errors = {}
+    fields: FormFieldSchema[],
+    errors: FormErrors = {}
   ) {
     const { id, title } = recordData(resource, record, [])
+    const relations = await relationValues(ctx, this.context, resource.model, fields, record)
     return renderPage(ctx, this.context, 'azu/resource/edit', {
       resource: resource.toSchema(),
       record: { id, title },
-      form: { fields, values: formValues(fields, record) },
+      form: { fields, values: formValues(fields, record, relations) },
       errors,
     })
   }

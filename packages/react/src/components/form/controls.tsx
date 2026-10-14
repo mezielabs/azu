@@ -57,7 +57,7 @@ export type ControlProps = {
   timezone: string
 }
 
-function FieldLabel({ field }: { field: FormFieldSchema }) {
+export function FieldLabel({ field }: { field: FormFieldSchema }) {
   return (
     <Label className="azu-label">
       {field.label}

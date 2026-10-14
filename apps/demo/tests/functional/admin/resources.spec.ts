@@ -43,7 +43,7 @@ test.group('Admin / resources (FR-03)', (group) => {
     response.assertInertiaPropsContains({ azu: { path: '/admin', navigation: [CATALOG, SALES] } })
   })
 
-  test('staff do not see resources their policy hides (OrderPolicy.viewList)', async ({
+  test('staff do not see resources their policies hide (CategoryPolicy, OrderPolicy)', async ({
     client,
   }) => {
     const staff = await createUser('staff')
@@ -51,7 +51,13 @@ test.group('Admin / resources (FR-03)', (group) => {
 
     response.assertStatus(200)
     response.assertInertiaPropsContains({
-      azu: { navigation: [CATALOG, { label: 'Sales', items: [COUPONS] }] },
+      azu: {
+        // CategoryPolicy and OrderPolicy are admin-only
+        navigation: [
+          { label: 'Catalog', items: [CATALOG.items[1]] },
+          { label: 'Sales', items: [COUPONS] },
+        ],
+      },
     })
   })
 

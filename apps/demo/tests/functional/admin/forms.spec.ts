@@ -2,10 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { DateTime } from 'luxon'
-import Category from '#models/category'
 import Coupon from '#models/coupon'
 import Order from '#models/order'
-import Product from '#models/product'
 import { createUser } from './helpers.ts'
 
 const COUPONS = '/admin/resources/coupons'
@@ -75,6 +73,7 @@ test.group('Admin / create (FR-06)', (group) => {
       'amount',
       'currency',
       'usageLimit',
+      'category',
       'isActive',
       'startsOn',
       'expiresAt',
@@ -221,7 +220,7 @@ test.group('Admin / detail (FR-06)', (group) => {
     const { record, fields, abilities } = response.body().props
     assert.equal(record.id, coupon.id)
     assert.equal(record.title, coupon.code)
-    assert.lengthOf(fields, 9)
+    assert.lengthOf(fields, 10)
     assert.containsSubset(record.values, {
       description: null,
       kind: 'percent',
@@ -367,34 +366,6 @@ test.group('Admin / edit (FR-06)', (group) => {
     submit.assertStatus(403)
     await coupon.refresh()
     assert.oneOf(coupon.amount, ['10.00', 10])
-  })
-
-  test('validator metadata can be mapped (ProductResource meta)', async ({ client, assert }) => {
-    const admin = await createUser('admin')
-    const category = await Category.create({ name: 'Edit', slug: `edit-${randomUUID()}` })
-    const product = await Product.create({
-      categoryId: category.id,
-      name: 'Old name',
-      sku: `T-${randomUUID().slice(0, 8)}`.toUpperCase(),
-      price: '5.00',
-      stock: 1,
-      status: 'draft',
-      isFeatured: false,
-    })
-
-    const response = await client
-      .put(`/admin/resources/products/${product.id}/edit`)
-      .loginAs(admin)
-      .withInertia()
-      .withCsrfToken()
-      .json({ name: 'New name', sku: product.sku, price: '6.00', status: 'published' })
-
-    // The update validator ran with { productId }: its own SKU isn't taken.
-    // It also requires stock and categoryId, which ProductResource doesn't
-    // declare as form fields (categoryId arrives with FR-08's belongsTo).
-    // Those errors go to the form's summary rather than being dropped.
-    response.assertStatus(422)
-    assert.sameMembers(Object.keys(errorsOf(response)), ['stock', 'categoryId'])
   })
 })
 

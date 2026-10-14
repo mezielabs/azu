@@ -8,6 +8,7 @@ export type ScannedRoutes = {
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
+    'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }
     'azu.resources.show': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'azu.resources.edit': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'azu.resources.update': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
@@ -23,6 +24,7 @@ export type ScannedRoutes = {
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
+    'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }
     'azu.resources.show': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'azu.resources.edit': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'home': { paramsTuple?: []; params?: {} }
@@ -34,6 +36,7 @@ export type ScannedRoutes = {
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
+    'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }
     'azu.resources.show': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'azu.resources.edit': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'home': { paramsTuple?: []; params?: {} }

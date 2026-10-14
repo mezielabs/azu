@@ -9,6 +9,7 @@ import {
   TextControl,
   type ControlProps,
 } from './controls.tsx'
+import { RelationControl } from './relation_control.tsx'
 
 /**
  * One form field, by kind, or the app's component when the field names
@@ -43,6 +44,8 @@ export function FormField(props: ControlProps & { values: Record<string, FieldVa
       return <DateControl {...props} />
     case 'datetime':
       return <DateTimeControl {...props} />
+    case 'belongsTo':
+      return <RelationControl {...props} />
     default:
       return <TextControl {...props} />
   }

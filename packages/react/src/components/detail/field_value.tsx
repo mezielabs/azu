@@ -1,5 +1,6 @@
 import { formatDateTime, formatDecimal, formatNumber } from '@mezielabs/azu/shared'
-import type { FieldSchema, FieldValue } from '@mezielabs/azu/types'
+import { Link } from '@inertiajs/react'
+import type { FieldSchema, FieldValue, RelationValue } from '@mezielabs/azu/types'
 
 const EMPTY = <span className="azu-cell-empty">—</span>
 
@@ -12,6 +13,11 @@ export function FieldValueView(props: { field: FieldSchema; value: FieldValue; t
   if (value === null || value === '') return EMPTY
 
   switch (field.kind) {
+    case 'belongsTo': {
+      const related = value as RelationValue
+      const label = related.title ?? String(related.id)
+      return related.href ? <Link href={related.href}>{label}</Link> : <>{label}</>
+    }
     case 'number':
       return <>{formatNumber(value as number, null)}</>
     case 'decimal':

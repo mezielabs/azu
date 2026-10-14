@@ -63,7 +63,10 @@ export function DataTable(props: {
   onSelectionChange?: (ids: (string | number)[]) => void
   /** The detail page URL for a row, or `undefined` when it has none */
   rowHref?: (row: ListRow) => string | undefined
+  /** Checkbox selection, for bulk actions. Defaults to on */
+  selectable?: boolean
 }) {
+  const selectable = props.selectable ?? true
   const { columns, rows, state, onSort, onSelectionChange } = props
   const visible = columns.filter((column) => !column.hiddenByDefault)
   const rowHeader = rowHeaderColumn(visible, props.titleColumn)
@@ -84,7 +87,7 @@ export function DataTable(props: {
       <Table
         aria-label={props.label}
         className="azu-table"
-        selectionMode="multiple"
+        selectionMode={selectable ? 'multiple' : 'none'}
         selectedKeys={selection}
         onSelectionChange={(next) => {
           setSelection(next)
@@ -96,9 +99,11 @@ export function DataTable(props: {
         }
       >
         <TableHeader>
-          <Column className="azu-th azu-th-selection">
-            <SelectionCheckbox />
-          </Column>
+          {selectable && (
+            <Column className="azu-th azu-th-selection">
+              <SelectionCheckbox />
+            </Column>
+          )}
           {visible.map((column) => (
             <Column
               key={column.name}
@@ -138,9 +143,11 @@ export function DataTable(props: {
                 )
               }
             >
-              <Cell className="azu-td azu-td-selection">
-                <SelectionCheckbox />
-              </Cell>
+              {selectable && (
+                <Cell className="azu-td azu-td-selection">
+                  <SelectionCheckbox />
+                </Cell>
+              )}
               {visible.map((column) => (
                 <Cell
                   key={column.name}

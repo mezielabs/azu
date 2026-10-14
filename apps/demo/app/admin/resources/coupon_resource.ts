@@ -1,6 +1,6 @@
 /**
- * Exercises every FR-06 form field kind, with the default `{ record }`
- * validator metadata.
+ * Exercises every FR-06 form field kind, an optional belongsTo (FR-08),
+ * and the default `{ record }` validator metadata.
  */
 import { column, defineResource, field } from '@mezielabs/azu'
 import Coupon from '#models/coupon'
@@ -13,12 +13,14 @@ export default defineResource(Coupon, {
   title: 'code',
   search: ['code'],
   policy: CouponPolicy,
+  query: (q) => q.preload('category'),
   validators: { create: createCouponValidator, update: updateCouponValidator },
 
   columns: [
     column.text('code').sortable(),
     column.badge('kind'),
     column.decimal('amount').sortable(),
+    column.belongsTo('category', 'name'),
     column.boolean('isActive'),
     column.date('startsOn').sortable(),
     column.datetime('expiresAt').sortable(),
@@ -40,6 +42,7 @@ export default defineResource(Coupon, {
       GBP: 'British pound',
     }),
     field.number('usageLimit').help('Leave empty for unlimited use'),
+    field.belongsTo('category').searchable('name').help('Leave empty to apply to every product'),
     field.boolean('isActive').default(true),
     field.date('startsOn'),
     field.datetime('expiresAt'),

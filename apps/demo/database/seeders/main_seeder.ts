@@ -115,6 +115,7 @@ export default class MainSeeder extends BaseSeeder {
         amount: '0.00',
         currency: 'NGN',
         usageLimit: 100,
+        categoryId: categories[0].id,
         isActive: false,
         startsOn: DateTime.fromISO('2026-09-01'),
         expiresAt: DateTime.utc(2026, 9, 30, 22, 59),

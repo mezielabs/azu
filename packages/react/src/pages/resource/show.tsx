@@ -3,6 +3,7 @@ import {
   FieldValueView,
   Head,
   Link,
+  RelationTableView,
   type ResourceShowPageProps,
 } from '@mezielabs/azu-react'
 
@@ -16,6 +17,7 @@ export default function ResourceShow({
   resource,
   fields,
   record,
+  relations,
   abilities,
 }: ResourceShowPageProps) {
   const path = `${azu.path}/resources/${resource.name}`
@@ -56,6 +58,9 @@ export default function ResourceShow({
           </div>
         ))}
       </dl>
+      {relations.map((table) => (
+        <RelationTableView key={table.name} table={table} path={azu.path} timezone={azu.timezone} />
+      ))}
     </AdminLayout>
   )
 }
