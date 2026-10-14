@@ -18,6 +18,8 @@ export { ResourceForm } from './components/form/resource_form.tsx'
 export { FormField } from './components/form/form_field.tsx'
 export { UnsavedChanges } from './components/form/unsaved_changes.tsx'
 export { FieldValueView } from './components/detail/field_value.tsx'
+export { RelationTableView } from './components/detail/relation_table.tsx'
+export { RelationControl } from './components/form/relation_control.tsx'
 export { showToast, ToastRegion } from './components/toast.tsx'
 
 /**
@@ -36,6 +38,10 @@ export type {
   FormErrors,
   FieldValue,
   RecordData,
+  RelationValue,
+  RelationOption,
+  RelationTable,
+  RelationOptionsResponse,
   ForbiddenPageProps,
   NotFoundPageProps,
   AzuSharedProps,

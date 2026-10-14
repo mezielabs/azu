@@ -1,15 +1,22 @@
 import { Link, router } from '@inertiajs/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
-import type { FieldValue, FormErrors, ResourceFormData } from '@mezielabs/azu/types'
+import type { FieldValue, FormErrors, RelationValue, ResourceFormData } from '@mezielabs/azu/types'
 import { showToast } from '../toast.tsx'
 import { FormField } from './form_field.tsx'
 import { UnsavedChanges } from './unsaved_changes.tsx'
 
 type Values = Record<string, FieldValue>
 
+/**
+ * Relations compare by id: picking the same record again isn't a change.
+ */
+function comparable(value: FieldValue | undefined) {
+  return value !== null && typeof value === 'object' ? value.id : value
+}
+
 function sameValues(a: Values, b: Values) {
-  return Object.keys(a).every((name) => a[name] === b[name])
+  return Object.keys(a).every((name) => comparable(a[name]) === comparable(b[name]))
 }
 
 /**
@@ -43,7 +50,7 @@ export function ResourceForm(props: {
   const dirty = !sameValues(values, initial)
   const other = unmatchedErrors(
     errors,
-    form.fields.map((field) => field.name)
+    form.fields.map((field) => field.input)
   )
 
   /**
@@ -59,10 +66,18 @@ export function ResourceForm(props: {
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    // Datetimes go as the exact instant the picker resolved; the server
-    // hands them to the validator in the format vine.date() expects
+    // Each field submits under its input: a belongsTo field sends its
+    // foreign key. Datetimes go as the exact instant the picker resolved;
+    // the server hands them to the validator in the format vine.date()
+    // expects.
     const data = Object.fromEntries(
-      form.fields.map((field) => [field.name, values[field.name] ?? null])
+      form.fields.map((field) => {
+        const value = values[field.name] ?? null
+        return [
+          field.input,
+          field.kind === 'belongsTo' ? ((value as RelationValue | null)?.id ?? null) : value,
+        ]
+      })
     )
     router[props.method](props.action, data, {
       preserveState: true,
@@ -92,7 +107,7 @@ export function ResourceForm(props: {
             setValues((current) => ({ ...current, [field.name]: value }))
             setEdited((current) => new Set(current).add(field.name))
           }}
-          errors={edited.has(field.name) ? [] : fieldErrors(errors, field.name)}
+          errors={edited.has(field.name) ? [] : fieldErrors(errors, field.input)}
           timezone={timezone}
           values={values}
         />
