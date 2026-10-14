@@ -202,6 +202,8 @@ Create and update forms submit through the validators named on the resource. Azu
 
 A resource with no validator for an operation can't save, by design: Azu never writes input that hasn't been through one of your validators.
 
+A `belongsTo` field submits its foreign key (`category` → `categoryId`), so your validator checks `categoryId`.
+
 Validation errors show up under the field that caused them, including nested and array fields like `tags.0`.
 
 Note: validators written for your API don't always fit a form. If update needs different rules from create (an optional password, say), give the resource a separate `update` validator.
