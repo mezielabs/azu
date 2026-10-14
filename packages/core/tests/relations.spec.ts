@@ -4,7 +4,7 @@ import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import { Azu } from '../src/azu.ts'
 import { defineConfig } from '../src/define_config.ts'
 import { formFields } from '../src/forms/form_fields.ts'
-import { hasManyTables } from '../src/records/relations.ts'
+import { canListRelated, hasManyTables } from '../src/records/relations.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 
@@ -127,6 +127,36 @@ test.group('Relations', () => {
         ['category', 'categoryId'],
         ['name', 'name'],
       ]
+    )
+  })
+
+  test('listing the related resource fails closed', async ({ assert }) => {
+    class NoViewList {
+      view() {}
+    }
+    const category = untouchable('Category')
+    const parent = parentModel({ category })
+    const categoryField = defineResource(parent, {
+      policy: Policy,
+      fields: [field.belongsTo('category')],
+    } as never).toSchema().fields[0]
+    const { ctx } = request(['viewList'])
+    const config = defineConfig()
+
+    // No resource for Category
+    assert.isFalse(await canListRelated(ctx, { azu: new Azu(), config }, parent, categoryField))
+
+    // A resource whose policy has no viewList
+    const withoutMethod = new Azu().register(
+      defineResource(category, { policy: NoViewList } as never)
+    )
+    assert.isFalse(await canListRelated(ctx, { azu: withoutMethod, config }, parent, categoryField))
+
+    // A resource whose viewList allows it
+    const allowed = new Azu().register(defineResource(category, { policy: Policy } as never))
+    assert.isTrue(await canListRelated(ctx, { azu: allowed, config }, parent, categoryField))
+    assert.isFalse(
+      await canListRelated(request([]).ctx, { azu: allowed, config }, parent, categoryField)
     )
   })
 })

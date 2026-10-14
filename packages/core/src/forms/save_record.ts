@@ -53,6 +53,25 @@ function toAttributes(model: LucidModel, output: Record<string, unknown>, target
 }
 
 /**
+ * A record's current value for a field, as the form would submit it:
+ * dates as `YYYY-MM-DD`, datetimes as `vine.date()` reads them, and
+ * decimals as strings (SQLite returns numbers).
+ */
+function currentInput(
+  record: LucidRow,
+  field: FormFieldSchema,
+  timezones: { admin: string; process: string }
+): unknown {
+  const value = (record as unknown as Record<string, unknown>)[field.input]
+  if (value === null || value === undefined) return value
+  const date = value as { toISO?: () => string | null; toISODate?: () => string | null }
+  if (typeof date.toISO === 'function') {
+    return field.kind === 'date' ? date.toISODate!() : toValidatorDateTime(date.toISO(), timezones)
+  }
+  return field.kind === 'decimal' ? String(value) : value
+}
+
+/**
  * Why a save can't happen without a validator, and the two ways to fix
  * it: name an existing validator on the resource, or generate one with
  * AdonisJS's `make:validator` (names as its `--resource` stub writes
@@ -81,7 +100,9 @@ export function missingValidatorMessage(resource: Resource<any, any>, mode: Form
  * Validates a create or update request and writes it (FR-06, FR-10).
  *
  * 1. The payload is limited to the fields the form showed this user,
- *    minus read-only ones, before validation.
+ *    minus read-only ones, before validation. On edit, read-only fields
+ *    get the record's current values, so a validator that requires them
+ *    still passes.
  * 2. Datetimes become what `vine.date()` parses by default (see
  *    `toValidatorDateTime`). Then the payload goes through the
  *    resource's validator, with `validators.meta` (default `{ record }`)
@@ -118,6 +139,15 @@ export async function saveRecord(
   for (const field of writable) {
     if (field.kind === 'datetime' && Object.hasOwn(data, field.input)) {
       data[field.input] = toValidatorDateTime(data[field.input], timezones)
+    }
+  }
+
+  // Read-only fields aren't written, but the validator still sees the
+  // whole record: on edit they carry its current values, from the
+  // record, never the request
+  if (record) {
+    for (const field of fields) {
+      if (field.readOnly) data[field.input] = currentInput(record, field, timezones)
     }
   }
   const meta = resource.options.validators?.meta?.({ record, ctx }) ?? { record }

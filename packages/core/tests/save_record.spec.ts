@@ -170,6 +170,33 @@ test.group('Saving a record', () => {
     assert.deepEqual(update.calls[0].meta, { productId: 7 })
   })
 
+  test("on edit, read-only fields carry the record's values, never the request's", async ({
+    assert,
+  }) => {
+    const { model } = fakeModel()
+    const update = fakeValidator()
+    const record = new (model as any)()
+    record.categoryId = 4
+    const resource = defineResource(model, {
+      policy: ProductPolicy,
+      validators: { update },
+      fields: [field.text('name'), field.text('categoryId').readOnly()],
+    } as never)
+    const ctx = request({ name: 'Pan', categoryId: 9 })
+
+    const result = await saveRecord(
+      ctx,
+      resource,
+      'edit',
+      await formFields(ctx, resource, 'edit', record),
+      { record }
+    )
+
+    assert.deepEqual(update.calls[0].data, { name: 'Pan', categoryId: 4 })
+    // And it isn't written
+    assert.deepEqual((result.record as any).attributes, { name: 'Pan' })
+  })
+
   test('update falls back to the create validator', async ({ assert }) => {
     const { model } = fakeModel()
     const create = fakeValidator()

@@ -12,7 +12,12 @@ import {
 import { saveRecord } from '../forms/save_record.ts'
 import { listRecords } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
-import { hasManyTables, relationOptions, relationValues } from '../records/relations.ts'
+import {
+  canListRelated,
+  hasManyTables,
+  relationOptions,
+  relationValues,
+} from '../records/relations.ts'
 import { renderPage } from '../render.ts'
 import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
@@ -215,6 +220,8 @@ export class ResourcesController {
    * Options for a `belongsTo` field's select (FR-08), as JSON. Gated
    * like the form it serves: `create`, or `update` on the record named
    * by `?record=`, and the field must be on that form for this user.
+   * The user must also pass the related resource's `viewList` (fails
+   * closed), and a read-only field has no options.
    */
   async options(ctx: HttpContext): Promise<RelationOptionsResponse | unknown> {
     const resource = this.context.azu.resources.get(ctx.params.resource)
@@ -233,17 +240,20 @@ export class ResourcesController {
     }
 
     const fields = await formFields(ctx, resource, record ? 'edit' : 'create', record)
-    const field = fields.find(
-      (item) => item.name === ctx.params.field && item.kind === 'belongsTo' && !item.readOnly
-    )
+    const field = fields.find((item) => item.name === ctx.params.field && item.kind === 'belongsTo')
     if (!field) return ctx.response.status(404).send({ error: 'Not found' })
+    if (field.readOnly || !(await canListRelated(ctx, this.context, resource.model, field))) {
+      return ctx.response.status(403).send({ error: 'Forbidden' })
+    }
 
     const term = typeof search === 'string' ? search.trim().slice(0, 100) : ''
     return { options: await relationOptions(this.context, resource.model, field, term) }
   }
 
   /**
-   * The form's fields, with each `belongsTo` field's options URL.
+   * The form's fields, with each `belongsTo` field's options URL. A
+   * `belongsTo` field whose related resource the user can't list is
+   * read-only: it shows the current record, with no options.
    */
   async #formFields(
     ctx: HttpContext,
@@ -253,14 +263,18 @@ export class ResourcesController {
   ): Promise<FormFieldSchema[]> {
     const fields = await formFields(ctx, resource, mode, record)
     const query = record ? `?record=${encodeURIComponent(String(record.$primaryKeyValue))}` : ''
-    return fields.map((field) =>
-      field.kind === 'belongsTo'
-        ? {
-            ...field,
-            optionsUrl: `${resourcePath(this.context, resource, 'fields', field.name, 'options')}${query}`,
-          }
-        : field
-    )
+    const result: FormFieldSchema[] = []
+    for (const field of fields) {
+      if (field.kind !== 'belongsTo') {
+        result.push(field)
+      } else if (!(await canListRelated(ctx, this.context, resource.model, field))) {
+        result.push({ ...field, readOnly: true, optionsUrl: null })
+      } else {
+        const url = resourcePath(this.context, resource, 'fields', field.name, 'options')
+        result.push({ ...field, optionsUrl: field.readOnly ? null : `${url}${query}` })
+      }
+    }
+    return result
   }
 
   #renderCreate(

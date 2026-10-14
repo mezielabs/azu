@@ -104,6 +104,24 @@ export async function belongsToValue(
 }
 
 /**
+ * Whether the user may list what a `belongsTo` field points at: the
+ * related resource's `viewList`. Fails closed: no resource for the
+ * related model, or no `viewList` on its policy, means no. Without it,
+ * the field is read-only and its options endpoint answers 403.
+ */
+export async function canListRelated(
+  ctx: HttpContext,
+  context: RelationsContext,
+  model: LucidModel,
+  field: FieldSchema
+): Promise<boolean> {
+  const keys = relationKeys(model, field.name)
+  if (!keys || keys.type !== 'belongsTo') return false
+  const related = context.azu.resources.forModel(keys.related)
+  return related ? allows(ctx, related, 'viewList') : false
+}
+
+/**
  * Every `belongsTo` field's value for a record, keyed by field name.
  */
 export async function relationValues(

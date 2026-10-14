@@ -107,17 +107,78 @@ test.group('Admin / belongsTo fields (FR-08)', (group) => {
     client,
     assert,
   }) => {
-    // Staff may update products but not create them (ProductPolicy)
+    const admin = await createUser('admin')
+    const { categories } = await createCategories('Kitchen')
+    const product = await createProduct(categories[0])
+
+    const forCreate = await client.get(OPTIONS).loginAs(admin)
+    forCreate.assertStatus(200)
+    const forEdit = await client.get(`${OPTIONS}?record=${product.id}`).loginAs(admin)
+    forEdit.assertStatus(200)
+    assert.isArray(forEdit.body().options)
+  })
+
+  test('options need the related viewList: staff may edit products, not list categories', async ({
+    client,
+  }) => {
     const staff = await createUser('staff')
     const { categories } = await createCategories('Kitchen')
     const product = await createProduct(categories[0])
 
+    // ProductPolicy.update allows staff; CategoryPolicy.viewList doesn't
+    const forEdit = await client.get(`${OPTIONS}?record=${product.id}`).loginAs(staff)
+    forEdit.assertStatus(403)
+    // ProductPolicy.create doesn't allow staff either
     const forCreate = await client.get(OPTIONS).loginAs(staff)
     forCreate.assertStatus(403)
+  })
 
-    const forEdit = await client.get(`${OPTIONS}?record=${product.id}`).loginAs(staff)
-    forEdit.assertStatus(200)
-    assert.isArray(forEdit.body().options)
+  test('without the related viewList, the field is read-only on the form', async ({
+    client,
+    assert,
+  }) => {
+    const staff = await createUser('staff')
+    const { prefix, categories } = await createCategories('Kitchen')
+    const product = await createProduct(categories[0])
+
+    const response = await client.get(`${PRODUCTS}/${product.id}/edit`).loginAs(staff).withInertia()
+
+    const { form } = response.body().props
+    const category = form.fields.find((field: any) => field.name === 'category')
+    assert.containsSubset(category, { readOnly: true, optionsUrl: null, input: 'categoryId' })
+    // It still shows the current category, without a link
+    assert.deepEqual(form.values.category, {
+      id: categories[0].id,
+      title: `${prefix} Kitchen`,
+      href: null,
+    })
+  })
+
+  test('staff save a product, and its category stays what it was', async ({ client, assert }) => {
+    const staff = await createUser('staff')
+    const { categories } = await createCategories('Kitchen', 'Books')
+    const product = await createProduct(categories[0])
+
+    // A crafted request tries to move it anyway
+    const response = await client
+      .put(`${PRODUCTS}/${product.id}/edit`)
+      .loginAs(staff)
+      .withInertia()
+      .withCsrfToken()
+      .json({
+        name: 'Clay pot, renamed',
+        sku: product.sku,
+        price: '5.00',
+        categoryId: categories[1].id,
+        status: 'draft',
+      })
+      .redirects(0)
+
+    // The update validator requires categoryId; it got the current one
+    response.assertStatus(303)
+    await product.refresh()
+    assert.equal(product.name, 'Clay pot, renamed')
+    assert.equal(product.categoryId, categories[0].id)
   })
 
   test('options need a belongsTo field on that form', async ({ client }) => {
@@ -207,15 +268,14 @@ test.group('Admin / belongsTo fields (FR-08)', (group) => {
     client,
     assert,
   }) => {
-    // Staff may update products (ProductPolicy.update)
-    const staff = await createUser('staff')
+    const admin = await createUser('admin')
     const { categories } = await createCategories('Kitchen', 'Books')
     const product = await createProduct(categories[0], { stock: 7 })
 
     // Keeping its own SKU passes the unique rule, which skips meta.productId
     const response = await client
       .put(`${PRODUCTS}/${product.id}/edit`)
-      .loginAs(staff)
+      .loginAs(admin)
       .withInertia()
       .withCsrfToken()
       .json({
@@ -235,19 +295,25 @@ test.group('Admin / belongsTo fields (FR-08)', (group) => {
     assert.equal(product.stock, 7)
   })
 
-  test('the detail page links the category', async ({ client, assert }) => {
-    const staff = await createUser('staff')
+  test('the detail page links the category for users who may view it', async ({
+    client,
+    assert,
+  }) => {
+    const [admin, staff] = [await createUser('admin'), await createUser('staff')]
     const { categories } = await createCategories('Kitchen')
     const product = await createProduct(categories[0])
 
-    const response = await client.get(`${PRODUCTS}/${product.id}`).loginAs(staff).withInertia()
-
-    const { fields, record } = response.body().props
+    const asAdmin = await client.get(`${PRODUCTS}/${product.id}`).loginAs(admin).withInertia()
+    const { fields, record } = asAdmin.body().props
     assert.include(
       fields.map((field: any) => field.name),
       'category'
     )
     assert.equal(record.values.category.href, `/admin/resources/categories/${categories[0].id}`)
+
+    // CategoryPolicy.view is admin-only: the title shows, unlinked
+    const asStaff = await client.get(`${PRODUCTS}/${product.id}`).loginAs(staff).withInertia()
+    assert.isNull(asStaff.body().props.record.values.category.href)
   })
 })
 
@@ -319,7 +385,7 @@ test.group('Admin / hasMany tables (FR-08)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test("a category's detail page pages through its products", async ({ client, assert }) => {
-    const staff = await createUser('staff')
+    const admin = await createUser('admin')
     const { categories } = await createCategories('Kitchen', 'Books')
     for (let i = 1; i <= 12; i++) {
       await createProduct(categories[0], { name: `Pot ${String(i).padStart(2, '0')}` })
@@ -328,7 +394,7 @@ test.group('Admin / hasMany tables (FR-08)', (group) => {
 
     const first = await client
       .get(`/admin/resources/categories/${categories[0].id}`)
-      .loginAs(staff)
+      .loginAs(admin)
       .withInertia()
     first.assertStatus(200)
     const [table] = first.body().props.relations
@@ -346,7 +412,7 @@ test.group('Admin / hasMany tables (FR-08)', (group) => {
 
     const second = await client
       .get(`/admin/resources/categories/${categories[0].id}?productsPage=2`)
-      .loginAs(staff)
+      .loginAs(admin)
       .withInertia()
     const [page2] = second.body().props.relations
     assert.lengthOf(page2.rows, 2)
@@ -357,14 +423,14 @@ test.group('Admin / hasMany tables (FR-08)', (group) => {
   })
 
   test('the table preloads its belongsTo columns (no N+1)', async ({ client, assert }) => {
-    const staff = await createUser('staff')
+    const admin = await createUser('admin')
     const { categories } = await createCategories('Few', 'Many')
     await createProduct(categories[0])
     for (let i = 0; i < 10; i++) await createProduct(categories[1])
 
     const visit = (category: Category) =>
       countQueries(() =>
-        client.get(`/admin/resources/categories/${category.id}`).loginAs(staff).withInertia()
+        client.get(`/admin/resources/categories/${category.id}`).loginAs(admin).withInertia()
       )
 
     assert.equal(await visit(categories[1]), await visit(categories[0]))

@@ -47,6 +47,8 @@ async function fetchOptions(url: string, search: string, signal: AbortSignal) {
  * - The edit form seeds the current value (id and title), so it shows
  *   without a search. While the input shows the selection, the list
  *   loads unfiltered.
+ * - Read-only (set on the field, or because the user can't list the
+ *   related resource): the current value, with no options.
  */
 export function RelationControl(props: ControlProps) {
   const { field, errors } = props
@@ -116,9 +118,11 @@ export function RelationControl(props: ControlProps) {
             ×
           </Button>
         )}
-        <Button className="azu-combobox-button" aria-label={`Show ${field.label} options`}>
-          <span aria-hidden>▾</span>
-        </Button>
+        {!field.readOnly && (
+          <Button className="azu-combobox-button" aria-label={`Show ${field.label} options`}>
+            <span aria-hidden>▾</span>
+          </Button>
+        )}
       </div>
       {field.help && (
         <Text slot="description" className="azu-description">
