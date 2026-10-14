@@ -152,15 +152,17 @@ Rules:
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
 | `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
-| `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
-| `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
+| `richText` | Tiptap editor (optional peer, lazy; a plain HTML textarea without it). Sanitised on the server with `sanitize-html` to Tiptap StarterKit's markup, before validation and again before display | Hidden by default | HTML in text column |
+| `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
 | `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
 | `manyToMany` | Searchable picker | Count | Lucid relation |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
 
-Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), and `belongsTo` (FR-08). Detail pages show `hasMany` tables (FR-08). Until FR-07 and FR-09 land, `richText`, `file`, `image` and `manyToMany` fields are left out of forms, detail pages and writes.
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), `belongsTo` (FR-08), and `richText`, `file` and `image` (FR-07). Detail pages show `hasMany` tables (FR-08). Until FR-09 lands, `manyToMany` fields are left out of forms, detail pages and writes.
+
+Uploads (FR-07): an upload is checked first. If the save fails validation, nothing is stored. Otherwise it's stored on the disk under `<resource>/<field>/<uuid>.<ext>`, and the validator sees that key. Leaving a file field out of the request keeps the stored file; sending it empty removes it. A replaced or removed file is deleted from the disk after the save commits. URLs come from the disk's `getUrl()`, so private disks (signed URLs) aren't supported yet. Drive is an optional peer: a resource with file or image fields fails at boot without it.
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 

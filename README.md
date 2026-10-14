@@ -149,8 +149,8 @@ azu.register(productResource)
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
 | `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |
-| `richText` | Rich text editor | Output is sanitised |
-| `file`, `image` | Drag-and-drop upload | Stored with Drive |
+| `richText` | Rich text editor | Sanitised on the server before your validator sees it, and again before it's shown. The editor is Tiptap, loaded only when a form needs it; install `@tiptap/react`, `@tiptap/pm` and `@tiptap/starter-kit`, or you get a plain HTML textarea |
+| `file`, `image` | Drag-and-drop upload | Stored with Drive on `disk()` or `defaultDisk`. Size (`maxSize()`, default 5mb for images, 10mb for files) and type (`accept()`) are checked on the server from the file's contents. SVG and HTML are refused unless you `accept()` them. Your validator sees the stored file's key |
 | `belongsTo` | Searchable select | Loads options as you type |
 | `hasMany` | Table on the detail page | |
 | `manyToMany` | Searchable picker | |
