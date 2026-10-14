@@ -15,7 +15,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-01 | Install with `node ace add @mezielabs/azu` | On a fresh AdonisJS 7 Inertia + React starter, `/admin` loads with no manual file edits | P0 |
 | FR-02 | Access gate on the app's existing auth guard | Guests redirect to the app's login; signed-in users failing the `accessAdmin` ability get a 403 | P0 |
 | FR-03 | Resource classes in `app/admin/resources` | A resource declaring a model, columns, and fields appears in navigation with no registration step | P0 |
-| FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles and renders list and forms with zero edits | P0 |
+| FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles, renders list and forms, and saves through the generated validator, with zero edits | P0 |
 | FR-05 | List screen: pagination, sorting, search | Server-side; page sizes 10/25/50/100; sort, search, and page survive reload via the URL | P0 |
 | FR-06 | Create, edit, and detail screens | Save redirects to detail with a success toast; unsaved-changes warning on navigate away | P0 |
 | FR-07 | Core field types | text, textarea, number, decimal, boolean, select, date, datetime, richText, file, image (via Drive) | P0 |
@@ -205,7 +205,7 @@ Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /a
 | Command | Behaviour |
 | --- | --- |
 | `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
-| `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts`. Flags: `--validator`, `--policy`, `--readonly` |
+| `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
 | `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
 | `node ace admin:doctor` | Checks config, missing policy methods, validators not covering declared fields, drifted published files |
@@ -218,6 +218,23 @@ Generator mapping:
 - foreign key with a `belongsTo` relation → `belongsTo`, titled by the related model's first string column
 - skip `password`, `rememberMeToken`, and `serializeAs: null` columns
 - search defaults to the first two string columns; `title` defaults to `name`, `title`, or `email`
+
+Generated validator (unless `--no-validator`). Azu's rule is that a resource with no validator for an operation can't save, so the generator writes one rather than leaving a resource that can't save:
+
+- **File and names:** `app/validators/<model>.ts` (snake_case, e.g. `order_item.ts`), exporting `create<Model>Validator` and `update<Model>Validator`. These are the names AdonisJS's `make:validator --resource` uses. The resource imports both and sets `validators: { create, update }`.
+- **Which keys:** the same columns the resource gets as form fields. That leaves out the primary key, auto-managed timestamps (`autoCreate`/`autoUpdate`), and `password`, `rememberMeToken` and `serializeAs: null` columns. A `belongsTo` relation's key is its foreign key (`categoryId`).
+- **Rules, from the column's database type:**
+  - `varchar(n)` → `vine.string().trim().maxLength(n)`; text → `vine.string().trim()`
+  - integer → `vine.number().withoutDecimals()`; float → `vine.number()`
+  - `decimal(p, s)` → `vine.string().trim().regex(…)` allowing up to `p - s` integer digits and `s` decimal places, so the value stays an exact string, like `field.decimal()`
+  - boolean → `vine.boolean()`; date, datetime and timestamp → `vine.date()`, which accepts what Azu's forms send (§5)
+  - enum → `vine.enum([...])`
+- **Optional and nullable:** a nullable column gets `.nullable().optional()`, and a column with a default gets `.optional()`. Everything else is required.
+- **Database rules:**
+  - A unique index adds `.unique({ table, column })`. The update validator's version skips the record being edited through `field.meta.record`, Azu's default metadata (§4), so no `validators.meta` is needed.
+  - A foreign key adds `.exists({ table, column })` on the related key.
+- **Existing files:** never overwritten. If `app/validators/<model>.ts` already exists, the generator warns and leaves `validators` out of the resource, so the app wires its own validators. Until it does, saving fails with the missing-validator error.
+- **The validator is the app's code from then on.** It's a starting point to edit, like the resource, and Azu never regenerates it.
 
 ## 8. Frontend
 

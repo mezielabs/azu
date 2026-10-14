@@ -69,7 +69,7 @@ Generate a resource from an existing model:
 node ace make:admin-resource Product
 ```
 
-Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`. Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
+Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`, plus a create and update validator in `app/validators/product.ts` derived from the model's columns (pass `--no-validator` to skip it). Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
 
 The generated resource is a starting point. Open it and adjust what's wrong.
 
@@ -303,7 +303,7 @@ Dark mode follows the user's system setting, with a toggle in the panel.
 | Command | What it does |
 | --- | --- |
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
-| `node ace make:admin-resource <Model>` | Generates a resource from a model. Add `--policy` or `--validator` to create those too |
+| `node ace make:admin-resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy too |
 | `node ace make:admin-action <Name>` | Creates a reusable action class |
 | `node ace admin:publish [page]` | Copies a page or component into your app for editing |
 | `node ace admin:doctor` | Checks config, missing policy methods, and drifted published files |
