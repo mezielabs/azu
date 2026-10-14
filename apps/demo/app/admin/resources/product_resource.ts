@@ -1,7 +1,9 @@
 /**
  * The README's Product resource, verbatim apart from the actions (from
- * the README's "Actions" section) and validator metadata (from its
- * "Validation" section). Loaded by convention from app/admin/resources.
+ * the README's "Actions" section), validator metadata (from its
+ * "Validation" section), and the thumbnail's disk: the README stores it
+ * on S3, the demo on Drive's default local disk so it runs offline.
+ * Loaded by convention from app/admin/resources.
  */
 import { defineResource, column, field, filter, action } from '@mezielabs/azu'
 import Product from '#models/product'
@@ -38,7 +40,7 @@ export default defineResource(Product, {
     field.belongsTo('category').searchable('name'),
     field.select('status').options({ draft: 'Draft', published: 'Published' }),
     field.richText('description'),
-    field.image('thumbnail').disk('s3').maxSize('2mb'),
+    field.image('thumbnail').maxSize('2mb'),
   ],
 
   filters: [

@@ -2,7 +2,10 @@ import vine from '@vinejs/vine'
 
 const fields = {
   name: vine.string().trim().minLength(2).maxLength(160),
-  description: vine.string().trim().nullable().optional(),
+  /** Sanitised HTML from the rich text field */
+  description: vine.string().trim().maxLength(20000).nullable().optional(),
+  /** A Drive key: Azu checks and stores the upload, then validates its key */
+  thumbnail: vine.string().maxLength(255).nullable().optional(),
   /**
    * A decimal column: kept as an exact string end to end, so validate
    * the format instead of parsing it into a float.
