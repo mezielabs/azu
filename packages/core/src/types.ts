@@ -64,6 +64,15 @@ export type AzuConfigInput = {
    * @default 25
    */
   perPage?: PageSize
+
+  /**
+   * The timezone admins enter and read dates in, as an IANA name such
+   * as `'Africa/Lagos'`. Set it when it differs from the server
+   * process's timezone (`TZ`), for example with the server in UTC.
+   *
+   * @default the server process's timezone
+   */
+  timezone?: string
 }
 
 /**
@@ -84,7 +93,7 @@ export type AzuSharedProps = {
     path: string
     /** Resources the user may list, grouped */
     navigation: NavigationGroup[]
-    /** The app's timezone, for formatting dates */
+    /** The admin's timezone (`timezone` in config/admin.ts), for dates */
     timezone: string
   }
 }

@@ -4,13 +4,6 @@ import type { Azu } from './azu.ts'
 import { buildNavigation } from './resources/navigation.ts'
 
 /**
- * The server's timezone: the app's, since AdonisJS apps set `TZ`.
- */
-export function appTimezone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone
-}
-
-/**
  * Renders an Azu page with the shared `azu` props: the admin path and
  * this user's navigation. Pass `navigation: false` where the user isn't
  * allowed in at all.
@@ -29,7 +22,7 @@ export async function renderPage<Page extends keyof AzuPages>(
      */
     azu: async () => ({
       path: context.config.path,
-      timezone: appTimezone(),
+      timezone: context.config.timezone,
       navigation:
         context.navigation === false
           ? []

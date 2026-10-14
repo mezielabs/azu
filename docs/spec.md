@@ -151,7 +151,7 @@ Rules:
 | `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
-| `date`, `datetime` | Date picker in the app's timezone. Submits `YYYY-MM-DD`, or `YYYY-MM-DD HH:mm:ss` as wall-clock time in the app's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
+| `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
 | `belongsTo` | Searchable async select | Related title, linked | Foreign key |
@@ -263,6 +263,8 @@ export default defineConfig({
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
+  // IANA name; defaults to the server process's timezone (TZ)
+  timezone: 'Africa/Lagos',
   resources: { autoload: 'app/admin/resources' },
   // Optional; must match azu({ entry }) in vite.config.ts
   entry: 'inertia/admin/app.tsx',

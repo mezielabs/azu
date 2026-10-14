@@ -148,7 +148,7 @@ azu.register(productResource)
 | `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step` |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
-| `date`, `datetime` | Date picker | Uses your app's timezone |
+| `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |
 | `richText` | Rich text editor | Output is sanitised |
 | `file`, `image` | Drag-and-drop upload | Stored with Drive |
 | `belongsTo` | Searchable select | Loads options as you type |
@@ -289,6 +289,8 @@ export default defineConfig({
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
+  // Dates are entered and shown in this timezone. Defaults to the server's (TZ)
+  timezone: 'Africa/Lagos',
 })
 ```
 

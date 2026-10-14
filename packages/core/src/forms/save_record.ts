@@ -3,6 +3,8 @@ import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import type { Resource } from '../resources/define_resource.ts'
 import type { FormErrors, FormFieldSchema } from '../schema.ts'
+import { processTimezone } from '../define_config.ts'
+import { toValidatorDateTime } from './datetime_input.ts'
 import { validatorFor, type FormMode } from './form_fields.ts'
 
 type ValidationMessage = { field: string; message: string }
@@ -54,8 +56,10 @@ function toAttributes(model: LucidModel, output: Record<string, unknown>, target
  *
  * 1. The payload is limited to the fields the form showed this user,
  *    minus read-only ones, before validation.
- * 2. It goes through the resource's validator, with `validators.meta`
- *    (default `{ record }`) as VineJS metadata.
+ * 2. Datetimes become what `vine.date()` parses by default (see
+ *    `toValidatorDateTime`). Then the payload goes through the
+ *    resource's validator, with `validators.meta` (default `{ record }`)
+ *    as VineJS metadata.
  * 3. Only the validator's output is written, again limited to those
  *    fields, never the raw payload. Hooks and the save share a
  *    transaction.
@@ -67,7 +71,12 @@ export async function saveRecord(
   resource: Resource<any, any>,
   mode: FormMode,
   fields: FormFieldSchema[],
-  record?: LucidRow
+  options: {
+    /** The record being edited; none on create */
+    record?: LucidRow
+    /** The admin's timezone, which wall-clock datetimes are read in */
+    timezone?: string
+  } = {}
 ): Promise<{ record: LucidRow; errors?: never } | { errors: FormErrors; record?: never }> {
   const validator = validatorFor(resource, mode)
   if (!validator) {
@@ -77,8 +86,17 @@ export async function saveRecord(
     )
   }
 
-  const writable = fields.filter((field) => !field.readOnly).map((field) => field.name)
-  const data = pick(ctx.request.body(), writable)
+  const { record } = options
+  const writable = fields.filter((field) => !field.readOnly)
+  const names = writable.map((field) => field.name)
+  const data = pick(ctx.request.body(), names)
+
+  const timezones = { admin: options.timezone ?? processTimezone(), process: processTimezone() }
+  for (const field of writable) {
+    if (field.kind === 'datetime' && Object.hasOwn(data, field.name)) {
+      data[field.name] = toValidatorDateTime(data[field.name], timezones)
+    }
+  }
   const meta = resource.options.validators?.meta?.({ record, ctx }) ?? { record }
 
   let output: Record<string, unknown>
@@ -94,7 +112,7 @@ export async function saveRecord(
   const target = record ?? new model()
   await model.transaction(async (trx) => {
     target.useTransaction(trx)
-    target.merge(toAttributes(model, pick(output, writable), target))
+    target.merge(toAttributes(model, pick(output, names), target))
     await resource.options.beforeSave?.(target, ctx)
     await target.save()
     await resource.options.afterSave?.(target, ctx)

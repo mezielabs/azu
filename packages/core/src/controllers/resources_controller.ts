@@ -132,7 +132,9 @@ export class ResourcesController {
     const { resource } = auth
 
     const fields = await formFields(ctx, resource, 'create')
-    const result = await saveRecord(ctx, resource, 'create', fields)
+    const result = await saveRecord(ctx, resource, 'create', fields, {
+      timezone: this.context.config.timezone,
+    })
     if (result.errors) {
       ctx.response.status(422)
       return renderPage(ctx, this.context, 'azu/resource/create', {
@@ -184,7 +186,10 @@ export class ResourcesController {
     const { resource, record } = auth
 
     const fields = await formFields(ctx, resource, 'edit', record)
-    const result = await saveRecord(ctx, resource, 'edit', fields, record)
+    const result = await saveRecord(ctx, resource, 'edit', fields, {
+      record,
+      timezone: this.context.config.timezone,
+    })
     if (result.errors) {
       ctx.response.status(422)
       return this.#renderEdit(ctx, resource, record!, fields, result.errors)

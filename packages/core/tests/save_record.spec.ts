@@ -162,7 +162,9 @@ test.group('Saving a record', () => {
     record.id = 7
     const ctx = request({ name: 'Pan' })
 
-    await saveRecord(ctx, resource, 'edit', await formFields(ctx, resource, 'edit', record), record)
+    await saveRecord(ctx, resource, 'edit', await formFields(ctx, resource, 'edit', record), {
+      record,
+    })
 
     assert.lengthOf(create.calls, 0)
     assert.deepEqual(update.calls[0].meta, { productId: 7 })
@@ -179,7 +181,9 @@ test.group('Saving a record', () => {
     const ctx = request({ name: 'Pan' })
     const record = new (model as any)()
 
-    await saveRecord(ctx, resource, 'edit', await formFields(ctx, resource, 'edit', record), record)
+    await saveRecord(ctx, resource, 'edit', await formFields(ctx, resource, 'edit', record), {
+      record,
+    })
 
     assert.lengthOf(create.calls, 1)
   })

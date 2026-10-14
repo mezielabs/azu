@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
 import type { FieldValue, FormErrors, ResourceFormData } from '@mezielabs/azu/types'
 import { showToast } from '../toast.tsx'
-import { toWireDateTime } from './date_values.ts'
 import { FormField } from './form_field.tsx'
 import { UnsavedChanges } from './unsaved_changes.tsx'
 
@@ -60,14 +59,10 @@ export function ResourceForm(props: {
 
   function submit(event: FormEvent) {
     event.preventDefault()
+    // Datetimes go as the exact instant the picker resolved; the server
+    // hands them to the validator in the format vine.date() expects
     const data = Object.fromEntries(
-      form.fields.map((field) => {
-        const value = values[field.name] ?? null
-        return [
-          field.name,
-          field.kind === 'datetime' ? toWireDateTime(value as string | null, timezone) : value,
-        ]
-      })
+      form.fields.map((field) => [field.name, values[field.name] ?? null])
     )
     router[props.method](props.action, data, {
       preserveState: true,

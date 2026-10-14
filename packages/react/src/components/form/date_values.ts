@@ -2,16 +2,15 @@
  * Date values between the wire and React Aria's date pickers.
  *
  * The server sends dates as `YYYY-MM-DD` and datetimes as ISO strings
- * with an offset. Forms send back what VineJS's `vine.date()` accepts by
- * default: `YYYY-MM-DD`, and `YYYY-MM-DD HH:mm:ss` as wall-clock time in
- * the app's timezone, which is the server's own, so the validator
- * parses it to the right instant.
+ * with an offset. Forms send dates back as `YYYY-MM-DD`, and datetimes
+ * as the exact instant (`toAbsoluteString()`), so the repeated hour at a
+ * DST change stays unambiguous. The server converts it for the app's
+ * validator.
  */
 import {
   now,
   parseAbsolute,
   parseDate,
-  toCalendarDateTime,
   type CalendarDate,
   type ZonedDateTime,
 } from '@internationalized/date'
@@ -44,16 +43,6 @@ export function fromCalendarDate(value: CalendarDate | null): string | null {
  */
 export function fromZonedDateTime(value: ZonedDateTime | null): string | null {
   return value ? value.toAbsoluteString() : null
-}
-
-/**
- * What a datetime field submits: `2026-10-25 01:30:00`, wall-clock time
- * in the app's timezone.
- */
-export function toWireDateTime(value: string | null, timezone: string): string | null {
-  const zoned = toZonedDateTime(value, timezone)
-  if (!zoned) return value
-  return toCalendarDateTime(zoned).set({ millisecond: 0 }).toString().replace('T', ' ')
 }
 
 /**
