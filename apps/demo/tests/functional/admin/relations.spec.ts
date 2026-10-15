@@ -408,7 +408,7 @@ test.group('Admin / hasMany tables (FR-08)', (group) => {
     })
     assert.lengthOf(table.rows, 10)
     assert.isTrue(table.columns.every((column: any) => column.sortable === false))
-    assert.deepEqual(table.rows[0].abilities, { view: true })
+    assert.isTrue(table.rows[0].abilities.view)
 
     const second = await client
       .get(`/admin/resources/categories/${categories[0].id}?productsPage=2`)

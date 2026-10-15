@@ -2,7 +2,8 @@ import string from '@adonisjs/core/helpers/string'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { ResourceSchema } from '../schema.ts'
-import type { ActionFor } from './actions.ts'
+import { RuntimeException } from '@adonisjs/core/exceptions'
+import { Action, type ActionFor } from './actions.ts'
 import type { ColumnFor } from './columns.ts'
 import type { FieldFor } from './fields.ts'
 import type { FilterFor } from './filters.ts'
@@ -55,6 +56,28 @@ export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
 }
 
 /**
+ * The built-in Delete actions, which the action endpoint runs itself.
+ */
+const BUILT_IN_DELETE = new WeakSet<object>()
+
+function builtInDelete(kind: 'row' | 'bulk', confirm: string) {
+  const deleteAction = new Action(kind, 'delete')
+    .label('Delete')
+    .confirm(confirm)
+    .ability('delete')
+    .destructive()
+  BUILT_IN_DELETE.add(deleteAction)
+  return deleteAction
+}
+
+/**
+ * Whether an action is the built-in Delete.
+ */
+export function isBuiltInDelete(candidate: object): boolean {
+  return BUILT_IN_DELETE.has(candidate)
+}
+
+/**
  * Brands resources across module copies, so discovery can recognise
  * them even if two copies of the package are loaded.
  */
@@ -81,6 +104,32 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
     return typeof value === 'object' && value !== null && RESOURCE in value
   }
 
+  #actions: Action<'row' | 'bulk', any, any, any>[] | null = null
+
+  /**
+   * The resource's actions, then the built-in Delete (row and bulk) when
+   * the policy has a `delete` method. A missing method means no Delete.
+   */
+  actions(): Action<'row' | 'bulk', any, any, any>[] {
+    if (this.#actions) return this.#actions
+    const declared = (this.options.actions ?? []) as Action<'row' | 'bulk', any, any, any>[]
+    if (declared.some((item) => item.name === 'delete')) {
+      throw new RuntimeException(
+        `Resource "${this.name}" declares an action named "delete", which is Azu's built-in Delete. Name it differently.`
+      )
+    }
+    const policy = this.options.policy as { prototype?: Record<string, unknown> }
+    const deletes =
+      typeof policy?.prototype?.delete === 'function'
+        ? [
+            builtInDelete('row', `Delete this ${this.singularLabel.toLowerCase()}?`),
+            builtInDelete('bulk', `Delete the selected ${this.label.toLowerCase()}?`),
+          ]
+        : []
+    this.#actions = [...declared, ...deletes]
+    return this.#actions
+  }
+
   get label(): string {
     return this.options.label ?? string.sentenceCase(string.plural(this.model.name))
   }
@@ -105,7 +154,7 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
       columns: (this.options.columns ?? []).map((column) => column.toJSON()),
       fields: (this.options.fields ?? []).map((item) => item.toJSON()),
       filters: (this.options.filters ?? []).map((item) => item.toJSON()),
-      actions: (this.options.actions ?? []).map((item) => item.toJSON()),
+      actions: this.actions().map((item) => item.toJSON()),
     }
   }
 }

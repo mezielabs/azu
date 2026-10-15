@@ -1,6 +1,6 @@
 /**
  * The README's Product resource, verbatim apart from the actions (from
- * the README's "Actions" section), validator metadata (from its
+ * the README's "Actions" section, plus a restock action), validator metadata (from its
  * "Validation" section), and the thumbnail's disk: the README stores it
  * on S3, the demo on Drive's default local disk so it runs offline.
  * Loaded by convention from app/admin/resources.
@@ -8,7 +8,11 @@
 import { defineResource, column, field, filter, action } from '@mezielabs/azu'
 import Product from '#models/product'
 import ProductPolicy from '#policies/product_policy'
-import { createProductValidator, updateProductValidator } from '#validators/product'
+import {
+  createProductValidator,
+  restockValidator,
+  updateProductValidator,
+} from '#validators/product'
 
 export default defineResource(Product, {
   label: 'Products',
@@ -55,8 +59,8 @@ export default defineResource(Product, {
       .bulk('publish')
       .confirm('Publish the selected products?')
       .ability('publish')
-      .handle(async (products) => {
-        await Product.query()
+      .handle(async (products, { trx }) => {
+        await Product.query({ client: trx })
           .whereIn(
             'id',
             products.map((p) => p.id)
@@ -64,6 +68,16 @@ export default defineResource(Product, {
           .update({ status: 'published' })
 
         return { message: `${products.length} products published` }
+      }),
+    // A dialog field, validated by its own VineJS validator
+    action
+      .row('restock')
+      .ability('restock')
+      .fields([field.number('quantity').help('Added to the current stock')], restockValidator)
+      .handle(async (product, { input }) => {
+        product.stock += input.quantity
+        await product.save()
+        return { message: `${product.name} now has ${product.stock} in stock` }
       }),
   ],
 })

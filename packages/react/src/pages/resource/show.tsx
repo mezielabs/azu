@@ -1,9 +1,12 @@
+import { router } from '@inertiajs/react'
+import { actionKey } from '@mezielabs/azu/shared'
 import {
   AdminLayout,
   FieldValueView,
   Head,
   Link,
   RelationTableView,
+  useActions,
   type ResourceShowPageProps,
 } from '@mezielabs/azu-react'
 
@@ -24,6 +27,21 @@ export default function ResourceShow({
   const name = record.title ?? `${resource.singularLabel} ${record.id}`
   const detail = `${path}/${encodeURIComponent(String(record.id))}`
 
+  const actions = useActions({
+    path: azu.path,
+    resource,
+    timezone: azu.timezone,
+    onDone: (result, action) => {
+      if (result.redirect) return router.visit(result.redirect)
+      // A deleted record has no detail page left
+      if (action.name === 'delete') return router.visit(path)
+      router.reload()
+    },
+  })
+  const rowActions = resource.actions.filter(
+    (action) => action.kind === 'row' && abilities.actions.includes(actionKey(action))
+  )
+
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={name} />
@@ -38,12 +56,26 @@ export default function ResourceShow({
         >
           {name}
         </h1>
-        {abilities.update && (
-          <Link href={`${detail}/edit`} className="azu-button azu-button-primary">
-            Edit
-          </Link>
-        )}
+        <div className="azu-toolbar">
+          {rowActions.map((action) => (
+            <button
+              key={action.name}
+              type="button"
+              className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
+              disabled={actions.busy}
+              onClick={() => actions.run(action, [record.id])}
+            >
+              {action.label}
+            </button>
+          ))}
+          {abilities.update && (
+            <Link href={`${detail}/edit`} className="azu-button azu-button-primary">
+              Edit
+            </Link>
+          )}
+        </div>
       </div>
+      {actions.dialog}
       <dl className="azu-details">
         {fields.map((field) => (
           <div key={field.name} className="azu-detail" data-azu-field={field.name}>

@@ -11,6 +11,7 @@ import {
 } from '../forms/form_fields.ts'
 import { saveRecord } from '../forms/save_record.ts'
 import { fileValues } from '../files/uploads.ts'
+import { actionAbilities, runAction } from '../actions/run_action.ts'
 import { listRecords } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
 import {
@@ -180,7 +181,10 @@ export class ResourcesController {
       fields,
       record: recordData(resource, record!, fields, resolved),
       relations: await hasManyTables(ctx, this.context, resource, tables, record!),
-      abilities: { update: await allows(ctx, resource, 'update', record) },
+      abilities: {
+        update: await allows(ctx, resource, 'update', record),
+        actions: await actionAbilities(ctx, resource, record!, ['row']),
+      },
     })
   }
 
@@ -222,6 +226,24 @@ export class ResourcesController {
     }
 
     return this.#toDetail(ctx, resource, result.record)
+  }
+
+  /**
+   * Runs a row or bulk action (FR-12), as JSON: `{ ids, input? }` in,
+   * `ActionResponse` out. Every record is checked against the action's
+   * policy method on the server.
+   */
+  async action(ctx: HttpContext) {
+    const resource = this.context.azu.resources.get(ctx.params.resource)
+    const kind = ctx.params.kind
+    if (!resource || (kind !== 'row' && kind !== 'bulk')) {
+      return ctx.response.status(404).send({ message: 'Not found' })
+    }
+    const outcome = await runAction(ctx, resource, kind, ctx.params.action, {
+      timezone: this.context.config.timezone,
+      defaultDisk: this.context.config.defaultDisk,
+    })
+    return ctx.response.status(outcome.status).send(outcome.body)
   }
 
   /**

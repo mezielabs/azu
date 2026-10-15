@@ -1,4 +1,5 @@
-import { column, defineResource, filter } from '@mezielabs/azu'
+import { Exception } from '@adonisjs/core/exceptions'
+import { action, column, defineResource, filter } from '@mezielabs/azu'
 import Order from '#models/order'
 import OrderPolicy from '#policies/order_policy'
 
@@ -28,5 +29,29 @@ export default defineResource(Order, {
       cancelled: 'Cancelled',
     }),
     filter.dateRange('placedAt'),
+  ],
+
+  actions: [
+    /**
+     * Rolls back when it throws: cancelling a shipped order fails the
+     * whole batch, including orders it already cancelled (FR-12).
+     */
+    action
+      .bulk('cancel')
+      .confirm('Cancel the selected orders?')
+      .ability('cancel')
+      .destructive()
+      .handle(async (orders) => {
+        for (const order of orders) {
+          if (order.status === 'shipped') {
+            throw new Exception(`Order ${order.number} has shipped, so it can't be cancelled.`, {
+              status: 422,
+            })
+          }
+          order.status = 'cancelled'
+          await order.save()
+        }
+        return { message: `Cancelled ${orders.length} ${orders.length === 1 ? 'order' : 'orders'}` }
+      }),
   ],
 })

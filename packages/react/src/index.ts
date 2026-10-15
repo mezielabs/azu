@@ -22,6 +22,9 @@ export { RelationTableView } from './components/detail/relation_table.tsx'
 export { RelationControl } from './components/form/relation_control.tsx'
 export { RichTextControl } from './components/form/rich_text_control.tsx'
 export { showToast, ToastRegion } from './components/toast.tsx'
+export { ActionDialog } from './components/actions/action_dialog.tsx'
+export { useActions } from './components/actions/use_actions.tsx'
+export { RowActionsMenu } from './components/actions/row_actions.tsx'
 
 /**
  * Contracts are defined in `@mezielabs/azu`, so a future Vue package
@@ -41,6 +44,8 @@ export type {
   RecordData,
   RelationValue,
   FileValue,
+  ActionKey,
+  ActionResponse,
   RelationOption,
   RelationTable,
   RelationOptionsResponse,

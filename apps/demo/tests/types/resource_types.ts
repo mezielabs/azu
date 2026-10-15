@@ -12,6 +12,7 @@ import Order from '#models/order'
 import Product from '#models/product'
 import User from '#models/user'
 import ProductPolicy from '#policies/product_policy'
+import { restockValidator } from '#validators/product'
 
 /**
  * Valid definitions beyond the README's, on other models, including a
@@ -64,6 +65,15 @@ export const valid = [
           // `product` is a Product, not Product[]
           product.isFeatured = true
           await product.save()
+        }),
+      action
+        .row('restock')
+        .ability('restock')
+        .fields([field.number('quantity')], restockValidator)
+        .handle(async (product, { input, trx }) => {
+          // `input` is the validator's output; `trx` takes the query
+          const quantity: number = input.quantity
+          await Product.query({ client: trx }).where('id', product.id).increment('stock', quantity)
         }),
     ],
   }),
@@ -142,6 +152,19 @@ export const mistakes = defineResource(Product, {
         // @ts-expect-error products are typed: no such attribute
         products.map((p) => p.nmae)
       }),
+    action
+      .row('restock')
+      .ability('restock')
+      .fields([field.number('quantity')], restockValidator)
+      .handle(async (_product, { input }) => {
+        // @ts-expect-error the input is typed by the validator: no such field
+        return { message: String(input.qty) }
+      }),
+    action
+      .row('attach')
+      .ability('update')
+      // @ts-expect-error a dialog can't show file fields
+      .fields([field.file('thumbnail')], restockValidator),
   ],
 })
 

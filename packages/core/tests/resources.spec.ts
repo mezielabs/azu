@@ -89,8 +89,20 @@ test.group('Builders', () => {
         .ability('publish')
         .handle(async () => {})
         .toJSON(),
-      { kind: 'bulk', name: 'publish', label: 'Publish', confirm: 'Sure?', ability: 'publish' }
+      {
+        kind: 'bulk',
+        name: 'publish',
+        label: 'Publish',
+        confirm: 'Sure?',
+        ability: 'publish',
+        destructive: false,
+        fields: [],
+      }
     )
+  })
+
+  test('an action without an ability checks update', ({ assert }) => {
+    assert.equal(action.row('archive').toJSON().ability, 'update')
   })
 })
 
@@ -141,6 +153,14 @@ test.group('ResourceRegistry', () => {
     assert.throws(
       () => registry.register(resource('Product')),
       /Two admin resources are named "products"/
+    )
+  })
+
+  test('rejects an action named delete, which is the built-in Delete', ({ assert }) => {
+    const products = resource('Product', { actions: [action.row('delete').handle(() => {})] })
+    assert.throws(
+      () => new ResourceRegistry().register(products),
+      /declares an action named "delete"/
     )
   })
 

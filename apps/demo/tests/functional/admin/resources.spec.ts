@@ -94,15 +94,15 @@ test.group('Admin / resources (FR-03)', (group) => {
       label: 'Low stock',
       options: null,
     })
-    assert.deepEqual(resource.actions, [
-      {
-        kind: 'bulk',
-        name: 'publish',
-        label: 'Publish',
-        confirm: 'Publish the selected products?',
-        ability: 'publish',
-      },
-    ])
+    assert.deepEqual(resource.actions[0], {
+      kind: 'bulk',
+      name: 'publish',
+      label: 'Publish',
+      confirm: 'Publish the selected products?',
+      ability: 'publish',
+      destructive: false,
+      fields: [],
+    })
   })
 
   test('the resource route checks viewList on the server, not just the navigation', async ({

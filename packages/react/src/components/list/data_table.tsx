@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   Cell,
   Checkbox,
@@ -65,6 +65,10 @@ export function DataTable(props: {
   rowHref?: (row: ListRow) => string | undefined
   /** Checkbox selection, for bulk actions. Defaults to on */
   selectable?: boolean
+  /** A last column with each row's actions (FR-12) */
+  rowActions?: (row: ListRow) => ReactNode
+  /** Changing it clears the selection, e.g. after a bulk action */
+  clearSelection?: number
 }) {
   const selectable = props.selectable ?? true
   const { columns, rows, state, onSort, onSelectionChange } = props
@@ -76,7 +80,7 @@ export function DataTable(props: {
   useEffect(() => {
     setSelection(new Set())
     onSelectionChange?.([])
-  }, [rowKey])
+  }, [rowKey, props.clearSelection])
 
   const sortDescriptor: SortDescriptor | undefined = state.sort
     ? { column: state.sort, direction: state.direction === 'desc' ? 'descending' : 'ascending' }
@@ -124,6 +128,11 @@ export function DataTable(props: {
               )}
             </Column>
           ))}
+          {props.rowActions && (
+            <Column className="azu-th azu-th-actions">
+              <span className="azu-visually-hidden">Actions</span>
+            </Column>
+          )}
         </TableHeader>
         <TableBody
           items={rows}
@@ -167,6 +176,9 @@ export function DataTable(props: {
                   />
                 </Cell>
               ))}
+              {props.rowActions && (
+                <Cell className="azu-td azu-td-actions">{props.rowActions(row)}</Cell>
+              )}
             </Row>
           )}
         </TableBody>

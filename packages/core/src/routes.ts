@@ -34,6 +34,8 @@ export function registerRoutes(
            */
           router.get('/create', (ctx) => resources.create(ctx)).as('create')
           router.post('/create', (ctx) => resources.store(ctx)).as('store')
+          // Row and bulk actions, as JSON (FR-12)
+          router.post('/actions/:kind/:action', (ctx) => resources.action(ctx)).as('actions.run')
           // A belongsTo field's options, as JSON (FR-08)
           router.get('/fields/:field/options', (ctx) => resources.options(ctx)).as('fields.options')
           router.get('/:id', (ctx) => resources.show(ctx)).as('show')

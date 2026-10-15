@@ -9,6 +9,7 @@ export type ScannedRoutes = {
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
+    'azu.resources.actions.run': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'resource': ParamValue,'kind': ParamValue,'action': ParamValue} }
     'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }
     'azu.resources.show': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
     'azu.resources.edit': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
@@ -49,6 +50,7 @@ export type ScannedRoutes = {
   }
   POST: {
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
+    'azu.resources.actions.run': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'resource': ParamValue,'kind': ParamValue,'action': ParamValue} }
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }

@@ -173,7 +173,18 @@
 
   .azu-th-selection,
   .azu-td-selection {
-    @apply w-10;
+    @apply relative w-10;
+  }
+
+  .azu-checkbox {
+    @apply flex cursor-pointer;
+  }
+
+  /* The checkbox's hit area covers its whole cell, so a near miss
+     selects the row instead of opening it */
+  .azu-checkbox::after {
+    @apply absolute inset-0;
+    content: '';
   }
 
   .azu-row {
@@ -754,5 +765,55 @@
   .azu-rich-text-content a {
     color: var(--azu-brand);
     @apply underline;
+  }
+}
+
+/*
+ * Actions (FR-12).
+ */
+@layer components {
+  .azu-bulk-toolbar {
+    @apply mb-2 min-h-8;
+  }
+
+  .azu-bulk-toolbar .azu-selection-summary {
+    @apply mb-0 mr-2;
+  }
+
+  .azu-th-actions,
+  .azu-td-actions {
+    @apply w-12 text-right;
+  }
+
+  .azu-row-actions-button {
+    @apply px-2 py-0.5;
+  }
+
+  .azu-menu {
+    @apply min-w-40 p-1 outline-none;
+  }
+
+  .azu-menu-item {
+    @apply cursor-pointer rounded px-2 py-1 text-sm outline-none;
+  }
+
+  .azu-menu-item.azu-is-focused {
+    background: var(--azu-subtle);
+  }
+
+  .azu-menu-item.azu-is-destructive {
+    color: #dc2626;
+  }
+
+  .azu-action-form {
+    @apply space-y-4;
+  }
+
+  .azu-dialog-count {
+    color: var(--azu-muted);
+  }
+
+  .azu-button:disabled {
+    @apply cursor-not-allowed opacity-50;
   }
 }

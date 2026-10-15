@@ -26,4 +26,8 @@ export default class ProductPolicy extends BasePolicy {
   publish(user: User) {
     return user.role === 'admin'
   }
+
+  restock(user: User, _product: Product) {
+    return user.role === 'admin'
+  }
 }
