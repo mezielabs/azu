@@ -9,6 +9,8 @@ import { AdminAccessMiddleware } from '../src/middleware/admin_access_middleware
 import type { AzuConfig } from '../src/types.ts'
 import { Azu } from '../src/azu.ts'
 import { loadResources } from '../src/resources/loader.ts'
+import { themeCss } from '../src/theme/palette.ts'
+import { themeBootScript } from '../src/shared/theme.ts'
 
 /**
  * Registers Azu with the host application: mounts the package's Edge
@@ -33,7 +35,14 @@ export default class AzuProvider {
   async boot() {
     const { default: edge } = await import('edge.js')
     edge.mount('azu', new URL('../resources/views', import.meta.url))
-    edge.global('azu', { entry: this.getConfig().entry })
+    const config = this.getConfig()
+    // The palettes and boot script are fixed for the process, so build them once
+    edge.global('azu', {
+      entry: config.entry,
+      appName: config.brand.name,
+      themeCss: themeCss(config.brand.color),
+      themeScript: themeBootScript(),
+    })
   }
 
   /**

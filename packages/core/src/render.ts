@@ -23,6 +23,7 @@ export async function renderPage<Page extends keyof AzuPages>(
     azu: async () => ({
       path: context.config.path,
       timezone: context.config.timezone,
+      brand: { name: context.config.brand.name, logo: context.config.brand.logo },
       navigation:
         context.navigation === false
           ? []
