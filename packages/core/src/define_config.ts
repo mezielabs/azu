@@ -1,5 +1,6 @@
 import type { AzuConfig, AzuConfigInput } from './types.ts'
 import { isPageSize } from './shared/list_state.ts'
+import { isHexColor } from './theme/color.ts'
 
 /**
  * Default URL prefix and admin Vite entry.
@@ -10,6 +11,7 @@ export const defaults: Omit<AzuConfig, 'timezone' | 'defaultDisk'> = {
   loginUrl: '/login',
   resources: { autoload: 'app/admin/resources' },
   perPage: 25,
+  brand: { name: 'Admin', logo: null, color: '#2563eb' },
 }
 
 /**
@@ -47,6 +49,11 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
       `"timezone" in config/admin.ts must be an IANA timezone such as "Africa/Lagos", not "${config.timezone}"`
     )
   }
+  if (config.brand?.color !== undefined && !isHexColor(config.brand.color)) {
+    throw new Error(
+      `"brand.color" in config/admin.ts must be a hex colour such as "#2563eb", not "${config.brand.color}"`
+    )
+  }
   const path = `/${(config.path ?? defaults.path).replace(/^\/+|\/+$/g, '')}`
   if (path === '/') {
     throw new Error('Azu can\'t be mounted at "/". Set "path" in config/admin.ts, e.g. "/admin"')
@@ -59,6 +66,11 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     loginUrl: config.loginUrl ?? defaults.loginUrl,
     perPage: config.perPage ?? defaults.perPage,
     timezone: config.timezone ?? processTimezone(),
+    brand: {
+      name: config.brand?.name?.trim() || defaults.brand.name,
+      logo: config.brand?.logo || null,
+      color: config.brand?.color?.trim() ?? defaults.brand.color,
+    },
     resources: {
       autoload:
         config.resources?.autoload === undefined

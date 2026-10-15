@@ -17,6 +17,13 @@ const adminConfig = defineConfig({
    * false to register them in start/admin.ts instead.
    */
   resources: { autoload: 'app/admin/resources' },
+
+  /**
+   * The name, logo and colour of the panel. Azu generates light and
+   * dark palettes from the colour, adjusted where needed so text stays
+   * readable. Dark mode follows the OS, with a toggle in the header.
+   */
+  brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
 })
 
 export default adminConfig

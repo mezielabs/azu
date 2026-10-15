@@ -1,6 +1,10 @@
 import { test } from '@japa/runner'
 import { escapeLike } from '../src/list/list_records.ts'
 import {
+  effectiveTheme,
+  storedTheme,
+  themeBootScript,
+  toggledTheme,
   activeFilters,
   dateRangeValue,
   isDate,
@@ -309,5 +313,30 @@ test.group('List filters (URL, FR-13)', () => {
     assert.deepEqual(values, { status: 'draft', category: '3' })
     assert.deepEqual(withFilter(values, 'status', null), { category: '3' })
     assert.equal(activeFilters(values, filters), 2)
+  })
+})
+
+test.group('Theme choice (FR-14)', () => {
+  test('follows the OS until a choice is stored', ({ assert }) => {
+    assert.equal(effectiveTheme(null, true), 'dark')
+    assert.equal(effectiveTheme(null, false), 'light')
+    assert.equal(effectiveTheme('light', true), 'light')
+    assert.isNull(storedTheme('sepia'))
+  })
+
+  test('a toggle remembers the other theme, or forgets when that is the OS theme', ({ assert }) => {
+    // OS light: toggling to dark remembers dark; toggling back follows the OS again
+    assert.equal(toggledTheme('light', false), 'dark')
+    assert.isNull(toggledTheme('dark', false))
+    // OS dark
+    assert.equal(toggledTheme('dark', true), 'light')
+    assert.isNull(toggledTheme('light', true))
+  })
+
+  test('the boot script reads the stored choice and survives blocked storage', ({ assert }) => {
+    const script = themeBootScript()
+    assert.include(script, 'localStorage.getItem("azu-theme")')
+    assert.include(script, 'setAttribute("data-azu-theme",t)')
+    assert.match(script, /^try\{.*\}catch\(e\)\{\}$/)
   })
 })

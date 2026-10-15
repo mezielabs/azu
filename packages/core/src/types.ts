@@ -85,17 +85,45 @@ export type AzuConfigInput = {
    * @default the server process's timezone
    */
   timezone?: string
+
+  /**
+   * The admin's name, logo and colour (FR-14). `color` is a hex colour;
+   * Azu generates light and dark palettes from it, adjusting it where
+   * needed so text stays readable (WCAG AA).
+   *
+   * @example
+   * ```ts
+   * brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' }
+   * ```
+   * @default { name: 'Admin', color: '#2563eb' }
+   */
+  brand?: {
+    /** Shown in the header and page titles */
+    name?: string
+    /** An image URL shown before the name in the header */
+    logo?: string
+    /** A hex colour, `#2563eb` or `#26e` */
+    color?: string
+  }
 }
+
+/**
+ * The brand with defaults applied.
+ */
+export type AzuBrand = { name: string; logo: string | null; color: string }
 
 /**
  * The config object `defineConfig` returns, with defaults applied.
  * `guard` stays undefined to mean the app's default guard.
  */
-export type AzuConfig = Required<Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk'>> & {
+export type AzuConfig = Required<
+  Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk' | 'brand'>
+> & {
   guard?: string
   /** `undefined` means Drive's default disk */
   defaultDisk?: string
   resources: { autoload: string | false }
+  brand: AzuBrand
 }
 
 /**
@@ -109,6 +137,8 @@ export type AzuSharedProps = {
     navigation: NavigationGroup[]
     /** The admin's timezone (`timezone` in config/admin.ts), for dates */
     timezone: string
+    /** The admin's name and logo (`brand` in config/admin.ts) */
+    brand: { name: string; logo: string | null }
   }
 }
 

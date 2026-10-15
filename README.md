@@ -327,7 +327,11 @@ export default defineConfig({
 })
 ```
 
-Dark mode follows the user's system setting, with a toggle in the panel.
+`brand.name` (default `Admin`) shows in the header and page titles, and `brand.logo` is an image shown before it. `brand.color` is a hex colour (default `#2563eb`). Azu uses it as is where it's readable. Where it isn't, it shifts only the colour's lightness, so the hue stays, until all text reaches WCAG AA (4.5:1) on each theme's backgrounds. A very light brand colour gets darkened on the light theme, for example. So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. Text on brand-coloured buttons is white or near-black, whichever reads.
+
+Dark mode follows the user's system setting. The header's "Dark theme" toggle overrides it, and this browser remembers the choice. Toggle back to your system's theme and Azu follows the system again.
+
+The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 
 ## Commands
 

@@ -297,7 +297,14 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 
 Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cover cases between levels 2 and 3.
 
-**Theming:** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
+**Theming (FR-14):** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
+
+- **Palettes:** `palette(color, theme)` in core (`src/theme`, plain TypeScript, no dependency) gives Azu's own variables (non-negotiable 9): neutrals (`surface`, `subtle`, `text`, `muted`, `border`), brand (`brand` for text and accents, `brand-solid` and `on-brand` for filled areas), danger, success, and a background and text pair for each badge colour (gray, green, blue, red, yellow).
+- **Contrast:** every text pair reaches WCAG AA, 4.5:1, for any brand colour. `brand` is the configured colour with only its OKLCH lightness moved as far as 4.5:1 against `surface` and `subtle` needs, so the hue stays. `on-brand` is white or near-black, falling back to black on the mid-tones where near-black misses. A unit test tries fifteen brand colours, from white to black, in both themes.
+- **Delivery:** the root view inlines the palettes as a `<style>`, built once at boot. Light is the default; dark applies under `prefers-color-scheme: dark` unless `data-azu-theme="light"` is on `<html>`, or when it's `"dark"`. A boot script sets that attribute from `localStorage` (`azu-theme`) before the first paint. Both carry Shield's CSP nonce. The stylesheet keeps the default brand's palettes as zero-specificity fallbacks.
+- **Toggle:** the header's "Dark theme" button (`aria-pressed`) stores the other theme, or clears the stored choice when the other theme is the OS's, so the admin follows the OS again.
+- **Name and logo:** `brand.name` (default `Admin`) heads the header and page titles (`Products · Acme`). `brand.logo` is a decorative image beside it. Pages get them as `azu.brand`.
+- **Checks:** the axe scans (§10) run in both themes.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 
@@ -333,7 +340,7 @@ export default defineConfig({
 })
 ```
 
-`path` can't be `/`; `defineConfig` throws so the panel never replaces the app's homepage.
+`path` can't be `/`; `defineConfig` throws so the panel never replaces the app's homepage. `brand.color` must be a hex colour (`#2563eb` or `#26e`); anything else throws. `brand` defaults to `{ name: 'Admin', color: '#2563eb' }` with no logo.
 
 ## 10. Testing
 
@@ -341,7 +348,7 @@ export default defineConfig({
 - **Integration (Japa API client):** each controller against the demo app on Postgres, MySQL, SQLite, with a forbidden-path test for every policy method.
 - **Browser (Japa browser client):** install to first resource, create/edit with validation errors, a bulk action, dark mode.
 - **Performance:** seeded 100,000-row table against the 200 ms p95 target, run before each release.
-- **Accessibility:** automated axe checks (axe-core, WCAG 2.1 A and AA) on core pages in CI, in the demo's browser suite (`tests/browser`), with popovers, menus and dialogs open as well as closed. One exception: while a React Aria popover is open, `aria-hidden-focus` is off for that scan (see `docs/decisions.md`).
+- **Accessibility:** automated axe checks (axe-core, WCAG 2.1 A and AA) on core pages in CI, in the demo's browser suite (`tests/browser`), with popovers, menus and dialogs open as well as closed, in the light and dark themes. One exception: while a React Aria popover is open, `aria-hidden-focus` is off for that scan (see `docs/decisions.md`).
 
 ## 11. Milestones
 
@@ -372,6 +379,13 @@ For each: what works, what doesn't, the recommended approach, and any spec chang
    - a lazily loaded Tiptap editor
 
    React Aria and Tiptap stay approved only if this check passes (see `docs/decisions.md`).
+
+**P1 planning note (2026-10-15, not started).** Phase 2's P0 items are FR-12, FR-13 and FR-14. These are the P1 items, in the suggested order, for Chimezie to approve before any of them starts:
+
+1. **FR-16, navigation groups, icons and order.** The smallest of the four. `group` and `icon` are already on resources and in the navigation props; what's missing is an `order` (for groups and items) and rendering icons from a fixed set. It changes only the navigation. A quick, low-risk start that every admin sees.
+2. **FR-09, `manyToMany` picker.** Builds on what FR-08 and FR-13 settled: the async ComboBox, the policy-checked options endpoint and its `viewList` rule. New work: a multi-select control, and pivot writes (`sync`) in the save transaction, after validation, limited to the declared field. It also takes `manyToMany` out of the "left out of forms" note in §5.
+3. **FR-17, bulk actions on all filtered rows.** Needs FR-12's action runner and FR-13's `applyFilters`, both in place now. New work: "Select all N matching" in the bulk toolbar, then running the action over the filtered query in chunks of 500, a transaction per chunk, with the per-record policy check and skip report kept. It raises questions to settle first: how partial success across chunks is reported, and what happens to rows that change between chunks.
+4. **FR-15, component overrides and `admin:publish`.** Last, because publishing a page freezes its contract in the app's copy: the later the pages settle (after FR-09's and FR-17's UI changes), the less drift `admin:doctor` has to report. Field component swaps (`component()`) already work; this adds column and page overrides, the publish command and drift detection.
 
 ## 12. Open technical questions
 

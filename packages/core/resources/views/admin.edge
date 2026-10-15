@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-inertia>Admin</title>
+    <meta name="azu-app-name" content="{{ azu.appName }}" />
+    <title data-inertia>{{ azu.appName }}</title>
+    {{-- The brand palettes (FR-14), then the stored light/dark choice, before the first paint --}}
+    <style id="azu-theme" nonce="{{ cspNonce ?? '' }}">{{{ azu.themeCss }}}</style>
+    <script nonce="{{ cspNonce ?? '' }}">{{{ azu.themeScript }}}</script>
 
     @viteReactRefresh()
     @vite([azu.entry])
