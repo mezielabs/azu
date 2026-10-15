@@ -229,7 +229,15 @@ export type FileValue = {
  * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset;
  * `belongsTo` is the related record; `file` and `image` the stored upload.
  */
-export type FieldValue = string | number | boolean | null | RelationValue | FileValue
+export type FieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | RelationValue
+  /** A `manyToMany` field's attached records */
+  | RelationValue[]
+  | FileValue
 
 /**
  * A field as a form renders it: the resource's field, with hints from

@@ -264,7 +264,8 @@ export class ResourcesController {
   }
 
   /**
-   * Options for a `belongsTo` field's select (FR-08), as JSON. Gated
+   * Options for a `belongsTo` field's select (FR-08) or a `manyToMany`
+   * field's picker (FR-09), as JSON. Gated
    * like the form it serves: `create`, or `update` on the record named
    * by `?record=`, and the field must be on that form for this user.
    * The user must also pass the related resource's `viewList` (fails
@@ -287,7 +288,10 @@ export class ResourcesController {
     }
 
     const fields = await formFields(ctx, resource, record ? 'edit' : 'create', record)
-    const field = fields.find((item) => item.name === ctx.params.field && item.kind === 'belongsTo')
+    const field = fields.find(
+      (item) =>
+        item.name === ctx.params.field && (item.kind === 'belongsTo' || item.kind === 'manyToMany')
+    )
     if (!field) return ctx.response.status(404).send({ error: 'Not found' })
     if (field.readOnly || !(await canListRelated(ctx, this.context, resource.model, field))) {
       return ctx.response.status(403).send({ error: 'Forbidden' })
@@ -331,9 +335,9 @@ export class ResourcesController {
   }
 
   /**
-   * The form's fields, with each `belongsTo` field's options URL. A
-   * `belongsTo` field whose related resource the user can't list is
-   * read-only: it shows the current record, with no options.
+   * The form's fields, with each `belongsTo` and `manyToMany` field's
+   * options URL. One whose related resource the user can't list is
+   * read-only: it shows the current records, with no options.
    */
   async #formFields(
     ctx: HttpContext,
@@ -345,7 +349,7 @@ export class ResourcesController {
     const query = record ? `?record=${encodeURIComponent(String(record.$primaryKeyValue))}` : ''
     const result: FormFieldSchema[] = []
     for (const field of fields) {
-      if (field.kind !== 'belongsTo') {
+      if (field.kind !== 'belongsTo' && field.kind !== 'manyToMany') {
         result.push(field)
       } else if (!(await canListRelated(ctx, this.context, resource.model, field))) {
         result.push({ ...field, readOnly: true, optionsUrl: null })

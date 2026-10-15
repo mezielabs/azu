@@ -38,6 +38,9 @@ type LucidRelation = {
   localKeyColumnName: string
 }
 
+/** The relation kinds a field can pick records for */
+const PICKER_RELATIONS = new Set(['belongsTo', 'manyToMany'])
+
 export function relationKeys(model: LucidModel, name: string): RelationKeys | null {
   const relation = model.$getRelation(name as never) as LucidRelation | undefined
   if (!relation) return null
@@ -107,11 +110,73 @@ export async function belongsToValue(
 }
 
 /**
- * Whether the user may list what a `belongsTo` field or filter points
- * at: the related resource's `viewList`. Fails closed: no resource for
- * the related model, or no `viewList` on its policy, means no. Without
- * it, the field is read-only, the filter is left out, and their options
- * endpoints answer 403.
+ * Most related records a `manyToMany` field shows and edits. A form
+ * picker holds a handful; past this, a `hasMany`-style table fits.
+ */
+export const MANY_TO_MANY_LIMIT = 200
+
+/**
+ * The records a `manyToMany` field has attached (FR-09), through the
+ * related resource's `query` hook, by title, each with a link to its
+ * detail page when the user may `view` it.
+ */
+export async function manyToManyValues(
+  ctx: HttpContext,
+  context: RelationsContext,
+  model: LucidModel,
+  field: FieldSchema,
+  record: LucidRow
+): Promise<RelationValue[]> {
+  const keys = relationKeys(model, field.name)
+  if (!keys || keys.type !== 'manyToMany') return []
+  const resource = context.azu.resources.forModel(keys.related)
+  const title = titleAttribute(field, resource)
+
+  // The relation's query builder is a model query on the related model
+  const query = (
+    record as unknown as { related(name: string): { query(): ReturnType<LucidModel['query']> } }
+  )
+    .related(field.name)
+    .query()
+  resource?.options.query?.(query)
+  if (title) query.orderBy(columnName(keys.related, title), 'asc')
+  const related = (await query
+    .orderBy(columnName(keys.related, keys.related.primaryKey), 'asc')
+    .limit(MANY_TO_MANY_LIMIT)) as LucidRow[]
+
+  return Promise.all(
+    related.map(async (item) => {
+      const viewable = resource ? await allows(ctx, resource, 'view', item) : false
+      return {
+        id: item.$primaryKeyValue as string | number,
+        title: titleOf(item, title),
+        href: viewable
+          ? `${context.config.path}/resources/${resource!.name}/${item.$primaryKeyValue}`
+          : null,
+      }
+    })
+  )
+}
+
+/**
+ * The keys a `manyToMany` field has attached, unscoped: what a
+ * read-only field hands the validator on edit.
+ */
+export async function manyToManyIds(record: LucidRow, name: string): Promise<(string | number)[]> {
+  const related = (await (
+    record as unknown as { related(name: string): { query(): Promise<LucidRow[]> } }
+  )
+    .related(name)
+    .query()) as LucidRow[]
+  return related.map((item) => item.$primaryKeyValue as string | number)
+}
+
+/**
+ * Whether the user may list what a `belongsTo` or `manyToMany` field, or
+ * a `belongsTo` filter, points at: the related resource's `viewList`.
+ * Fails closed: no resource for the related model, or no `viewList` on
+ * its policy, means no. Without it, the field is read-only, the filter
+ * is left out, and their options endpoints answer 403.
  */
 export async function canListRelated(
   ctx: HttpContext,
@@ -120,7 +185,7 @@ export async function canListRelated(
   field: Pick<FieldSchema, 'name'>
 ): Promise<boolean> {
   const keys = relationKeys(model, field.name)
-  if (!keys || keys.type !== 'belongsTo') return false
+  if (!keys || !PICKER_RELATIONS.has(keys.type)) return false
   const related = context.azu.resources.forModel(keys.related)
   return related ? allows(ctx, related, 'viewList') : false
 }
@@ -134,11 +199,13 @@ export async function relationValues(
   model: LucidModel,
   fields: FieldSchema[],
   record: LucidRow
-): Promise<Record<string, RelationValue | null>> {
-  const values: Record<string, RelationValue | null> = {}
+): Promise<Record<string, RelationValue | RelationValue[] | null>> {
+  const values: Record<string, RelationValue | RelationValue[] | null> = {}
   for (const field of fields) {
     if (field.kind === 'belongsTo') {
       values[field.name] = await belongsToValue(ctx, context, model, field, record)
+    } else if (field.kind === 'manyToMany') {
+      values[field.name] = await manyToManyValues(ctx, context, model, field, record)
     }
   }
   return values
@@ -157,7 +224,7 @@ export async function relationOptions(
   search: string
 ): Promise<RelationOption[]> {
   const keys = relationKeys(model, field.name)
-  if (!keys || keys.type !== 'belongsTo') return []
+  if (!keys || !PICKER_RELATIONS.has(keys.type)) return []
 
   const resource = context.azu.resources.forModel(keys.related)
   const title = titleAttribute(field, resource)

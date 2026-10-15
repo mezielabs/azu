@@ -131,6 +131,10 @@ export function renderResource(
     '',
     '  fields: [',
     ...plan.fields.map((field) => `    ${fieldBuilder(field)},`),
+    ...plan.manyToMany.map(
+      (relation) =>
+        `    field.manyToMany(${quote(relation.name)})${relation.title ? `.searchable(${quote(relation.title)})` : ''},`
+    ),
     '  ],',
     '})',
     '',
@@ -196,8 +200,14 @@ function rule(field: FieldPlan, plan: ModelPlan, update: boolean): string {
  */
 export function renderValidator(plan: ModelPlan, names: Names): string {
   const hasUnique = plan.fields.some((field) => field.column.unique && field.kind !== 'belongsTo')
-  const block = (update: boolean) =>
-    plan.fields.map((field) => `  ${field.input}: ${rule(field, plan, update)},`)
+  const block = (update: boolean) => [
+    ...plan.fields.map((field) => `  ${field.input}: ${rule(field, plan, update)},`),
+    // The related keys; left out, the attached records stay as they are
+    ...plan.manyToMany.map(
+      (relation) =>
+        `  ${relation.input}: vine.array(${relation.integerKey ? 'vine.number()' : 'vine.string()'}.exists({ table: ${quote(relation.relatedTable)}, column: ${quote(relation.relatedKeyColumn)} })).optional(),`
+    ),
+  ]
 
   const lines = [
     `import vine from '@vinejs/vine'`,

@@ -157,11 +157,11 @@ Rules:
 | `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
 | `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
-| `manyToMany` | Searchable picker | Count | Lucid relation |
+| `manyToMany` | Searchable picker: the attached records as removable tags, plus a search that adds one at a time. Submits the related keys (`tags` → `tagIds`). Read-only without the related resource's `viewList` | Not a list column yet | Lucid relation (pivot rows) |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
 
-Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), `belongsTo` (FR-08), and `richText`, `file` and `image` (FR-07). Detail pages show `hasMany` tables (FR-08). Until FR-09 lands, `manyToMany` fields are left out of forms, detail pages and writes.
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), `belongsTo` (FR-08), and `richText`, `file` and `image` (FR-07). Detail pages show `hasMany` tables (FR-08). Forms and detail pages render `manyToMany` (FR-09).
 
 Uploads (FR-07): an upload is checked first. If the save fails validation, nothing is stored. Otherwise it's stored on the disk under `<resource>/<field>/<uuid>.<ext>`, and the validator sees that key. Leaving a file field out of the request keeps the stored file; sending it empty removes it. A replaced or removed file is deleted from the disk after the save commits. URLs come from the disk's `getUrl()`, so private disks (signed URLs) aren't supported yet. Drive is an optional peer: a resource with file or image fields fails at boot without it.
 
@@ -230,6 +230,10 @@ How a save works (FR-06, FR-10):
 Relations (FR-08):
 
 - **`belongsTo` options** come from `GET /admin/resources/<name>/fields/<field>/options?search=…`, as JSON. It's gated like the form it serves: `create`, or `update` with the record named by `?record=<id>`, and the field must be on that form for the user (its `visibleOn` and `ability`, not `readOnly`). The user must also pass the related resource's `viewList`, failing closed: no resource for the related model, or no `viewList` on its policy, is a 403. Without it, the form shows the field read-only: the current record, no options, never written. It returns up to 20 records whose title attribute (`searchable()`, else the related resource's `title`) contains the search, literally, sorted by title, through the related resource's `query` hook when there is one.
+- **`manyToMany` fields (FR-09)** submit the related records' keys under the relation's singular name plus `Ids` (`tags` → `tagIds`, `relatedProducts` → `relatedProductIds`), and the validator checks that array.
+  - **Options:** they use the same options endpoint and rule as `belongsTo`. Without the related resource's `viewList`, the field is read-only: it shows the attached records, offers no options (403), and is never written. On edit, its current keys reach the validator.
+  - **Writes:** the validator's array replaces the attached records through Lucid's `sync`, repeated keys counted once. The sync runs after `save()` and before `afterSave`, in the save's transaction, so any failure rolls back the record and its pivot rows together. A request without the key leaves them as they are, and an empty array detaches them all.
+  - **Display:** the form and the detail page show up to 200 attached records, by title, through the related resource's `query` hook, each linked when the user may `view` it.
 - **`hasMany` tables** show only when the user passes the related resource's `viewList`. They use the related resource's columns, `query` hook and preloads, and check `view` per row for links. Each table's page is a query parameter (`productsPage`), and paging is a partial reload of `relations`.
 
 Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /admin/resources/<name>/<id>/edit`. A 422 then leaves the address bar on the form. An id that can't exist, such as `abc` for an integer key, is a 404.
@@ -250,6 +254,7 @@ Generator mapping:
 - `boolean` → `boolean`; `number` → `number`; decimal/numeric database columns → `decimal`; `DateTime` → `datetime`
 - enum check or TS union type → `select` with those options
 - foreign key with a `belongsTo` relation → `belongsTo`, titled by the related model's first string column
+- `manyToMany` relation → `field.manyToMany(name).searchable(title)` after the column fields, and `<singular>Ids: vine.array(vine.number().exists({ table, column })).optional()` (`vine.string()` for non-integer keys) in both validators
 - skip `password`, `rememberMeToken`, and `serializeAs: null` columns
 - search defaults to the first two string columns; `title` defaults to `name`, `title`, or `email`
 - the field type comes from the model's declared TypeScript type when there is one, so the resource compiles against the model. That's the model file, or the schema class it extends from `#database/schema`. Otherwise it comes from the database type. A `string` decimal is `decimal` even on SQLite, which stores decimals as floats. Long text (`text` columns) is `textarea`.

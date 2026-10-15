@@ -1,3 +1,4 @@
+import string from '@adonisjs/core/helpers/string'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidRow } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
@@ -11,9 +12,8 @@ import { introspectValidator, isIntrospectable, type FieldHints } from './intros
 export type FormMode = 'create' | 'edit'
 
 /**
- * Field kinds the forms and detail page render. `manyToMany` arrives
- * with FR-09; until then it's left out of forms, detail pages and
- * writes. `hasMany` is a table on the detail page, never a form field.
+ * Field kinds the forms and detail page render. `hasMany` is a table
+ * on the detail page, never a form field.
  */
 export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'text',
@@ -25,18 +25,29 @@ export const FORM_KINDS: ReadonlySet<FieldKind> = new Set([
   'date',
   'datetime',
   'belongsTo',
+  'manyToMany',
   'richText',
   'file',
   'image',
 ])
 
 /**
- * The payload key a field submits and its errors use: a `belongsTo`
- * field writes its foreign key (`category` → `categoryId`).
+ * The payload key a field submits and its errors use:
+ *
+ * - a `belongsTo` field writes its foreign key (`category` → `categoryId`)
+ * - a `manyToMany` field sends the related records' keys, under the
+ *   relation's singular name plus `Ids` (`tags` → `tagIds`,
+ *   `relatedProducts` → `relatedProductIds`)
  */
 export function inputName(resource: Resource<any, any>, field: FieldSchema): string {
+  if (field.kind === 'manyToMany') return manyToManyInput(field.name)
   if (field.kind !== 'belongsTo') return field.name
   return relationKeys(resource.model, field.name)?.foreignKey ?? field.name
+}
+
+/** `tags` → `tagIds` */
+export function manyToManyInput(relation: string): string {
+  return `${string.camelCase(string.singular(relation))}Ids`
 }
 
 /**

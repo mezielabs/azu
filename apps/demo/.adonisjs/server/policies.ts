@@ -3,5 +3,6 @@ export const policies = {
   CouponPolicy: () => import('#policies/coupon_policy'),
   OrderPolicy: () => import('#policies/order_policy'),
   ProductPolicy: () => import('#policies/product_policy'),
+  TagPolicy: () => import('#policies/tag_policy'),
 }
 
