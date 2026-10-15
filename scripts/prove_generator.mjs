@@ -51,6 +51,8 @@ for (const dir of ['app/admin/resources', 'app/policies']) {
 }
 rmSync(join(proof, 'tests/functional'), { recursive: true, force: true })
 rmSync(join(proof, 'tests/types'), { recursive: true, force: true })
+// The browser suite (axe checks) uses the hand-written resources too
+rmSync(join(proof, 'tests/browser'), { recursive: true, force: true })
 mkdirSync(join(proof, 'tests/functional'), { recursive: true })
 cpSync(
   join(root, 'scripts/generator_proof/proof.spec.ts'),
