@@ -93,6 +93,7 @@ export async function configure(command: Configure) {
    */
   await codemods.updateRcFile((rcFile) => {
     rcFile.addProvider('@mezielabs/azu/azu_provider')
+    rcFile.addCommand('@mezielabs/azu/commands')
     rcFile.addPreloadFile('#start/admin')
   })
 

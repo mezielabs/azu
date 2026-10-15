@@ -39,6 +39,10 @@
       "types": "./build/src/types.d.ts",
       "default": "./build/src/types.js"
     },
+    "./commands": {
+      "types": "./build/commands/main.d.ts",
+      "default": "./build/commands/main.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -48,10 +52,10 @@
     "format": "prettier --write .",
     "quick:test": "node --import=@poppinss/ts-exec --enable-source-maps bin/test.ts",
     "test": "c8 pnpm run quick:test",
-    "compile": "tsdown && tsc --emitDeclarationOnly --declaration",
-    "postcompile": "pnpm run copy:templates",
+    "compile": "tsdown && tsc --emitDeclarationOnly --declaration && pnpm run copy:templates && pnpm run index:commands",
     "build": "pnpm run compile",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "index:commands": "adonis-kit index build/commands"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^8.5.2",
@@ -109,7 +113,8 @@
       "./vite.ts",
       "./providers/azu_provider.ts",
       "./services/main.ts",
-      "./src/types.ts"
+      "./src/types.ts",
+      "./commands/make_admin_resource.ts"
     ],
     "outDir": "./build",
     "clean": true,

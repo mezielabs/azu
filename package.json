@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "demo:seed": "pnpm --filter demo exec node ace migration:fresh --seed",
     "budget": "pnpm build && NODE_ENV=production pnpm --filter demo exec vite build && node scripts/check_admin_bundle.mjs",
-    "bench:list": "node scripts/bench_list.mjs"
+    "bench:list": "node scripts/bench_list.mjs",
+    "prove:generator": "pnpm build && node scripts/prove_generator.mjs"
   },
   "devDependencies": {
     "@adonisjs/prettier-config": "^1.5.0",

@@ -226,10 +226,22 @@ Generator mapping:
 - foreign key with a `belongsTo` relation → `belongsTo`, titled by the related model's first string column
 - skip `password`, `rememberMeToken`, and `serializeAs: null` columns
 - search defaults to the first two string columns; `title` defaults to `name`, `title`, or `email`
+- the field type comes from the model's declared TypeScript type when there is one, so the resource compiles against the model. That's the model file, or the schema class it extends from `#database/schema`. Otherwise it comes from the database type. A `string` decimal is `decimal` even on SQLite, which stores decimals as floats. Long text (`text` columns) is `textarea`.
+- fields and columns follow the table's column order. The list shows the title column and the next five; the rest, and an auto-created `createdAt`, start `hiddenByDefault()`. Long text stays off the list.
+- the generator reads the database through per-dialect queries (Postgres, MySQL, SQLite), because Lucid's `columnsInfo` lacks decimal precision, enum values, unique indexes and foreign keys. The files are formatted with the app's own Prettier when it has one.
+
+Policy. The resource imports `app/policies/<model>_policy.ts`. If there's none, the generator stops and asks for `--policy`, which writes one:
+
+- `viewList`, `view`, `create` and `update` return `true` for everyone who passes the `accessAdmin` gate, with a comment to narrow them. There's no `delete` method, so deleting is denied until one is written.
+- If the table has a required column that no field covers (no default, not nullable, such as `users.password`), the policy has no `create` either, with a comment saying why: those records can't be created from the admin panel. The generator warns about it.
+- `--readonly` writes only `viewList` and `view`, and no validators.
+- An existing policy is used as it is; `--policy` never replaces it.
+
+The generator's proof, `pnpm prove:generator` (and CI, on all three databases), runs it on every demo model in a copy of the demo with its resources, policies and tests removed. It then typechecks the copy and lists, creates, shows and edits each resource through HTTP, with zero hand edits. Users are the one model that can't be created, because of `users.password`.
 
 Generated validator (unless `--no-validator`). Azu's rule is that a resource with no validator for an operation can't save, so the generator writes one rather than leaving a resource that can't save:
 
-- **File and names:** `app/validators/<model>.ts` (snake_case, e.g. `order_item.ts`), exporting `create<Model>Validator` and `update<Model>Validator`. These are the names AdonisJS's `make:validator --resource` uses. The resource imports both and sets `validators: { create, update }`.
+- **File and names:** `app/validators/<model>.ts` (snake_case, e.g. `order_item.ts`), or `app/validators/<model>_admin.ts` when the app already has `<model>.ts` (a signup `user.ts`, say). It exports `create<Model>Validator` and `update<Model>Validator`, the names AdonisJS's `make:validator --resource` uses. The resource imports both and sets `validators: { create, update }`.
 - **Which keys:** the same columns the resource gets as form fields. That leaves out the primary key, auto-managed timestamps (`autoCreate`/`autoUpdate`), and `password`, `rememberMeToken` and `serializeAs: null` columns. A `belongsTo` relation's key is its foreign key (`categoryId`).
 - **Rules, from the column's database type:**
   - `varchar(n)` → `vine.string().trim().maxLength(n)`; text → `vine.string().trim()`
@@ -241,7 +253,7 @@ Generated validator (unless `--no-validator`). Azu's rule is that a resource wit
 - **Database rules:**
   - A unique index adds `.unique({ table, column })`. The update validator's version skips the record being edited through `field.meta.record`, Azu's default metadata (§4), so no `validators.meta` is needed.
   - A foreign key adds `.exists({ table, column })` on the related key.
-- **Existing files:** never overwritten. If `app/validators/<model>.ts` already exists, the generator warns and leaves `validators` out of the resource, so the app wires its own validators. Until it does, saving fails with the missing-validator error.
+- **Existing files:** never overwritten. An app's own `<model>.ts` stays as it is, and the admin validators go in `<model>_admin.ts`. An existing resource file is an error; the generator doesn't replace it.
 - **The validator is the app's code from then on.** It's a starting point to edit, like the resource, and Azu never regenerates it.
 
 ## 8. Frontend

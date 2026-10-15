@@ -31,6 +31,7 @@ export default defineConfig({
     () => import('@adonisjs/lucid/commands'),
     () => import('@adonisjs/session/commands'),
     () => import('@adonisjs/inertia/commands'),
+    () => import('@mezielabs/azu/commands'),
     () => import('@adonisjs/bouncer/commands'),
   ],
 

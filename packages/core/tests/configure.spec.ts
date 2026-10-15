@@ -61,6 +61,7 @@ test.group('configure', (group) => {
     await assert.fileContains('config/admin.ts', `path: '/admin'`)
     await assert.fileContains('inertia/admin/app.tsx', `createAzuApp({`)
     await assert.fileContains('adonisrc.ts', `@mezielabs/azu/azu_provider`)
+    await assert.fileContains('adonisrc.ts', `@mezielabs/azu/commands`)
     await assert.fileContains('vite.config.ts', `import { azu } from '@mezielabs/azu/vite'`)
     await assert.fileContains('vite.config.ts', `azu()`)
     await assert.fileContains('config/admin.ts', `resources: { autoload: 'app/admin/resources' }`)

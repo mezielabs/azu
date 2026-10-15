@@ -31,6 +31,23 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The demo's adonisrc.ts loads Azu's commands from the built package,
+      # and ace loads every command, even for generate:key
+      - run: pnpm build
+
+      # What `node ace configure` and the provider need at runtime ships in
+      # the package: stubs, the Edge view and the commands index
+      - name: Packed core includes stubs, views and commands
+        run: |
+          mkdir -p /tmp/azu-pack
+          (cd packages/core && pnpm pack --pack-destination /tmp/azu-pack > /dev/null)
+          tar -tzf /tmp/azu-pack/mezielabs-azu-*.tgz > /tmp/azu-pack/files
+          for file in build/stubs/config/admin.stub build/stubs/start/admin.stub \
+            build/stubs/inertia/admin/app.stub build/resources/views/admin.edge \
+            build/commands/main.js build/commands/commands.json; do
+            grep -qx "package/$file" /tmp/azu-pack/files || { echo "Missing $file"; exit 1; }
+          done
+
       # Ace commands (codegen in typecheck) validate the demo's env
       - name: Create demo .env
         working-directory: apps/demo
@@ -111,11 +128,21 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The demo's adonisrc.ts loads Azu's commands from the built package,
+      # and ace loads every command, even for generate:key
+      - run: pnpm build
+
       - name: Create demo .env
         working-directory: apps/demo
         run: cp .env.example .env && node ace generate:key
 
       - run: pnpm test
+
+      # FR-04: generate every demo model in a copy of the demo, then
+      # typecheck it and list, create, show and edit each one. Before the
+      # seed step: the proof seeds its own database
+      - name: Generator proof
+        run: node scripts/prove_generator.mjs
 
       # The tests roll their migrations back; also prove the seeder runs
       - run: pnpm demo:seed
