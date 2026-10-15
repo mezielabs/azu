@@ -24,6 +24,11 @@ const adminConfig = defineConfig({
    * readable. Dark mode follows the OS, with a toggle in the header.
    */
   brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
+
+  /**
+   * Navigation group order. Groups not listed follow, by label.
+   */
+  navigation: { groups: ['Sales', 'Catalog'] },
 })
 
 export default adminConfig

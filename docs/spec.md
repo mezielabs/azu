@@ -76,6 +76,7 @@ export default defineResource(Product, {
   label: 'Products',
   group: 'Catalog',
   icon: 'package',
+  order: 1,
   title: 'name',
   search: ['name', 'sku'],
   policy: ProductPolicy,
@@ -305,6 +306,14 @@ Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cove
 - **Toggle:** the header's "Dark theme" button (`aria-pressed`) stores the other theme, or clears the stored choice when the other theme is the OS's, so the admin follows the OS again.
 - **Name and logo:** `brand.name` (default `Admin`) heads the header and page titles (`Products · Acme`). `brand.logo` is a decorative image beside it. Pages get them as `azu.brand`.
 - **Checks:** the axe scans (§10) run in both themes.
+
+**Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
+
+- **Icons:** `icon` is a Lucide icon name in kebab case. `lucide-react` is an optional peer of `@mezielabs/azu-react`, and without it the navigation has no icons.
+- **Bundling:** `@mezielabs/azu-react/icons` is an empty map that the `azu()` Vite plugin replaces with a generated module. The plugin reads the resource files (`resources`, default `app/admin/resources`, plus its `icons` option) for `icon:` names, and imports one file per icon in use, so the bundle holds no others.
+- **Unknown names and dev:** an unknown name is a build warning and renders nothing. In dev, an edit that changes the icons in use reloads the admin.
+- **Agnostic plugin:** the front-end package's manifest (`azu.icons`) names the icon package and file pattern, so `azu()` knows nothing of React or Lucide.
+- **Accessibility:** icons are decorative (`aria-hidden`); the link's label names it.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 

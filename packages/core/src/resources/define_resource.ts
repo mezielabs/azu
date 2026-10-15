@@ -28,8 +28,18 @@ export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
   singularLabel?: string
   /** Navigation group. */
   group?: string
-  /** Navigation icon name. */
+  /**
+   * Navigation icon: a Lucide icon name in kebab case, `'package'` or
+   * `'shopping-cart'` (lucide.dev/icons). Shown when the app has
+   * `lucide-react` installed; the `azu()` Vite plugin bundles only the
+   * icons resources name.
+   */
   icon?: string
+  /**
+   * Position in its navigation group: lower comes first. Resources
+   * without one follow, in label order.
+   */
+  order?: number
   /** The attribute that names a record, e.g. in a `belongsTo` select. */
   title?: StringAttribute<M>
   /** Columns the list search looks in. Must be persisted. */

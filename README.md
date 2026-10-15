@@ -88,6 +88,7 @@ export default defineResource(Product, {
   label: 'Products',
   group: 'Catalog',
   icon: 'package',
+  order: 1,
   title: 'name',
   search: ['name', 'sku'],
   policy: ProductPolicy,
@@ -139,6 +140,17 @@ import productResource from '#admin/resources/product_resource'
 
 azu.register(productResource)
 ```
+
+### Navigation
+
+Resources without a `group` come first. Groups follow in the order you list in `config/admin.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
+
+```ts
+// config/admin.ts
+navigation: { groups: ['Sales', 'Catalog'] },
+```
+
+`icon` is a [Lucide](https://lucide.dev/icons) icon name in kebab case, like `'package'` or `'shopping-cart'`. Install `lucide-react` to show icons; without it, the navigation shows none. The `azu()` Vite plugin bundles only the icons your resources name, which it reads from `app/admin/resources`. If a resource sets `icon` in a way the plugin can't read, from a variable say, list the name in `azu({ icons: ['shopping-cart'] })`. An unknown name gives a warning at build time and shows no icon.
 
 ### Field types
 

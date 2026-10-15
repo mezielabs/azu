@@ -284,6 +284,45 @@ test.group('Navigation', () => {
     ])
   })
 
+  test('orders groups by config and resources by order, then by label (FR-16)', async ({
+    assert,
+  }) => {
+    const { ctx } = requestWith(
+      new Map<unknown, boolean>([
+        [CatalogPolicy, true],
+        [SalesPolicy, true],
+      ])
+    )
+    const tags = resource('Tag', { group: 'Catalog' })
+    const brands = resource('Brand', { group: 'Catalog' })
+    const ordered = [
+      resource('Product', { group: 'Catalog', order: 1 }),
+      resource('Category', { group: 'Catalog', order: 2 }),
+      tags,
+      brands,
+      defineResource(model('Order'), { policy: SalesPolicy, group: 'Sales' } as never),
+      defineResource(model('Report'), { policy: SalesPolicy, group: 'Reports' } as never),
+      defineResource(model('Media'), { policy: SalesPolicy, group: 'Assets' } as never),
+      settings,
+    ]
+    const navigation = await buildNavigation(ctx, ordered, '/admin', {
+      groups: ['Sales', 'Catalog'],
+    })
+
+    assert.deepEqual(
+      navigation.map((group) => [group.label, group.items.map((item) => item.name)]),
+      [
+        // Ungrouped first, then the configured groups, then the rest by label
+        [null, ['settings']],
+        ['Sales', ['orders']],
+        // Ordered resources first, then the rest by label
+        ['Catalog', ['products', 'categories', 'brands', 'tags']],
+        ['Assets', ['media']],
+        ['Reports', ['reports']],
+      ]
+    )
+  })
+
   test('hides resources whose viewList denies the user', async ({ assert }) => {
     const { ctx } = requestWith(
       new Map<unknown, boolean>([

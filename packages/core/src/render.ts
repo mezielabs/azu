@@ -27,7 +27,9 @@ export async function renderPage<Page extends keyof AzuPages>(
       navigation:
         context.navigation === false
           ? []
-          : await buildNavigation(ctx, context.azu.resources.all(), context.config.path),
+          : await buildNavigation(ctx, context.azu.resources.all(), context.config.path, {
+              groups: context.config.navigation.groups,
+            }),
     }),
   } as never)
 }

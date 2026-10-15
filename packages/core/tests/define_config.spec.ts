@@ -13,7 +13,18 @@ test.group('defineConfig', () => {
       perPage: 25,
       timezone: processTimezone(),
       brand: { name: 'Admin', logo: null, color: '#2563eb' },
+      navigation: { groups: [] },
     })
+  })
+
+  test('takes the navigation group order (FR-16)', ({ assert }) => {
+    assert.deepEqual(defineConfig({ navigation: { groups: ['Sales', 'Catalog'] } }).navigation, {
+      groups: ['Sales', 'Catalog'],
+    })
+    assert.throws(
+      () => defineConfig({ navigation: { groups: 'Sales' as never } }),
+      /must be a list of group labels/
+    )
   })
 
   test('takes a brand, with a hex colour only (FR-14)', ({ assert }) => {

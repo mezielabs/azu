@@ -12,6 +12,7 @@ export const defaults: Omit<AzuConfig, 'timezone' | 'defaultDisk'> = {
   resources: { autoload: 'app/admin/resources' },
   perPage: 25,
   brand: { name: 'Admin', logo: null, color: '#2563eb' },
+  navigation: { groups: [] },
 }
 
 /**
@@ -54,6 +55,10 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
       `"brand.color" in config/admin.ts must be a hex colour such as "#2563eb", not "${config.brand.color}"`
     )
   }
+  const groups = config.navigation?.groups ?? []
+  if (!Array.isArray(groups) || !groups.every((group) => typeof group === 'string')) {
+    throw new Error('"navigation.groups" in config/admin.ts must be a list of group labels')
+  }
   const path = `/${(config.path ?? defaults.path).replace(/^\/+|\/+$/g, '')}`
   if (path === '/') {
     throw new Error('Azu can\'t be mounted at "/". Set "path" in config/admin.ts, e.g. "/admin"')
@@ -66,6 +71,7 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     loginUrl: config.loginUrl ?? defaults.loginUrl,
     perPage: config.perPage ?? defaults.perPage,
     timezone: config.timezone ?? processTimezone(),
+    navigation: { groups: [...groups] },
     brand: {
       name: config.brand?.name?.trim() || defaults.brand.name,
       logo: config.brand?.logo || null,

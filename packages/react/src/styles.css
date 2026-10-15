@@ -156,7 +156,11 @@
   }
 
   .azu-nav-link {
-    @apply block rounded px-2 py-1 text-sm;
+    @apply flex items-center gap-2 rounded px-2 py-1 text-sm;
+  }
+
+  .azu-nav-icon {
+    @apply h-4 w-4 shrink-0;
   }
 
   .azu-nav-link:hover {

@@ -30,6 +30,10 @@
       "types": "./build/features/rich_text_fallback.d.ts",
       "default": "./build/features/rich_text_fallback.js"
     },
+    "./icons": {
+      "types": "./build/icons.d.ts",
+      "default": "./build/icons.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -55,6 +59,7 @@
     "eslint": "^10.11.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "lucide-react": "^1.55.0",
     "prettier": "^3.9.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -64,11 +69,12 @@
   "peerDependencies": {
     "@inertiajs/react": "^3.0.0",
     "@mezielabs/azu": "workspace:^",
+    "@tiptap/pm": "^3.0.0",
+    "@tiptap/react": "^3.0.0",
+    "@tiptap/starter-kit": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@tiptap/react": "^3.0.0",
-    "@tiptap/pm": "^3.0.0",
-    "@tiptap/starter-kit": "^3.0.0"
+    "lucide-react": "^1.0.0"
   },
   "publishConfig": {
     "access": "public",
@@ -88,6 +94,9 @@
     },
     "@tiptap/starter-kit": {
       "optional": true
+    },
+    "lucide-react": {
+      "optional": true
     }
   },
   "azu": {
@@ -106,6 +115,11 @@
           "@tiptap/starter-kit"
         ]
       }
-    ]
+    ],
+    "icons": {
+      "specifier": "@mezielabs/azu-react/icons",
+      "package": "lucide-react",
+      "path": "dist/esm/icons/{name}.mjs"
+    }
   }
 }

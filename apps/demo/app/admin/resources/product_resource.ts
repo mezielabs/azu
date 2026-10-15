@@ -19,6 +19,7 @@ export default defineResource(Product, {
   label: 'Products',
   group: 'Catalog',
   icon: 'package',
+  order: 1,
   title: 'name',
   search: ['name', 'sku'],
   policy: ProductPolicy,
