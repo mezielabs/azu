@@ -60,6 +60,21 @@ const partial = {
 }
 
 const path = '/admin/resources/products'
+
+// A category for the belongsTo filter, from the filter's own options endpoint
+const categories = await request(`${path}/filters/category/options`, {
+  headers: { accept: 'application/json' },
+})
+const category = categories.ok ? (await categories.json()).options[0]?.id : undefined
+if (category === undefined) {
+  console.error(`No category options (HTTP ${categories.status}); seed the database first`)
+  process.exit(1)
+}
+const lastMonth = (() => {
+  const day = (offset) => new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10)
+  return `${day(30)}..${day(0)}`
+})()
+
 const scenarios = [
   ['first page, default order (Inertia visit)', `${path}`, inertia],
   ['first page, full HTML load', `${path}`, {}],
@@ -70,6 +85,34 @@ const scenarios = [
   ['search "product", matches every row (partial reload)', `${path}?search=product`, partial],
   ['page 2,000 of 4,000 (partial reload)', `${path}?page=2000`, partial],
   ['100 per page (partial reload)', `${path}?perPage=100`, partial],
+  // Filters (FR-13), each sorted
+  [
+    'status=published, ~75,000 matches, by price',
+    `${path}?status=published&sort=price&direction=desc`,
+    partial,
+  ],
+  ['category, ~25,000 matches, by name', `${path}?category=${category}&sort=name`, partial],
+  ['featured, ~10,000 matches, by price', `${path}?isFeatured=true&sort=price`, partial],
+  [
+    'low stock (custom), ~5,000 matches, by price',
+    `${path}?low-stock=1&sort=price&direction=desc`,
+    partial,
+  ],
+  [
+    'created in the last 30 days, ~8,500 matches, by price',
+    `${path}?createdAt=${lastMonth}&sort=price`,
+    partial,
+  ],
+  [
+    'status + category + low stock + date + search, by price',
+    `${path}?search=product&status=published&category=${category}&low-stock=1&createdAt=${lastMonth}&sort=price`,
+    partial,
+  ],
+  [
+    'status=published, page 1,000 of 3,000, by price',
+    `${path}?status=published&sort=price&page=1000`,
+    partial,
+  ],
 ]
 
 const percentile = (sorted, p) =>

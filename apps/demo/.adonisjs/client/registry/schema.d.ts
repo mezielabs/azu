@@ -91,6 +91,18 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.resources.filters.options': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/resources/:resource/filters/:filter/options'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { resource: ParamValue; filter: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'azu.resources.show': {
     methods: ["GET","HEAD"]
     pattern: '/admin/resources/:resource/:id'

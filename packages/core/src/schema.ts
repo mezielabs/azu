@@ -180,6 +180,20 @@ export type ListRow = {
   }
 }
 
+/**
+ * A filter as the list page shows it (FR-13): its schema, its value
+ * from the URL, and for `belongsTo` the selected record and the
+ * policy-checked options endpoint.
+ */
+export type ListFilter = FilterSchema & {
+  /** The URL value, or `null` when the filter is off */
+  value: string | null
+  /** `belongsTo`: the record the value names */
+  selected: RelationOption | null
+  /** `belongsTo`: `GET` it with `?search=` for options */
+  optionsUrl: string | null
+}
+
 export type ListMeta = {
   total: number
   perPage: number

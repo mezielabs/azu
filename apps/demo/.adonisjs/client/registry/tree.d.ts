@@ -19,6 +19,9 @@ export interface ApiDefinition {
       fields: {
         options: typeof routes['azu.resources.fields.options']
       }
+      filters: {
+        options: typeof routes['azu.resources.filters.options']
+      }
       show: typeof routes['azu.resources.show']
       edit: typeof routes['azu.resources.edit']
       update: typeof routes['azu.resources.update']

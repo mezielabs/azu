@@ -2,7 +2,17 @@ import type { ListMeta } from '@mezielabs/azu/types'
 
 export function Pagination(props: { meta: ListMeta; onPage: (page: number) => void }) {
   const { total, currentPage, lastPage, perPage } = props.meta
-  if (total === 0) return null
+  // Still a live region with no records (the table says so on screen),
+  // so a filter that matches nothing is announced too
+  if (total === 0) {
+    return (
+      <nav className="azu-pagination" aria-label="Pagination">
+        <p className="azu-visually-hidden" aria-live="polite">
+          No records
+        </p>
+      </nav>
+    )
+  }
   const from = (currentPage - 1) * perPage + 1
   const to = Math.min(currentPage * perPage, total)
 

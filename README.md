@@ -114,6 +114,7 @@ export default defineResource(Product, {
 
   filters: [
     filter.select('status', { draft: 'Draft', published: 'Published' }),
+    filter.belongsTo('category'),
     filter.dateRange('createdAt'),
     filter.custom('Low stock', (q) => q.where('stock', '<', 10)),
   ],
@@ -122,7 +123,7 @@ export default defineResource(Product, {
 
 Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo.
 
-The list screen pages, sorts and searches on the server, and keeps it all in the URL, so a reload or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
+The list screen pages, sorts, searches and filters on the server, and keeps it all in the URL, so a reload, a bookmark or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
 
 Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/admin.ts` and register resources in `start/admin.ts`:
 
@@ -217,6 +218,17 @@ validators: {
   meta: ({ record }) => ({ productId: record?.id }),
 },
 ```
+
+## Filters
+
+Each filter is a URL query parameter named after it, so a filtered view can be bookmarked: `?status=published&category=3&createdAt=2026-10-01..2026-10-31&low-stock=1`. Filters combine with each other, with search and with sort, and changing one goes back to page 1.
+
+- `filter.select(column, options)` and `filter.boolean(column)` match a column.
+- `filter.dateRange(column)` takes whole days in the admin's timezone (`timezone` in `config/admin.ts`). Either end can be left open.
+- `filter.belongsTo(relation)` picks a related record from a searchable list. It shows only to users who pass the related resource's `viewList`, like a `belongsTo` field.
+- `filter.custom(label, query)` is an on/off filter with your own query, typed against the model. Its parameter is the label in kebab case (`low-stock`).
+
+A filter can't be named after the list's own parameters (`page`, `perPage`, `sort`, `direction`, `search`), and values that don't fit a filter are ignored rather than failing the page.
 
 ## Actions
 

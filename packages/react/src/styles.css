@@ -135,6 +135,41 @@
     color: var(--azu-muted);
   }
 
+  /* Filters (FR-13): a wrapping row of labelled controls */
+  .azu-filters {
+    @apply mb-3 flex flex-wrap items-end gap-3;
+  }
+
+  .azu-filter {
+    @apply m-0 flex min-w-0 flex-col gap-1 border-0 p-0 text-sm;
+  }
+
+  .azu-filter-label {
+    @apply p-0 text-xs font-medium;
+    color: var(--azu-muted);
+  }
+
+  .azu-filter-range {
+    @apply flex-row flex-wrap items-center gap-1;
+  }
+
+  .azu-filter-range .azu-filter-label {
+    @apply w-full;
+  }
+
+  .azu-filter .azu-combobox .azu-input {
+    @apply w-44;
+  }
+
+  .azu-filter-toggle {
+    @apply flex-row items-center gap-2 py-1;
+  }
+
+  .azu-filter-checkbox {
+    @apply h-4 w-4;
+    accent-color: var(--azu-brand);
+  }
+
   .azu-button {
     @apply rounded border px-3 py-1 text-sm;
     border-color: var(--azu-border);

@@ -10,30 +10,14 @@ import {
   Text,
   useAsyncList,
 } from 'react-aria-components'
-import type { RelationOption, RelationOptionsResponse, RelationValue } from '@mezielabs/azu/types'
+import { fetchRelationOptions } from '@mezielabs/azu/shared'
+import type { RelationOption, RelationValue } from '@mezielabs/azu/types'
 import { FieldLabel, type ControlProps } from './controls.tsx'
 
 const cx = (...classes: (string | false | undefined)[]) => classes.filter(Boolean).join(' ')
 
 function optionLabel(option: { id: string | number; title: string | null }) {
   return option.title ?? String(option.id)
-}
-
-/**
- * Fetches options from the field's policy-checked endpoint. React
- * Aria's `useAsyncList` aborts the previous request whenever the text
- * changes, so the last response wins (docs/ui-check.md §1).
- */
-async function fetchOptions(url: string, search: string, signal: AbortSignal) {
-  const target = new URL(url, window.location.origin)
-  if (search) target.searchParams.set('search', search)
-  const response = await fetch(target, {
-    signal,
-    credentials: 'same-origin',
-    headers: { Accept: 'application/json' },
-  })
-  if (!response.ok) throw new Error(`Options request failed with ${response.status}`)
-  return ((await response.json()) as RelationOptionsResponse).options
 }
 
 /**
@@ -61,7 +45,9 @@ export function RelationControl(props: ControlProps) {
     async load({ signal, filterText = '' }) {
       if (!field.optionsUrl) return { items: [] }
       const showing = current.current ? optionLabel(current.current) : ''
-      const items = await fetchOptions(
+      // useAsyncList aborts the previous request when the text changes,
+      // so the last response wins (docs/ui-check.md §1)
+      const items = await fetchRelationOptions(
         field.optionsUrl,
         filterText === showing ? '' : filterText,
         signal

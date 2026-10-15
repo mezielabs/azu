@@ -42,7 +42,8 @@ export default class BenchProducts extends BaseCommand {
           is_featured: n % 10 === 0,
           thumbnail: null,
           published_at: null,
-          created_at: now,
+          // Spread over the past year, so a date range filter is selective
+          created_at: new Date(now.getTime() - (n % 365) * 86_400_000),
           updated_at: now,
         }
       })

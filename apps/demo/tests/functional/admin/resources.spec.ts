@@ -88,7 +88,7 @@ test.group('Admin / resources (FR-03)', (group) => {
       format: { style: 'currency', currency: 'NGN' },
     })
     assert.include(resource.fields[3], { kind: 'belongsTo', name: 'category', searchable: 'name' })
-    assert.deepEqual(resource.filters[2], {
+    assert.deepEqual(resource.filters[3], {
       kind: 'custom',
       name: 'low-stock',
       label: 'Low stock',

@@ -13,6 +13,7 @@ export { useComponent } from './components/registry.tsx'
 export { DataTable, selectedIds } from './components/list/data_table.tsx'
 export { ListCell } from './components/list/cell.tsx'
 export { ListToolbar } from './components/list/list_toolbar.tsx'
+export { FilterBar } from './components/list/filter_bar.tsx'
 export { Pagination } from './components/list/pagination.tsx'
 export { ResourceForm } from './components/form/resource_form.tsx'
 export { FormField } from './components/form/form_field.tsx'
@@ -58,5 +59,6 @@ export type {
   ColumnSchema,
   FieldSchema,
   FilterSchema,
+  ListFilter,
   ActionSchema,
 } from '@mezielabs/azu/types'

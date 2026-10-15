@@ -1,7 +1,7 @@
 /**
  * The README's Product resource, verbatim apart from the actions (from
  * the README's "Actions" section, plus a restock action), validator metadata (from its
- * "Validation" section), and the thumbnail's disk: the README stores it
+ * "Validation" section), a boolean filter, and the thumbnail's disk: the README stores it
  * on S3, the demo on Drive's default local disk so it runs offline.
  * Loaded by convention from app/admin/resources.
  */
@@ -50,8 +50,11 @@ export default defineResource(Product, {
 
   filters: [
     filter.select('status', { draft: 'Draft', published: 'Published' }),
+    filter.belongsTo('category'),
     filter.dateRange('createdAt'),
     filter.custom('Low stock', (q) => q.where('stock', '<', 10)),
+    // Not in the README: a boolean filter (FR-13)
+    filter.boolean('isFeatured').label('Featured'),
   ],
 
   // From the README's "Actions" section. FR-12 runs it; FR-03 only defines it.

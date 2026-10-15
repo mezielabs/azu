@@ -164,6 +164,18 @@ test.group('ResourceRegistry', () => {
     )
   })
 
+  test("rejects filters that clash with the list's parameters or each other", ({ assert }) => {
+    const reserved = resource('Product', { filters: [filter.custom('Search', (q) => q)] })
+    assert.throws(
+      () => new ResourceRegistry().register(reserved),
+      /filter named "search", which the list uses/
+    )
+    const twice = resource('Product', {
+      filters: [filter.select('status', {}), filter.boolean('status')],
+    })
+    assert.throws(() => new ResourceRegistry().register(twice), /two filters named "status"/)
+  })
+
   test('rejects anything not made by defineResource', ({ assert }) => {
     assert.throws(() => new ResourceRegistry().register({} as never), /defineResource/)
   })

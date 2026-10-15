@@ -9,8 +9,9 @@ export class ResourceRegistry {
 
   /**
    * Registering the same resource twice is a no-op; two different
-   * resources with the same URL name are an error. So is an action
-   * named `delete`, checked here so it fails at boot.
+   * resources with the same URL name are an error. So are an action
+   * named `delete` and clashing filter names, checked here so they fail
+   * at boot.
    */
   register(...resources: Resource<any, any>[]): this {
     for (const resource of resources) {
@@ -25,6 +26,7 @@ export class ResourceRegistry {
         )
       }
       resource.actions()
+      resource.filters()
       this.#resources.set(resource.name, resource)
     }
     return this

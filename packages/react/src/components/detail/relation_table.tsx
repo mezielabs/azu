@@ -19,6 +19,7 @@ export function RelationTableView(props: { table: RelationTable; path: string; t
     sort: null,
     direction: 'asc',
     search: '',
+    filters: {},
   }
 
   return (

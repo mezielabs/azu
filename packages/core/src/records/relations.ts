@@ -60,11 +60,14 @@ function read(record: LucidRow, attribute: string): unknown {
  * The attribute that names a related record: the field's
  * `searchable()`, else the related resource's `title`.
  */
-function titleAttribute(field: FieldSchema, related: Resource<any, any> | undefined) {
+function titleAttribute(
+  field: Pick<FieldSchema, 'searchable'>,
+  related: Resource<any, any> | undefined
+) {
   return field.searchable ?? related?.options.title ?? null
 }
 
-function titleOf(record: LucidRow, attribute: string | null) {
+export function titleOf(record: LucidRow, attribute: string | null) {
   const value = attribute ? read(record, attribute) : null
   return value === null || value === undefined ? null : String(value)
 }
@@ -104,16 +107,17 @@ export async function belongsToValue(
 }
 
 /**
- * Whether the user may list what a `belongsTo` field points at: the
- * related resource's `viewList`. Fails closed: no resource for the
- * related model, or no `viewList` on its policy, means no. Without it,
- * the field is read-only and its options endpoint answers 403.
+ * Whether the user may list what a `belongsTo` field or filter points
+ * at: the related resource's `viewList`. Fails closed: no resource for
+ * the related model, or no `viewList` on its policy, means no. Without
+ * it, the field is read-only, the filter is left out, and their options
+ * endpoints answer 403.
  */
 export async function canListRelated(
   ctx: HttpContext,
   context: RelationsContext,
   model: LucidModel,
-  field: FieldSchema
+  field: Pick<FieldSchema, 'name'>
 ): Promise<boolean> {
   const keys = relationKeys(model, field.name)
   if (!keys || keys.type !== 'belongsTo') return false
@@ -141,14 +145,15 @@ export async function relationValues(
 }
 
 /**
- * Up to 20 records a `belongsTo` field can point at, matching `search`
- * in the title attribute, literally. The related resource's `query`
- * hook applies, so a scoped resource's records stay scoped.
+ * Up to 20 records a `belongsTo` field or filter can point at,
+ * matching `search` in the title attribute, literally. The related
+ * resource's `query` hook applies, so a scoped resource's records stay
+ * scoped.
  */
 export async function relationOptions(
   context: RelationsContext,
   model: LucidModel,
-  field: FieldSchema,
+  field: Pick<FieldSchema, 'name' | 'searchable'>,
   search: string
 ): Promise<RelationOption[]> {
   const keys = relationKeys(model, field.name)
@@ -219,7 +224,7 @@ export async function hasManyTables(
     const list = await listRecords(
       ctx,
       related,
-      { page, perPage: RELATION_PAGE_SIZE, sort: null, direction: 'asc', search: '' },
+      { page, perPage: RELATION_PAGE_SIZE, sort: null, direction: 'asc', search: '', filters: {} },
       {
         scope: (query) => query.where(keys.foreignKeyColumnName, parentKey as never),
         defaultDisk: context.config.defaultDisk,

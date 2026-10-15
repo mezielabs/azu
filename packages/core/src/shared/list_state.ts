@@ -1,6 +1,9 @@
+import type { FilterSchema } from '../schema.ts'
+import { parseFilterValue, type FilterValues } from './list_filters.ts'
+
 /**
  * The list screen's state, as it lives in the URL: page, page size,
- * sort, and search. Plain TypeScript with no server or UI imports
+ * sort, search and filters (`list_filters.ts`). Plain TypeScript with no server or UI imports
  * (non-negotiable 11), so the server parses requests and the front end
  * builds URLs with the same rules.
  */
@@ -17,6 +20,8 @@ export type ListState = {
   sort: string | null
   direction: SortDirection
   search: string
+  /** Filter name → its URL value, only for filters that are on */
+  filters: FilterValues
 }
 
 export type ListStateOptions = {
@@ -24,6 +29,8 @@ export type ListStateOptions = {
   defaultPerPage: PageSize
   /** Column names the user may sort by. Anything else is ignored. */
   sortable: readonly string[]
+  /** The filters this user may use. Other parameters are ignored. */
+  filters?: readonly Pick<FilterSchema, 'name' | 'kind' | 'options'>[]
 }
 
 /** Longest search term kept; the rest is dropped */
@@ -52,6 +59,11 @@ export function parseListState(query: QueryInput, options: ListStateOptions): Li
   const sort = read(query, 'sort') ?? null
   const direction = read(query, 'direction') === 'desc' ? 'desc' : 'asc'
   const search = (read(query, 'search') ?? '').trim().slice(0, MAX_SEARCH_LENGTH)
+  const filters: FilterValues = {}
+  for (const filter of options.filters ?? []) {
+    const value = parseFilterValue(filter, read(query, filter.name))
+    if (value !== null) filters[filter.name] = value
+  }
 
   return {
     page: Number.isInteger(page) && page > 0 ? page : 1,
@@ -59,12 +71,13 @@ export function parseListState(query: QueryInput, options: ListStateOptions): Li
     sort: sort !== null && options.sortable.includes(sort) ? sort : null,
     direction: sort !== null && options.sortable.includes(sort) ? direction : 'asc',
     search,
+    filters,
   }
 }
 
 /**
  * Query parameters for a list state, leaving out defaults so URLs stay
- * short: page 1, the default page size, no sort, no search.
+ * short: page 1, the default page size, no sort, no search, no filters.
  */
 export function listStateToQuery(
   state: ListState,
@@ -72,6 +85,7 @@ export function listStateToQuery(
 ): Record<string, string> {
   const query: Record<string, string> = {}
   if (state.search) query.search = state.search
+  for (const [name, value] of Object.entries(state.filters)) query[name] = value
   if (state.sort) {
     query.sort = state.sort
     query.direction = state.direction
@@ -94,12 +108,17 @@ export function listStateUrl(
 }
 
 /**
- * The next state after a user action. Changing the search, sort or page
- * size goes back to page 1, so the user never lands past the end.
+ * The next state after a user action. Changing the search, a filter,
+ * the sort or the page size goes back to page 1, so the user never
+ * lands past the end.
  */
 export function nextListState(state: ListState, change: Partial<ListState>): ListState {
   const resetsPage =
-    'search' in change || 'sort' in change || 'direction' in change || 'perPage' in change
+    'search' in change ||
+    'filters' in change ||
+    'sort' in change ||
+    'direction' in change ||
+    'perPage' in change
   return { ...state, ...change, page: change.page ?? (resetsPage ? 1 : state.page) }
 }
 
