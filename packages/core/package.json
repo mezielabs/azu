@@ -52,8 +52,7 @@
     "format": "prettier --write .",
     "quick:test": "node --import=@poppinss/ts-exec --enable-source-maps bin/test.ts",
     "test": "c8 pnpm run quick:test",
-    "compile": "tsdown && tsc --emitDeclarationOnly --declaration",
-    "postcompile": "pnpm run copy:templates && pnpm run index:commands",
+    "compile": "tsdown && tsc --emitDeclarationOnly --declaration && pnpm run copy:templates && pnpm run index:commands",
     "build": "pnpm run compile",
     "prepublishOnly": "pnpm run build",
     "index:commands": "adonis-kit index build/commands"
