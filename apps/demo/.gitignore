@@ -4,6 +4,9 @@ build
 tmp/*
 !tmp/.gitkeep
 
+# Drive's local disk (uploads)
+storage
+
 # Secrets
 .env
 .env.local

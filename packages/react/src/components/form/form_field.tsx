@@ -1,4 +1,5 @@
-import type { FieldProps, FieldValue, FormFieldSchema } from '@mezielabs/azu/types'
+import { lazy, Suspense } from 'react'
+import type { FieldProps, FieldValue, FileValue, FormFieldSchema } from '@mezielabs/azu/types'
 import { useComponent } from '../registry.tsx'
 import {
   BooleanControl,
@@ -10,6 +11,15 @@ import {
   type ControlProps,
 } from './controls.tsx'
 import { RelationControl } from './relation_control.tsx'
+import { RichTextControl } from './rich_text_control.tsx'
+
+/**
+ * The upload UI (React Aria's DropZone and FileTrigger) is its own
+ * chunk, so forms without file or image fields don't load it.
+ */
+const FileControl = lazy(async () => ({
+  default: (await import('./file_control.tsx')).FileControl,
+}))
 
 /**
  * One form field, by kind, or the app's component when the field names
@@ -46,6 +56,26 @@ export function FormField(props: ControlProps & { values: Record<string, FieldVa
       return <DateTimeControl {...props} />
     case 'belongsTo':
       return <RelationControl {...props} />
+    case 'richText':
+      return <RichTextControl {...props} />
+    case 'file':
+    case 'image':
+      return (
+        <Suspense
+          fallback={
+            <div className="azu-field" data-azu-field={field.name} aria-busy="true">
+              <span className="azu-label">{field.label}</span>
+              <div className="azu-drop-zone azu-is-loading">Loading…</div>
+            </div>
+          }
+        >
+          <FileControl
+            {...props}
+            value={props.value as FileValue | File | null}
+            onChange={props.onChange as (value: FileValue | File | null) => void}
+          />
+        </Suspense>
+      )
     default:
       return <TextControl {...props} />
   }

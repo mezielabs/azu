@@ -57,9 +57,13 @@ export type ControlProps = {
   timezone: string
 }
 
-export function FieldLabel({ field }: { field: FormFieldSchema }) {
+/**
+ * A field's label text with its required marker. Screen readers get
+ * "required" from `aria-required`, so the asterisk is hidden from them.
+ */
+export function FieldLabelText({ field }: { field: FormFieldSchema }) {
   return (
-    <Label className="azu-label">
+    <>
       {field.label}
       {field.required && (
         <span className="azu-required" aria-hidden>
@@ -67,6 +71,14 @@ export function FieldLabel({ field }: { field: FormFieldSchema }) {
           *
         </span>
       )}
+    </>
+  )
+}
+
+export function FieldLabel({ field }: { field: FormFieldSchema }) {
+  return (
+    <Label className="azu-label">
+      <FieldLabelText field={field} />
     </Label>
   )
 }

@@ -4,6 +4,7 @@ type ParamValue = string | number | bigint | boolean
 
 export type ScannedRoutes = {
   ALL: {
+    'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
@@ -21,6 +22,7 @@ export type ScannedRoutes = {
     'session.destroy': { paramsTuple?: []; params?: {} }
   }
   GET: {
+    'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
@@ -33,6 +35,7 @@ export type ScannedRoutes = {
     'dashboard': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
+    'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }

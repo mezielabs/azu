@@ -220,7 +220,10 @@ export async function hasManyTables(
       ctx,
       related,
       { page, perPage: RELATION_PAGE_SIZE, sort: null, direction: 'asc', search: '' },
-      (query) => query.where(keys.foreignKeyColumnName, parentKey as never)
+      {
+        scope: (query) => query.where(keys.foreignKeyColumnName, parentKey as never),
+        defaultDisk: context.config.defaultDisk,
+      }
     )
 
     tables.push({

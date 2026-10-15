@@ -6,13 +6,23 @@ import { showToast } from '../toast.tsx'
 import { FormField } from './form_field.tsx'
 import { UnsavedChanges } from './unsaved_changes.tsx'
 
-type Values = Record<string, FieldValue>
+/**
+ * Form state: field values, plus a newly chosen `File` for uploads.
+ */
+type Values = Record<string, FieldValue | File>
 
 /**
- * Relations compare by id: picking the same record again isn't a change.
+ * What Inertia accepts as visit data; `@inertiajs/react` doesn't export the type.
  */
-function comparable(value: FieldValue | undefined) {
-  return value !== null && typeof value === 'object' ? value.id : value
+type Payload = NonNullable<Parameters<typeof router.post>[1]>
+
+/**
+ * Relations compare by id and stored files by key: picking the same
+ * record again isn't a change. A chosen file always is.
+ */
+function comparable(value: FieldValue | File | undefined) {
+  if (value instanceof File || value === null || typeof value !== 'object') return value
+  return 'id' in value ? value.id : value.key
 }
 
 function sameValues(a: Values, b: Values) {
@@ -70,16 +80,23 @@ export function ResourceForm(props: {
     // foreign key. Datetimes go as the exact instant the picker resolved;
     // the server hands them to the validator in the format vine.date()
     // expects.
-    const data = Object.fromEntries(
-      form.fields.map((field) => {
-        const value = values[field.name] ?? null
-        return [
-          field.input,
-          field.kind === 'belongsTo' ? ((value as RelationValue | null)?.id ?? null) : value,
-        ]
-      })
-    )
-    router[props.method](props.action, data, {
+    // Uploads send a chosen File, or null to remove the stored file; an
+    // untouched upload isn't sent, so the server keeps it. With a File in
+    // the data, Inertia sends multipart form data.
+    const data: Record<string, unknown> = {}
+    for (const field of form.fields) {
+      const value = values[field.name] ?? null
+      if (field.kind === 'file' || field.kind === 'image') {
+        if (comparable(value) !== comparable(initial[field.name] ?? null)) {
+          data[field.input] = value
+        }
+      } else if (field.kind === 'belongsTo') {
+        data[field.input] = (value as RelationValue | null)?.id ?? null
+      } else {
+        data[field.input] = value
+      }
+    }
+    router[props.method](props.action, data as Payload, {
       preserveState: true,
       preserveScroll: true,
       onStart: () => setProcessing(true),

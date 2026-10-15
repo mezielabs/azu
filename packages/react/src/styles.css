@@ -631,3 +631,128 @@
     @apply underline;
   }
 }
+
+/*
+ * Uploads and rich text (FR-07).
+ */
+@layer components {
+  .azu-drop-zone {
+    @apply rounded-lg border border-dashed p-3 outline-none;
+    border-color: var(--azu-border);
+  }
+
+  .azu-drop-zone.azu-is-drop-target {
+    border-color: var(--azu-brand);
+    background: var(--azu-subtle);
+  }
+
+  .azu-drop-zone.azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-drop-zone.azu-is-invalid {
+    border-color: #dc2626;
+  }
+
+  .azu-file {
+    @apply flex items-center gap-3;
+  }
+
+  .azu-file-preview {
+    @apply h-16 w-16 shrink-0 rounded object-cover;
+    background: var(--azu-subtle);
+  }
+
+  .azu-file-body {
+    @apply min-w-0 space-y-2 text-sm;
+  }
+
+  .azu-file-name {
+    @apply truncate;
+  }
+
+  .azu-file-name a,
+  .azu-detail-value a {
+    color: var(--azu-brand);
+  }
+
+  .azu-file-size,
+  .azu-file-empty {
+    color: var(--azu-muted);
+  }
+
+  .azu-file-actions {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .azu-detail-image {
+    @apply max-h-48 rounded;
+  }
+
+  .azu-rich-text {
+    @apply rounded border;
+    border-color: var(--azu-border);
+  }
+
+  .azu-rich-text.azu-is-loading {
+    @apply min-h-32 p-3 text-sm;
+    color: var(--azu-muted);
+  }
+
+  .azu-rich-text .azu-textarea {
+    @apply border-0;
+  }
+
+  .azu-rich-text-toolbar {
+    @apply flex flex-wrap gap-1 border-b p-1;
+    border-color: var(--azu-border);
+  }
+
+  .azu-rich-text-tool {
+    @apply px-2 py-0.5 text-xs;
+  }
+
+  .azu-rich-text-tool[aria-pressed='true'] {
+    background: var(--azu-subtle);
+    color: var(--azu-brand);
+  }
+
+  .azu-rich-text .azu-rich-text-content {
+    @apply min-h-32 px-3 py-2 outline-none;
+  }
+
+  .azu-rich-text:focus-within {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-rich-text-content {
+    @apply space-y-2 text-sm;
+  }
+
+  .azu-rich-text-content h1,
+  .azu-rich-text-content h2,
+  .azu-rich-text-content h3 {
+    @apply font-semibold;
+  }
+
+  .azu-rich-text-content ul {
+    @apply list-disc pl-5;
+  }
+
+  .azu-rich-text-content ol {
+    @apply list-decimal pl-5;
+  }
+
+  .azu-rich-text-content blockquote {
+    @apply border-l-2 pl-3;
+    border-color: var(--azu-border);
+    color: var(--azu-muted);
+  }
+
+  .azu-rich-text-content a {
+    color: var(--azu-brand);
+    @apply underline;
+  }
+}

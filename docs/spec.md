@@ -43,9 +43,9 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. Searches use `ILIKE '%term%'`, so on Postgres the search columns need trigram (`pg_trgm`) GIN indexes; a B-tree can't serve a leading wildcard. Measured 2026-10-13 on 100,000 demo products, Postgres 18, production mode, sequential requests: worst p95 40 ms across first page, sorts, a 101-match search, deep pages and 100 per page; 162 ms for a search matching every row. Without trigram indexes, search was 598 ms. Check with `pnpm bench:list` before each release. |
 | Security | Every admin route and action authorises server-side, never only by hiding UI. CSRF on all writes. Mass assignment limited to declared fields. Uploads restricted by MIME type and size per field. |
 | Accessibility | WCAG 2.1 AA on core screens: keyboard navigation, focus states, labelled inputs, 4.5:1 contrast in both themes. |
-| Compatibility | AdonisJS 7, Node 24+, Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
+| Compatibility | AdonisJS 7, Node 24.21+ (earlier 24.x releases crash loading some dependencies, see docs/decisions.md), Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
 | Type safety | Resource definitions typed against the model: a misspelled column or field name fails `tsc`. |
-| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), and ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS). |
+| Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS), and ≤ 200 kB gz per optional-feature chunk (an `azu()` optional feature such as the Tiptap editor, loaded only when a form uses it; measured like a page, beyond the initial JS). |
 | Upgrades | Semver. Published components carry a version stamp; `admin:doctor` flags drift. |
 | i18n | All UI strings go through AdonisJS i18n; English only in v1. |
 | Mobile | Usable at 375 px: tables scroll horizontally, forms stack. |
@@ -152,15 +152,17 @@ Rules:
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
 | `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
-| `richText` | Tiptap editor, output sanitised | Hidden by default | HTML in text column |
-| `file`, `image` | Drag-and-drop upload with preview | File name or thumbnail | Drive disk, key on the model |
+| `richText` | Tiptap editor (optional peer, lazy; a plain HTML textarea without it). Sanitised on the server with `sanitize-html` to Tiptap StarterKit's markup, before validation and again before display | Hidden by default | HTML in text column |
+| `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
 | `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
 | `manyToMany` | Searchable picker | Count | Lucid relation |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
 
-Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), and `belongsTo` (FR-08). Detail pages show `hasMany` tables (FR-08). Until FR-07 and FR-09 land, `richText`, `file`, `image` and `manyToMany` fields are left out of forms, detail pages and writes.
+Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`, `select`, `date` and `datetime` (FR-06), `belongsTo` (FR-08), and `richText`, `file` and `image` (FR-07). Detail pages show `hasMany` tables (FR-08). Until FR-09 lands, `manyToMany` fields are left out of forms, detail pages and writes.
+
+Uploads (FR-07): an upload is checked first. If the save fails validation, nothing is stored. Otherwise it's stored on the disk under `<resource>/<field>/<uuid>.<ext>`, and the validator sees that key. Leaving a file field out of the request keeps the stored file; sending it empty removes it. A replaced or removed file is deleted from the disk after the save commits. URLs come from the disk's `getUrl()`, so private disks (signed URLs) aren't supported yet. Drive is an optional peer: a resource with file or image fields fails at boot without it.
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 
@@ -312,7 +314,7 @@ export default defineConfig({
 | 1. Weeks 1–3 | FR-01 to FR-08: install, access gate, resources, generator, list/forms/detail, core fields, belongsTo/hasMany | Generated Product resource works end to end in the demo app |
 | 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass; v0.x preview published |
 | 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | README quickstart works on a fresh app in under five minutes |
-| v1.1 | P1 items: FR-09, FR-15, FR-16, FR-17 | |
+| v1.1 | P1 items: FR-09, FR-15, FR-16, FR-17. Private Drive disks: `file` and `image` URLs signed through Drive (`getSignedUrl`) instead of `getUrl`, which only suits public disks | |
 
 **Phase 0 risk checks:**
 

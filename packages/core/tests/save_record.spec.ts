@@ -75,7 +75,7 @@ test.group('Form fields', () => {
       field.text('sku').visibleOn('create'),
       field.text('slug').visibleOn('edit'),
       field.decimal('price').ability('editPrice'),
-      field.richText('description'),
+      field.manyToMany('tags'),
     ],
   } as never)
 
@@ -100,11 +100,11 @@ test.group('Form fields', () => {
     )
   })
 
-  test('kinds that arrive with FR-07 and FR-08 are left out', async ({ assert }) => {
+  test('manyToMany, which arrives with FR-09, is left out', async ({ assert }) => {
     const fields = await formFields(request({}, ['editPrice']), resource, 'create')
     assert.notInclude(
       fields.map((item) => item.name),
-      'description'
+      'tags'
     )
   })
 })

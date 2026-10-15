@@ -4,7 +4,7 @@ import { isPageSize } from './shared/list_state.ts'
 /**
  * Default URL prefix and admin Vite entry.
  */
-export const defaults: Omit<AzuConfig, 'timezone'> = {
+export const defaults: Omit<AzuConfig, 'timezone' | 'defaultDisk'> = {
   path: '/admin',
   entry: 'inertia/admin/app.tsx',
   loginUrl: '/login',
@@ -55,6 +55,7 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     path,
     entry: config.entry ?? defaults.entry,
     guard: config.guard,
+    defaultDisk: config.defaultDisk,
     loginUrl: config.loginUrl ?? defaults.loginUrl,
     perPage: config.perPage ?? defaults.perPage,
     timezone: config.timezone ?? processTimezone(),
