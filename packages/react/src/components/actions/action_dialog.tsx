@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useState, type FormEvent } from 'react'
 import { Button, Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components'
-import { dismissLabel, fieldErrors } from '@mezielabs/azu/shared'
+import { dismissLabel } from '@mezielabs/azu/shared'
 import type { ActionSchema, FieldValue, FormErrors } from '@mezielabs/azu/types'
-import { FormField } from '../form/form_field.tsx'
+
+const DialogFields = lazy(async () => ({
+  default: (await import('./dialog_fields.tsx')).DialogFields,
+}))
 
 /**
  * The confirm dialog for an action (FR-12), with the action's fields
  * when it has any. Errors come from the server (the action's
- * validator), under each field.
+ * validator), under each field. The fields load on demand, so a
+ * confirm-only dialog stays small.
  */
 export function ActionDialog(props: {
   action: ActionSchema
@@ -30,16 +34,9 @@ export function ActionDialog(props: {
     )
   )
 
-  // A dialog with fields starts in the first one; otherwise (and for a
-  // destructive action) on Cancel, through its autoFocus
-  const form = useRef<HTMLFormElement>(null)
+  // A dialog with fields starts in the first one (once it loads);
+  // otherwise, and for a destructive action, on Cancel
   const startInFields = action.fields.length > 0 && !action.destructive
-  useEffect(() => {
-    if (!startInFields) return
-    form.current
-      ?.querySelector<HTMLElement>('input:not([type="hidden"]), textarea, select')
-      ?.focus()
-  }, [startInFields])
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -57,7 +54,7 @@ export function ActionDialog(props: {
     >
       <Modal className="azu-modal">
         <Dialog role="alertdialog" className="azu-dialog" data-azu-action={action.name}>
-          <form ref={form} onSubmit={submit} noValidate className="azu-action-form">
+          <form onSubmit={submit} noValidate className="azu-action-form">
             <Heading slot="title" className="azu-dialog-title">
               {action.label}
             </Heading>
@@ -67,17 +64,20 @@ export function ActionDialog(props: {
                 <span className="azu-dialog-count"> ({target})</span>
               )}
             </p>
-            {action.fields.map((field) => (
-              <FormField
-                key={field.name}
-                field={field}
-                value={values[field.name] ?? null}
-                onChange={(value) => setValues((current) => ({ ...current, [field.name]: value }))}
-                errors={fieldErrors(props.errors, field.name)}
-                timezone={props.timezone}
-                values={values}
-              />
-            ))}
+            {action.fields.length > 0 && (
+              <Suspense fallback={null}>
+                <DialogFields
+                  fields={action.fields}
+                  values={values}
+                  onChange={(name, value) =>
+                    setValues((current) => ({ ...current, [name]: value }))
+                  }
+                  errors={props.errors}
+                  timezone={props.timezone}
+                  autoFocus={startInFields}
+                />
+              </Suspense>
+            )}
             <div className="azu-dialog-actions">
               <Button
                 className="azu-button"

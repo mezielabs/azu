@@ -30,4 +30,9 @@ export default class ProductPolicy extends BasePolicy {
   restock(user: User, _product: Product) {
     return user.role === 'admin'
   }
+
+  /** The reusable action in app/admin/actions/feature.ts */
+  feature(user: User, _product: Product) {
+    return user.role === 'admin'
+  }
 }

@@ -1,0 +1,33 @@
+{{{
+  exports({ to: path })
+}}}
+import { action } from '@mezielabs/azu'
+
+/**
+ * {{{ label }}}: a {{ kind }} action. Add it to a resource's \`actions\`;
+ * tsc checks that the resource's policy has a \`{{ ability }}\` method,
+ * which Azu calls with the user and each record.
+ */
+export default action
+  .{{ kind }}('{{ name }}')
+  .confirm('{{{ confirm }}}')
+  .ability('{{ ability }}')
+{{#if kind === 'bulk'}}
+  .handle(async (records, { trx }) => {
+    for (const record of records) {
+      // Change each record here. The handler runs in a transaction: run
+      // every query through \`trx\` (\`Model.query({ client: trx })\`), so a
+      // thrown error rolls back everything the action did.
+      await record.useTransaction(trx).save()
+    }
+    return { message: \`{{{ label }}}: done for \${records.length} records\` }
+  })
+{{#else}}
+  .handle(async (record, { trx }) => {
+    // Change the record here. The handler runs in a transaction: run
+    // every query through \`trx\` (\`Model.query({ client: trx })\`), so a
+    // thrown error rolls back everything the action did.
+    await record.useTransaction(trx).save()
+    return { message: '{{{ label }}}: done' }
+  })
+{{/if}}

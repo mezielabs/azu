@@ -226,6 +226,46 @@ test.group('Admin / bulk actions (FR-12)', (group) => {
     assert.equal(order.status, 'pending')
   })
 
+  test('a reusable action from make:admin-action runs like any other', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const products = [await createProduct(), await createProduct()]
+
+    const response = await client
+      .post('/admin/resources/products/actions/bulk/feature')
+      .loginAs(admin)
+      .withCsrfToken()
+      .json({ ids: products.map((product) => product.id) })
+
+    response.assertStatus(200)
+    assert.containsSubset(response.body(), { message: 'Featured 2 products', done: 2 })
+    for (const product of products) {
+      await product.refresh()
+      // SQLite reads booleans back as 1 and 0
+      assert.ok(product.isFeatured)
+    }
+  })
+
+  test('forbidden: staff cannot feature products (ProductPolicy.feature)', async ({
+    client,
+    assert,
+  }) => {
+    const staff = await createUser('staff')
+    const product = await createProduct()
+
+    const response = await client
+      .post('/admin/resources/products/actions/bulk/feature')
+      .loginAs(staff)
+      .withCsrfToken()
+      .json({ ids: [product.id] })
+
+    response.assertStatus(403)
+    await product.refresh()
+    assert.notOk(product.isFeatured)
+  })
+
   test('a bulk action takes at most 1,000 records', async ({ client }) => {
     const admin = await createUser('admin')
     const response = await client
@@ -375,7 +415,7 @@ test.group('Admin / action abilities (FR-12)', (group) => {
     const actions = response.body().props.resource.actions
     assert.deepEqual(
       actions.map((item: any) => `${item.kind}.${item.name}`),
-      ['bulk.publish', 'row.restock', 'row.delete', 'bulk.delete']
+      ['bulk.publish', 'row.restock', 'bulk.feature', 'row.delete', 'bulk.delete']
     )
     const restock = actions.find((item: any) => item.name === 'restock')
     assert.containsSubset(restock.fields[0], {

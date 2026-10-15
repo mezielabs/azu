@@ -6,6 +6,7 @@
  * directions: valid names compile, and each mistake doesn't. Ported from
  * the Phase 0 spike (docs/spike-findings.md, check 1), plus decimals.
  */
+import { BasePolicy } from '@adonisjs/bouncer'
 import { BaseModel, column as dbColumn } from '@adonisjs/lucid/orm'
 import { action, column, defineResource, field, filter } from '@mezielabs/azu'
 import Order from '#models/order'
@@ -13,6 +14,7 @@ import Product from '#models/product'
 import User from '#models/user'
 import ProductPolicy from '#policies/product_policy'
 import { restockValidator } from '#validators/product'
+import markAsPaid from './generated_action.ts'
 
 /**
  * Valid definitions beyond the README's, on other models, including a
@@ -78,6 +80,29 @@ export const valid = [
     ],
   }),
 ]
+
+/**
+ * make:admin-action's output, unedited (generated_action.ts), plugs
+ * into any resource whose policy has its ability.
+ */
+class PaymentPolicy extends BasePolicy {
+  markAsPaid() {
+    return true
+  }
+}
+
+export const generated = defineResource(Order, {
+  policy: PaymentPolicy,
+  title: 'number',
+  actions: [markAsPaid],
+})
+
+export const generatedMistake = defineResource(Order, {
+  policy: ProductPolicy,
+  title: 'number',
+  // @ts-expect-error ProductPolicy has no markAsPaid method
+  actions: [markAsPaid],
+})
 
 /**
  * Mistakes that must fail tsc.

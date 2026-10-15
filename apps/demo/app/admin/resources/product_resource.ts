@@ -8,6 +8,7 @@
 import { defineResource, column, field, filter, action } from '@mezielabs/azu'
 import Product from '#models/product'
 import ProductPolicy from '#policies/product_policy'
+import feature from '#admin/actions/feature'
 import {
   createProductValidator,
   restockValidator,
@@ -79,5 +80,7 @@ export default defineResource(Product, {
         await product.save()
         return { message: `${product.name} now has ${product.stock} in stock` }
       }),
+    // A reusable action from make:admin-action
+    feature,
   ],
 })
