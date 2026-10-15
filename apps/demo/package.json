@@ -88,7 +88,7 @@
     "@vinejs/vine": "^4.4.0",
     "better-sqlite3": "^13.0.3",
     "edge.js": "^6.5.1",
-    "lucide-react": "^1.48.0",
+    "lucide-react": "^1.55.0",
     "luxon": "^3.7.2",
     "mysql2": "^3.24.5",
     "pg": "^8.23.1",

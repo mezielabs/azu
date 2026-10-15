@@ -2,16 +2,17 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { createUser } from './helpers.ts'
 
+// Products before Categories, by `order` (FR-16)
 const CATALOG = {
   label: 'Catalog',
   items: [
+    { name: 'products', label: 'Products', icon: 'package', href: '/admin/resources/products' },
     {
       name: 'categories',
       label: 'Categories',
       icon: 'folder',
       href: '/admin/resources/categories',
     },
-    { name: 'products', label: 'Products', icon: 'package', href: '/admin/resources/products' },
   ],
 }
 const COUPONS = {
@@ -20,11 +21,12 @@ const COUPONS = {
   icon: 'ticket',
   href: '/admin/resources/coupons',
 }
+// Orders before Coupons, by `order`
 const SALES = {
   label: 'Sales',
   items: [
-    COUPONS,
     { name: 'orders', label: 'Orders', icon: 'receipt', href: '/admin/resources/orders' },
+    COUPONS,
   ],
 }
 
@@ -35,12 +37,16 @@ const SALES = {
 test.group('Admin / resources (FR-03)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('admins see every autoloaded resource in navigation, grouped', async ({ client }) => {
+  test('admins see every autoloaded resource in navigation, grouped and ordered', async ({
+    client,
+    assert,
+  }) => {
     const admin = await createUser('admin')
     const response = await client.get('/admin').loginAs(admin).withInertia()
 
     response.assertStatus(200)
-    response.assertInertiaPropsContains({ azu: { path: '/admin', navigation: [CATALOG, SALES] } })
+    // Sales before Catalog: navigation.groups in config/admin.ts (FR-16)
+    assert.deepEqual(response.body().props.azu.navigation, [SALES, CATALOG])
   })
 
   test('staff do not see resources their policies hide (CategoryPolicy, OrderPolicy)', async ({
@@ -54,8 +60,8 @@ test.group('Admin / resources (FR-03)', (group) => {
       azu: {
         // CategoryPolicy and OrderPolicy are admin-only
         navigation: [
-          { label: 'Catalog', items: [CATALOG.items[1]] },
           { label: 'Sales', items: [COUPONS] },
+          { label: 'Catalog', items: [CATALOG.items[0]] },
         ],
       },
     })

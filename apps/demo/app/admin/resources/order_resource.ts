@@ -6,6 +6,7 @@ import OrderPolicy from '#policies/order_policy'
 export default defineResource(Order, {
   group: 'Sales',
   icon: 'receipt',
+  order: 1,
   title: 'number',
   search: ['number'],
   policy: OrderPolicy,

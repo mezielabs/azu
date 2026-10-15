@@ -87,6 +87,19 @@ export type AzuConfigInput = {
   timezone?: string
 
   /**
+   * Navigation (FR-16). `groups` lists group labels in the order the
+   * navigation shows them; groups it leaves out follow, in label order.
+   * Resources without a group always come first.
+   *
+   * @example
+   * ```ts
+   * navigation: { groups: ['Sales', 'Catalog'] }
+   * ```
+   * @default { groups: [] }
+   */
+  navigation?: { groups?: string[] }
+
+  /**
    * The admin's name, logo and colour (FR-14). `color` is a hex colour;
    * Azu generates light and dark palettes from it, adjusting it where
    * needed so text stays readable (WCAG AA).
@@ -117,8 +130,9 @@ export type AzuBrand = { name: string; logo: string | null; color: string }
  * `guard` stays undefined to mean the app's default guard.
  */
 export type AzuConfig = Required<
-  Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk' | 'brand'>
+  Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk' | 'brand' | 'navigation'>
 > & {
+  navigation: { groups: string[] }
   guard?: string
   /** `undefined` means Drive's default disk */
   defaultDisk?: string

@@ -11,6 +11,7 @@ import { createCouponValidator, updateCouponValidator } from '#validators/coupon
 export default defineResource(Coupon, {
   group: 'Sales',
   icon: 'ticket',
+  order: 2,
   title: 'code',
   search: ['code'],
   policy: CouponPolicy,

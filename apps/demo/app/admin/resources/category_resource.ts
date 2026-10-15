@@ -6,6 +6,7 @@ import { createCategoryValidator, updateCategoryValidator } from '#validators/ca
 export default defineResource(Category, {
   group: 'Catalog',
   icon: 'folder',
+  order: 2,
   title: 'name',
   search: ['name', 'slug'],
   policy: CategoryPolicy,

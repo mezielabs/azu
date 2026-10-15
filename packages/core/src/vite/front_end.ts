@@ -33,6 +33,13 @@ type FrontEndManifest = {
       /** Installed peers to pre-bundle when the feature is available */
       optimizeDeps?: string[]
     }[]
+
+    /**
+     * Navigation icons (FR-16): `specifier` is replaced with a module of
+     * the icons the app's resources name, each the default export of
+     * `path` (with `{name}`) in `package`, when it's installed.
+     */
+    icons?: { specifier: string; package: string; path: string }
   }
 }
 
@@ -110,4 +117,27 @@ export function frontEndFeatures(root: string): {
   }
 
   return { alias, include, missing }
+}
+
+/**
+ * Where the front-end package's icons come from, when the icon package
+ * is installed: the specifier to replace, and the file for an icon name
+ * (`null` when the package has no such icon).
+ */
+export function frontEndIcons(
+  root: string
+): { specifier: string; file: (name: string) => string | null } | undefined {
+  const icons = readFrontEnd(root)?.manifest.azu?.icons
+  if (!icons) return undefined
+  const manifest = findPackageJson(root, icons.package)
+  if (!manifest) return undefined
+  const dir = dirname(manifest)
+  return {
+    specifier: icons.specifier,
+    file: (name) => {
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) return null
+      const file = join(dir, icons.path.replace('{name}', name))
+      return existsSync(file) ? file : null
+    },
+  }
 }
