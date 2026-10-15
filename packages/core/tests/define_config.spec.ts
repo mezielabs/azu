@@ -12,7 +12,21 @@ test.group('defineConfig', () => {
       resources: { autoload: 'app/admin/resources' },
       perPage: 25,
       timezone: processTimezone(),
+      brand: { name: 'Admin', logo: null, color: '#2563eb' },
     })
+  })
+
+  test('takes a brand, with a hex colour only (FR-14)', ({ assert }) => {
+    assert.deepEqual(
+      defineConfig({ brand: { name: ' Acme ', logo: '/images/logo.svg', color: '#26e' } }).brand,
+      { name: 'Acme', logo: '/images/logo.svg', color: '#26e' }
+    )
+    assert.deepEqual(defineConfig({ brand: { name: '' } }).brand, {
+      name: 'Admin',
+      logo: null,
+      color: '#2563eb',
+    })
+    assert.throws(() => defineConfig({ brand: { color: 'blue' } }), /must be a hex colour/)
   })
 
   test('takes an IANA timezone, and refuses anything else', ({ assert }) => {

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react'
 import type { ReactNode } from 'react'
 import type { AzuSharedProps, NavigationGroup } from '@mezielabs/azu/types'
+import { ThemeToggle } from './theme_toggle.tsx'
 
 export type AdminLayoutProps = AzuSharedProps & {
   title: string
@@ -47,16 +48,20 @@ function Navigation({ groups }: { groups: NavigationGroup[] }) {
 }
 
 /**
- * The admin shell: header, resource navigation, then the page.
+ * The admin shell: header (the brand from config/admin.ts and the theme
+ * toggle), resource navigation, then the page.
  */
 export function AdminLayout({ azu, title, children }: AdminLayoutProps) {
   return (
     <div className="azu-shell">
       <header className="azu-header">
         <Link href={azu.path} className="azu-brand">
-          Azu
+          {/* Decorative: the name next to it is the link's text */}
+          {azu.brand.logo && <img src={azu.brand.logo} alt="" className="azu-logo" />}
+          {azu.brand.name}
         </Link>
         <span className="azu-header-title">{title}</span>
+        <ThemeToggle />
       </header>
       <div className="azu-body">
         <Navigation groups={azu.navigation} />

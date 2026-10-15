@@ -75,7 +75,12 @@ export class AdminAccessMiddleware {
    */
   protected async forbid(ctx: HttpContext) {
     const page = await ctx.inertia.render('azu/errors/forbidden', {
-      azu: { path: this.config.path, navigation: [], timezone: this.config.timezone },
+      azu: {
+        path: this.config.path,
+        navigation: [],
+        timezone: this.config.timezone,
+        brand: { name: this.config.brand.name, logo: this.config.brand.logo },
+      },
     })
     ctx.response.status(403).send(page)
   }

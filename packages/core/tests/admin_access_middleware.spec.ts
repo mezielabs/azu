@@ -112,6 +112,7 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
           path: '/admin',
           navigation: [],
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          brand: { name: 'Admin', logo: null },
         },
       },
     })

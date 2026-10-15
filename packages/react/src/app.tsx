@@ -41,7 +41,12 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
   )
 
   return createInertiaApp({
-    title: (title) => (title ? `${title} · Admin` : 'Admin'),
+    // The app's name (`brand.name` in config/admin.ts), from the root view
+    title: (title) => {
+      const name =
+        document.querySelector<HTMLMetaElement>('meta[name="azu-app-name"]')?.content || 'Admin'
+      return title ? `${title} · ${name}` : name
+    },
     resolve: async (name) => {
       const key = name.replace(/^azu\//, '')
       const load = overrides[key] ?? packagePages[key]
