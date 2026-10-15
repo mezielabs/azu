@@ -341,7 +341,7 @@ export default defineConfig({
 - **Integration (Japa API client):** each controller against the demo app on Postgres, MySQL, SQLite, with a forbidden-path test for every policy method.
 - **Browser (Japa browser client):** install to first resource, create/edit with validation errors, a bulk action, dark mode.
 - **Performance:** seeded 100,000-row table against the 200 ms p95 target, run before each release.
-- **Accessibility:** automated axe checks on core pages in CI.
+- **Accessibility:** automated axe checks (axe-core, WCAG 2.1 A and AA) on core pages in CI, in the demo's browser suite (`tests/browser`), with popovers, menus and dialogs open as well as closed. One exception: while a React Aria popover is open, `aria-hidden-focus` is off for that scan (see `docs/decisions.md`).
 
 ## 11. Milestones
 

@@ -137,6 +137,11 @@ jobs:
         working-directory: apps/demo
         run: cp .env.example .env && node ace generate:key
 
+      # The demo's browser suite (the axe checks, spec §10) runs in Chromium
+      - name: Install Chromium for the browser tests
+        working-directory: apps/demo
+        run: pnpm exec playwright install --with-deps chromium
+
       - run: pnpm test
 
       # FR-04: generate every demo model in a copy of the demo, then
