@@ -21,4 +21,9 @@ export default class CouponPolicy extends BasePolicy {
   update(user: User, _coupon: Coupon) {
     return user.role === 'admin'
   }
+
+  /** The built-in Delete (FR-12) */
+  delete(user: User, _coupon: Coupon) {
+    return user.role === 'admin'
+  }
 }

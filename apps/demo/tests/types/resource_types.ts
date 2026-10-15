@@ -6,12 +6,15 @@
  * directions: valid names compile, and each mistake doesn't. Ported from
  * the Phase 0 spike (docs/spike-findings.md, check 1), plus decimals.
  */
+import { BasePolicy } from '@adonisjs/bouncer'
 import { BaseModel, column as dbColumn } from '@adonisjs/lucid/orm'
 import { action, column, defineResource, field, filter } from '@mezielabs/azu'
 import Order from '#models/order'
 import Product from '#models/product'
 import User from '#models/user'
 import ProductPolicy from '#policies/product_policy'
+import { restockValidator } from '#validators/product'
+import markAsPaid from './generated_action.ts'
 
 /**
  * Valid definitions beyond the README's, on other models, including a
@@ -65,9 +68,41 @@ export const valid = [
           product.isFeatured = true
           await product.save()
         }),
+      action
+        .row('restock')
+        .ability('restock')
+        .fields([field.number('quantity')], restockValidator)
+        .handle(async (product, { input, trx }) => {
+          // `input` is the validator's output; `trx` takes the query
+          const quantity: number = input.quantity
+          await Product.query({ client: trx }).where('id', product.id).increment('stock', quantity)
+        }),
     ],
   }),
 ]
+
+/**
+ * make:admin-action's output, unedited (generated_action.ts), plugs
+ * into any resource whose policy has its ability.
+ */
+class PaymentPolicy extends BasePolicy {
+  markAsPaid() {
+    return true
+  }
+}
+
+export const generated = defineResource(Order, {
+  policy: PaymentPolicy,
+  title: 'number',
+  actions: [markAsPaid],
+})
+
+export const generatedMistake = defineResource(Order, {
+  policy: ProductPolicy,
+  title: 'number',
+  // @ts-expect-error ProductPolicy has no markAsPaid method
+  actions: [markAsPaid],
+})
 
 /**
  * Mistakes that must fail tsc.
@@ -142,6 +177,19 @@ export const mistakes = defineResource(Product, {
         // @ts-expect-error products are typed: no such attribute
         products.map((p) => p.nmae)
       }),
+    action
+      .row('restock')
+      .ability('restock')
+      .fields([field.number('quantity')], restockValidator)
+      .handle(async (_product, { input }) => {
+        // @ts-expect-error the input is typed by the validator: no such field
+        return { message: String(input.qty) }
+      }),
+    action
+      .row('attach')
+      .ability('update')
+      // @ts-expect-error a dialog can't show file fields
+      .fields([field.file('thumbnail')], restockValidator),
   ],
 })
 

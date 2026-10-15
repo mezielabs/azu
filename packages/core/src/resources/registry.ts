@@ -9,7 +9,8 @@ export class ResourceRegistry {
 
   /**
    * Registering the same resource twice is a no-op; two different
-   * resources with the same URL name are an error.
+   * resources with the same URL name are an error. So is an action
+   * named `delete`, checked here so it fails at boot.
    */
   register(...resources: Resource<any, any>[]): this {
     for (const resource of resources) {
@@ -23,6 +24,7 @@ export class ResourceRegistry {
           `Two admin resources are named "${resource.name}" (${existing.model.name} and ${resource.model.name})`
         )
       }
+      resource.actions()
       this.#resources.set(resource.name, resource)
     }
     return this

@@ -1,6 +1,9 @@
 import { test } from '@japa/runner'
 import { escapeLike } from '../src/list/list_records.ts'
 import {
+  actionUrl,
+  bulkActionsFor,
+  dismissLabel,
   formatDateTime,
   formatDecimal,
   formatNumber,
@@ -13,6 +16,7 @@ import {
   withPageParam,
   type ListState,
 } from '../shared.ts'
+import type { ActionSchema, ListRow } from '../src/schema.ts'
 
 const options = { defaultPerPage: 25 as const, sortable: ['name', 'price'] }
 const base: ListState = { page: 1, perPage: 25, sort: null, direction: 'asc', search: '' }
@@ -150,5 +154,47 @@ test.group('Relation table pages', () => {
 
   test('leaves page 1 out', ({ assert }) => {
     assert.equal(withPageParam('/c/1?productsPage=2', 'productsPage', 1), '/c/1')
+  })
+})
+
+test.group('Actions (FR-12)', () => {
+  const bulk = (name: string): ActionSchema => ({
+    kind: 'bulk',
+    name,
+    label: name,
+    confirm: null,
+    ability: 'update',
+    destructive: false,
+    fields: [],
+  })
+  const row = (id: number, actions: ListRow['abilities']['actions']): ListRow => ({
+    id,
+    title: null,
+    cells: {},
+    abilities: { view: true, actions },
+  })
+
+  test('posts to the action route', ({ assert }) => {
+    assert.equal(
+      actionUrl('/admin', 'products', { kind: 'row', name: 'restock' }),
+      '/admin/resources/products/actions/row/restock'
+    )
+  })
+
+  test('offers a bulk action when any selected row allows it', ({ assert }) => {
+    const rows = [row(1, ['bulk.publish']), row(2, []), row(3, ['bulk.delete'])]
+    const actions = [bulk('publish'), bulk('delete')]
+    assert.deepEqual(
+      bulkActionsFor(actions, rows, [1, 2]).map((item) => item.name),
+      ['publish']
+    )
+    assert.deepEqual(bulkActionsFor(actions, rows, [2]), [])
+  })
+
+  test('the dialog never shows two Cancel buttons', ({ assert }) => {
+    assert.equal(dismissLabel({ label: 'Delete' }), 'Cancel')
+    assert.equal(dismissLabel({ label: 'Cancel' }), 'Close')
+    assert.equal(dismissLabel({ label: 'Cancel orders' }), 'Close')
+    assert.equal(dismissLabel({ label: 'Cancellation report' }), 'Cancel')
   })
 })

@@ -220,24 +220,41 @@ validators: {
 
 ## Actions
 
-Actions are async functions. They run on a single row, or on a selection of rows as a bulk action:
+Actions are async functions. They run on a single row (from the list's row menu or the detail page), or on a selection of rows as a bulk action:
 
 ```ts
 actions: [
   action.bulk('publish')
     .confirm('Publish the selected products?')
     .ability('publish')
-    .handle(async (products) => {
-      await Product.query()
+    .handle(async (products, { trx }) => {
+      await Product.query({ client: trx })
         .whereIn('id', products.map((p) => p.id))
         .update({ status: 'published' })
 
       return { message: `${products.length} products published` }
     }),
+
+  action.row('restock')
+    .ability('restock')
+    .fields([field.number('quantity')], restockValidator)
+    .handle(async (product, { input }) => {
+      product.stock += input.quantity
+      await product.save()
+      return { message: `${product.name} now has ${product.stock} in stock` }
+    }),
 ]
 ```
 
-`.ability('publish')` checks the `publish` method on your policy. In a bulk action, records the user can't touch are skipped and reported, rather than failing the whole batch. If the handler throws, its changes roll back and the user sees the error.
+`.ability('publish')` checks the `publish` method on your policy for each record; without `.ability()`, an action checks `update`. In a bulk action, records the user can't touch are skipped and reported, rather than failing the whole batch.
+
+The handler runs in a transaction, with its records bound to it. Run your other queries through `trx` too, so that if the handler throws, all its changes roll back and the user sees an error toast. An AdonisJS `Exception` with a status below 500 shows its message; any other error shows a generic message and goes to your log.
+
+`.fields()` asks for input in the action's dialog. The input goes through the validator you pass, like a form's, and the handler gets the validator's output as `input`. `.destructive()` styles the action like Delete. Return `{ message }` for a toast, or `{ redirect }` to go somewhere else.
+
+To share an action between resources, generate it with `node ace make:admin-action Archive`, import it from `#admin/actions/archive` and add it to each resource's `actions`. Every resource that uses it needs the ability on its policy; `tsc` checks.
+
+When the policy has a `delete` method, every resource gets a Delete row and bulk action, with a confirmation. It runs `beforeDelete` for each record, and deletes their stored files after the transaction commits.
 
 ## Customising
 
@@ -306,7 +323,7 @@ Dark mode follows the user's system setting, with a toggle in the panel.
 | --- | --- |
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
 | `node ace make:admin-resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
-| `node ace make:admin-action <Name>` | Creates a reusable action class |
+| `node ace make:admin-action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
 | `node ace admin:publish [page]` | Copies a page or component into your app for editing |
 | `node ace admin:doctor` | Checks config, missing policy methods, and drifted published files |
 

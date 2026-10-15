@@ -67,6 +67,18 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.resources.actions.run': {
+    methods: ["POST"]
+    pattern: '/admin/resources/:resource/actions/:kind/:action'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue, ParamValue]
+      params: { resource: ParamValue; kind: ParamValue; action: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'azu.resources.fields.options': {
     methods: ["GET","HEAD"]
     pattern: '/admin/resources/:resource/fields/:field/options'

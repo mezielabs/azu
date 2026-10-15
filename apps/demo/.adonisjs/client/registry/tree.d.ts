@@ -13,6 +13,9 @@ export interface ApiDefinition {
       index: typeof routes['azu.resources.index']
       create: typeof routes['azu.resources.create']
       store: typeof routes['azu.resources.store']
+      actions: {
+        run: typeof routes['azu.resources.actions.run']
+      }
       fields: {
         options: typeof routes['azu.resources.fields.options']
       }

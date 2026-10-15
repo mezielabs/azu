@@ -97,8 +97,31 @@ export type ActionSchema = {
   name: string
   label: string
   confirm: string | null
-  /** The policy method each record must pass */
-  ability: string | null
+  /** The policy method each record must pass (`update` unless the action names one) */
+  ability: string
+  /** Styled as destructive, like the built-in Delete */
+  destructive: boolean
+  /** The dialog's fields, with hints from the action's validator */
+  fields: FormFieldSchema[]
+}
+
+/**
+ * An action's key in `abilities.actions`: `row.publish`, `bulk.delete`.
+ */
+export type ActionKey = `${'row' | 'bulk'}.${string}`
+
+/**
+ * What the action endpoint returns.
+ */
+export type ActionResponse = {
+  /** For a toast */
+  message: string | null
+  /** Where to go next, instead of staying on the page */
+  redirect: string | null
+  /** Records the action ran on */
+  done: number
+  /** Records skipped because the user may not run the action on them */
+  skipped: number
 }
 
 export type ResourceSchema = {
@@ -150,7 +173,11 @@ export type ListRow = {
   /** Keyed by column name */
   cells: Record<string, CellValue>
   /** What the user may do with this record, from the policy */
-  abilities: { view: boolean }
+  abilities: {
+    view: boolean
+    /** Actions the user may run on this record (`row.publish`, `bulk.delete`) */
+    actions: ActionKey[]
+  }
 }
 
 export type ListMeta = {

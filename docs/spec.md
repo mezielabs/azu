@@ -114,8 +114,8 @@ export default defineResource(Product, {
     action.bulk('publish')
       .confirm('Publish the selected products?')
       .ability('publish')
-      .handle(async (products) => {
-        await Product.query().whereIn('id', products.map((p) => p.id)).update({ status: 'published' })
+      .handle(async (products, { trx }) => {
+        await Product.query({ client: trx }).whereIn('id', products.map((p) => p.id)).update({ status: 'published' })
         return { message: `${products.length} products published` }
       }),
   ],
@@ -166,7 +166,18 @@ Uploads (FR-07): an upload is checked first. If the save fails validation, nothi
 
 **Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
 
-**Actions:** row actions (one record) and bulk actions (selected rows; all filtered rows per FR-17, in chunks of 500 with a transaction per chunk). Both support `confirm(message)`, optional dialog form fields, `ability`, and return `{ message }` or `{ redirect }`. A thrown error rolls back and shows an error toast. In bulk, records failing the ability are skipped and reported.
+**Actions:** row actions (one record) and bulk actions (selected rows; all filtered rows per FR-17, in chunks of 500 with a transaction per chunk). Both support `confirm(message)`, dialog form fields with their validator (`fields(fields, validator)`), `ability`, `destructive()`, and return `{ message }` or `{ redirect }`. A thrown error rolls back and shows an error toast. In bulk, records failing the ability are skipped and reported.
+
+How an action runs (FR-12):
+
+- **Route:** `POST /admin/resources/<name>/actions/<row|bulk>/<action>`, JSON `{ ids, input? }`, answered with JSON `{ message, redirect, done, skipped }`. A row action takes one id, a bulk action up to 1,000 (FR-17 covers more). An unknown action is a 404.
+- **Records** are found through the resource's `query` hook, so a scoped resource can't reach records outside its scope. Ids that don't exist count as skipped.
+- **Ability:** each record must pass the action's policy method, `update` when it names none. Records that fail are skipped and reported in the message; when none pass, it's a 403, before the input is read.
+- **Input** from the dialog is cut down to the action's fields and goes through its validator. Errors are a 422 `{ errors }` keyed by path, shown under each field, and the dialog stays open.
+- **The handler** gets the records (one record for a row action) and `{ ctx, input, trx }`. It runs in one transaction, with the records bound to it. A thrown error rolls back the whole batch. An AdonisJS `Exception` below 500 shows its message with its status; anything else is logged and shows a generic message, with a 500.
+- **Delete** is built in, as a row and a bulk action, when the policy has `delete`. It confirms first, runs `beforeDelete` for each record in the transaction, and deletes stored files after the commit. A resource can't declare its own `delete` action.
+- **Abilities in the UI:** list rows and the detail page get the keys of the actions the user may run on them (`row.restock`, `bulk.delete`), one policy call per distinct method. The bulk toolbar offers an action when any selected row allows it.
+- **After an action:** a toast (a live region) shows the message. On the list, the selection clears, the list reloads and focus moves to the table, where React Aria returns it to the cell it was last on. On a detail page the page reloads, and Delete goes to the list. `{ redirect }` visits that URL. A failure keeps the selection, so the user can change it and try again.
 
 ## 6. Auth, permissions, validation
 
@@ -186,8 +197,8 @@ The access gate runs on every admin route, after the admin root view is set up:
 | `view(user, record)` | Detail page, row link | Detail request; per row for links, including `hasMany` tables and `belongsTo` links |
 | `create(user)` | Create button and form | Form load and submit |
 | `update(user, record)` | Edit button, form | Form load and submit |
-| `delete(user, record)` | Delete action | Action run |
-| Custom, e.g. `publish` | Actions/fields with `.ability('publish')` | Action run; per record in bulk |
+| `delete(user, record)` | Built-in Delete action (row and bulk) | List and detail page (to show it); action run, per record |
+| Custom, e.g. `publish` | Actions/fields with `.ability('publish')`; actions without one check `update` | List and detail page (to show it); action run, per record |
 
 The server computes abilities once per request and sends them as Inertia props. The UI hides what the server would reject, but the server always checks.
 
@@ -214,7 +225,7 @@ Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /a
 | --- | --- |
 | `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise) |
 | `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
-| `node ace make:admin-action <Name>` | Scaffolds a reusable action class |
+| `node ace make:admin-action <Name>` | Writes `app/admin/actions/<name>.ts` from a stub: a row action (`--bulk` for bulk) built with `action.row()`, named and with its ability in camelCase (`MarkAsPaid` → `markAsPaid`), a `confirm`, and a handler that saves through `trx`. Refuses `delete` and won't overwrite without `--force`. Exported as the file's default, so any resource can list it; `tsc` checks the ability against each resource's policy |
 | `node ace admin:publish [page]` | Copies a page or component into `inertia/admin/`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` is accepted too. No argument lists options |
 | `node ace admin:doctor` | Checks config, missing policy methods, validators not covering declared fields, drifted published files |
 

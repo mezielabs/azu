@@ -14,7 +14,7 @@ If the code forces a change to the API in `README.md` or `docs/spec.md`, update 
 
 ## Current phase
 
-**Phase 1** (approved 2026-10-12). The plan, starting with its week-one items, is in `docs/spec.md` §11. One FR per branch and PR, and stop for Chimezie's review where he asks.
+**Phase 2** (started 2026-10-15, after Phase 1 closed with #15). In order: FR-12 actions, FR-13 filters, FR-14 theming, one PR each, stopping for Chimezie's review after each. The P1 items (FR-09, FR-15, FR-16, FR-17) are a planning note in `docs/spec.md` §11 only; don't build them yet.
 
 ## Stack
 

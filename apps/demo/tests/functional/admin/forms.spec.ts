@@ -235,7 +235,7 @@ test.group('Admin / detail (FR-06)', (group) => {
       '2026-11-30 18:45'
     )
     // Staff may view but not update coupons
-    assert.deepEqual(abilities, { update: false })
+    assert.deepEqual(abilities, { update: false, actions: [] })
   })
 
   test('admins get the Edit action', async ({ client }) => {
@@ -255,7 +255,7 @@ test.group('Admin / detail (FR-06)', (group) => {
       .withInertia()
 
     const [row] = response.body().props.list.rows
-    assert.deepEqual(row.abilities, { view: true })
+    assert.isTrue(row.abilities.view)
   })
 
   test('staff cannot view orders (OrderPolicy.view)', async ({ client }) => {

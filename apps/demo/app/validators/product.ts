@@ -53,3 +53,10 @@ export const updateProductValidator = vine.create({
       },
     }),
 })
+
+/**
+ * The restock action's dialog (FR-12)
+ */
+export const restockValidator = vine.create({
+  quantity: vine.number().withoutDecimals().min(1).max(10000),
+})

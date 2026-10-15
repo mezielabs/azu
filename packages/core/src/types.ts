@@ -3,6 +3,7 @@
  * later `@mezielabs/azu-vue`) re-export these; they don't define their own.
  */
 import type {
+  ActionKey,
   FieldSchema,
   FieldValue,
   FormErrors,
@@ -181,7 +182,11 @@ export type ResourceShowPageProps = AzuSharedProps & {
   /** `hasMany` fields whose related resource the user may list */
   relations: RelationTable[]
   /** What the user may do with this record, from the policy */
-  abilities: { update: boolean }
+  abilities: {
+    update: boolean
+    /** Row actions the user may run on this record (`row.publish`, `row.delete`) */
+    actions: ActionKey[]
+  }
 }
 
 /**

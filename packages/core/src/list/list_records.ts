@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
+import { actionAbilities } from '../actions/run_action.ts'
 import { allows } from '../resources/abilities.ts'
 import { diskFor, fileValue } from '../files/uploads.ts'
 import type { Resource } from '../resources/define_resource.ts'
@@ -156,7 +157,10 @@ export async function listRecords(
             ])
           )
         ),
-        abilities: { view: await allows(ctx, resource, 'view', record) },
+        abilities: {
+          view: await allows(ctx, resource, 'view', record),
+          actions: await actionAbilities(ctx, resource, record),
+        },
       }
     })
   )

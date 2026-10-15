@@ -36,6 +36,12 @@ const routes = {
     tokens: [{"old":"/admin/resources/:resource/create","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/create","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/create","type":0,"val":"create","end":""}],
     types: placeholder as Registry['azu.resources.store']['types'],
   },
+  'azu.resources.actions.run': {
+    methods: ["POST"],
+    pattern: '/admin/resources/:resource/actions/:kind/:action',
+    tokens: [{"old":"/admin/resources/:resource/actions/:kind/:action","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/actions/:kind/:action","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/actions/:kind/:action","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/actions/:kind/:action","type":0,"val":"actions","end":""},{"old":"/admin/resources/:resource/actions/:kind/:action","type":1,"val":"kind","end":""},{"old":"/admin/resources/:resource/actions/:kind/:action","type":1,"val":"action","end":""}],
+    types: placeholder as Registry['azu.resources.actions.run']['types'],
+  },
   'azu.resources.fields.options': {
     methods: ["GET","HEAD"],
     pattern: '/admin/resources/:resource/fields/:field/options',
