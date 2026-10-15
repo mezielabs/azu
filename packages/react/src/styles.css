@@ -144,8 +144,11 @@
     @apply cursor-not-allowed opacity-50;
   }
 
+  /* Positioned, so absolutely positioned content inside (visually hidden
+     labels, checkbox hit areas) scrolls with the table instead of
+     widening the page on a phone */
   .azu-table-container {
-    @apply overflow-x-auto rounded-lg border;
+    @apply relative overflow-x-auto rounded-lg border;
     border-color: var(--azu-border);
   }
 

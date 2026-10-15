@@ -119,6 +119,7 @@ Newest at the bottom. Each entry: date, decision, why.
 - **2026-10-15 · Delete is a built-in action, present when the policy has `delete` (FR-12).** It's a row and a bulk action like any other, so it gets the same per-record check, skip report and transaction. It runs `beforeDelete`, then deletes the records' stored files after the commit, as a save does for replaced files. A resource declaring its own `delete` action is an error at boot, so the two can't be confused.
 - **2026-10-15 · List UI details from the FR-12 browser check.**
   - **The bulk toolbar is always rendered,** with a minimum height. When it appeared on the first selection, it pushed the table down under the pointer, and the next click opened a row instead of selecting it.
+  - **The table container is positioned.** The visually hidden "Actions" column header is absolutely positioned. With nothing positioned between it and the page, it escaped the table's horizontal scroll and widened lists with row actions to 616 px on a 375 px phone. Found while checking FR-13's filters on the products list.
   - **A row checkbox's hit area covers its whole cell** (a stretched `::after`). A click in the cell's padding, just outside the 16 px box, used to open the row.
   - **The dialog's dismiss button reads "Close" when the action's label starts with "Cancel",** so the demo's Cancel action doesn't show two Cancel buttons.
   - **A dialog with fields opens in its first field;** a destructive one, or one with no fields, opens on Cancel.
