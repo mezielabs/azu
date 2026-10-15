@@ -100,6 +100,9 @@ function pickTitle(candidates: string[]) {
 async function stringColumns(model: LucidModel, client: QueryClientContract, files: ModelFiles) {
   const file = files.modelFile(model)
   const types = existsSync(file) ? await declaredTypes(file, files.schemaFile) : new Map()
+  // Lucid sets `table` (and the column metadata) when a model boots;
+  // in an app that hasn't used the model yet, it isn't booted
+  model.boot()
   const columns = await introspectTable(client, model.table)
   return definitions(model)
     .filter(([attribute, definition]) => {
@@ -154,6 +157,9 @@ export async function planModel(
   client: QueryClientContract,
   files: ModelFiles
 ): Promise<ModelPlan> {
+  // Lucid sets `table` (and the column metadata) when a model boots;
+  // in an app that hasn't used the model yet, it isn't booted
+  model.boot()
   const columns = await introspectTable(client, model.table)
   const types = await declaredTypes(files.modelFile(model), files.schemaFile)
   const relations = [...(model.$relationsDefinitions as Map<string, RelationDefinition>)].map(

@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 import { baseType, declaredTypes, literalUnion } from '../src/generator/declared_types.ts'
 import { checkEnums, type DbColumn } from '../src/generator/introspect_db.ts'
-import type { FieldPlan, ModelPlan } from '../src/generator/model_info.ts'
+import { planModel, type FieldPlan, type ModelPlan } from '../src/generator/model_info.ts'
 import {
   renderPolicy,
   renderResource,
@@ -237,5 +237,55 @@ test.group('Generator / rendering', () => {
     assert.include(source, 'view() {')
     assert.notInclude(source, 'create() {')
     assert.notInclude(source, 'update() {')
+  })
+})
+
+test.group('Generator / planning', () => {
+  test("boots the model before reading its table (a fresh app hasn't yet)", async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create(
+      'app/models/user.ts',
+      'export default class User extends BaseModel {\n  declare email: string\n  declare password: string\n}'
+    )
+    // An unbooted Lucid model: `table` and the columns appear on boot()
+    const model = {
+      name: 'User',
+      primaryKey: 'id',
+      table: undefined as string | undefined,
+      $columnsDefinitions: new Map(),
+      $relationsDefinitions: new Map(),
+      boot() {
+        this.table = 'users'
+        this.$columnsDefinitions = new Map([
+          ['id', { columnName: 'id', isPrimary: true, serializeAs: 'id' }],
+          ['email', { columnName: 'email', isPrimary: false, serializeAs: 'email' }],
+          ['password', { columnName: 'password', isPrimary: false, serializeAs: null }],
+        ])
+      },
+    }
+    // A SQLite client that only knows the users table
+    const client = {
+      dialect: { name: 'better-sqlite3' },
+      rawQuery: async (sql: string) =>
+        sql === 'pragma table_info("users")'
+          ? [
+              { name: 'id', type: 'integer', notnull: 1, dflt_value: null },
+              { name: 'email', type: 'varchar(254)', notnull: 1, dflt_value: null },
+              { name: 'password', type: 'varchar(255)', notnull: 1, dflt_value: null },
+            ]
+          : [],
+    }
+
+    const planned = await planModel(model as unknown as LucidModel, client as never, {
+      modelFile: () => `${fs.basePath}/app/models/user.ts`,
+      schemaFile: `${fs.basePath}/database/schema.ts`,
+    })
+    assert.deepEqual(
+      planned.fields.map((item) => [item.name, item.kind]),
+      [['email', 'text']]
+    )
+    assert.deepEqual(planned.uncovered, ['password'])
   })
 })
