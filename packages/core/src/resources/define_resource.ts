@@ -6,7 +6,8 @@ import { RuntimeException } from '@adonisjs/core/exceptions'
 import { Action, type ActionFor } from './actions.ts'
 import type { ColumnFor } from './columns.ts'
 import type { FieldFor } from './fields.ts'
-import type { FilterFor } from './filters.ts'
+import type { Filter, FilterFor } from './filters.ts'
+import { LIST_PARAMS } from '../shared/list_filters.ts'
 import type { PolicyClass, Row, StringAttribute, StringColumn } from './model_types.ts'
 
 /**
@@ -105,6 +106,33 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
   }
 
   #actions: Action<'row' | 'bulk', any, any, any>[] | null = null
+  #filters: Filter<any, string, any>[] | null = null
+
+  /**
+   * The resource's filters (FR-13). Each is a URL query parameter named
+   * after it, so two filters can't share a name, and none may take one
+   * of the list's own parameters (`page`, `sort`, `search`…).
+   */
+  filters(): Filter<any, string, any>[] {
+    if (this.#filters) return this.#filters
+    const filters = (this.options.filters ?? []) as Filter<any, string, any>[]
+    const seen = new Set<string>()
+    for (const item of filters) {
+      if ((LIST_PARAMS as readonly string[]).includes(item.name)) {
+        throw new RuntimeException(
+          `Resource "${this.name}" has a filter named "${item.name}", which the list uses for its own URL parameter. Give it a label that names it differently.`
+        )
+      }
+      if (seen.has(item.name)) {
+        throw new RuntimeException(
+          `Resource "${this.name}" has two filters named "${item.name}"; each needs its own URL parameter.`
+        )
+      }
+      seen.add(item.name)
+    }
+    this.#filters = filters
+    return filters
+  }
 
   /**
    * The resource's actions, then the built-in Delete (row and bulk) when
@@ -153,7 +181,7 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
       search: [...(this.options.search ?? [])],
       columns: (this.options.columns ?? []).map((column) => column.toJSON()),
       fields: (this.options.fields ?? []).map((item) => item.toJSON()),
-      filters: (this.options.filters ?? []).map((item) => item.toJSON()),
+      filters: this.filters().map((item) => item.toJSON()),
       actions: this.actions().map((item) => item.toJSON()),
     }
   }

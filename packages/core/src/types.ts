@@ -8,6 +8,7 @@ import type {
   FieldValue,
   FormErrors,
   FormFieldSchema,
+  ListFilter,
   ListMeta,
   RelationOption,
   RelationTable,
@@ -134,6 +135,8 @@ export type ResourceIndexPageProps = AzuSharedProps & {
     state: ListState
     /** The page size the URL leaves out */
     defaultPerPage: PageSize
+    /** The filters this user may use, with their values */
+    filters: ListFilter[]
   }
   /** What the user may do on this resource, from the policy */
   abilities: { create: boolean }

@@ -40,7 +40,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 
 | Area | Requirement |
 | --- | --- |
-| Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. Searches use `ILIKE '%term%'`, so on Postgres the search columns need trigram (`pg_trgm`) GIN indexes; a B-tree can't serve a leading wildcard. Measured 2026-10-13 on 100,000 demo products, Postgres 18, production mode, sequential requests: worst p95 40 ms across first page, sorts, a 101-match search, deep pages and 100 per page; 162 ms for a search matching every row. Without trigram indexes, search was 598 ms. Check with `pnpm bench:list` before each release. |
+| Performance | List page server response under 200 ms at p95 for 100,000 rows, 25 per page, on Postgres with indexed sort columns. No N+1: relations shown in columns are preloaded. Searches use `ILIKE '%term%'`, so on Postgres the search columns need trigram (`pg_trgm`) GIN indexes; a B-tree can't serve a leading wildcard. Measured 2026-10-13 on 100,000 demo products, Postgres 18, production mode, sequential requests: worst p95 40 ms across first page, sorts, a 101-match search, deep pages and 100 per page; 162 ms for a search matching every row. Without trigram indexes, search was 598 ms. Filters (FR-13), measured 2026-10-15 the same way: worst p95 47 ms for a filtered, sorted page (status, page 1,000 of 3,000, by price). Each filter alone, sorted, was 19–27 ms, and five combined with a search was 20 ms. Filters need no extra indexes at this size. Check with `pnpm bench:list` before each release. |
 | Security | Every admin route and action authorises server-side, never only by hiding UI. CSRF on all writes. Mass assignment limited to declared fields. Uploads restricted by MIME type and size per field. |
 | Accessibility | WCAG 2.1 AA on core screens: keyboard navigation, focus states, labelled inputs, 4.5:1 contrast in both themes. |
 | Compatibility | AdonisJS 7, Node 24.21+ (earlier 24.x releases crash loading some dependencies, see docs/decisions.md), Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
@@ -164,7 +164,21 @@ Forms and detail pages render `text`, `textarea`, `number`, `decimal`, `boolean`
 
 Uploads (FR-07): an upload is checked first. If the save fails validation, nothing is stored. Otherwise it's stored on the disk under `<resource>/<field>/<uuid>.<ext>`, and the validator sees that key. Leaving a file field out of the request keeps the stored file; sending it empty removes it. A replaced or removed file is deleted from the disk after the save commits. URLs come from the disk's `getUrl()`, so private disks (signed URLs) aren't supported yet. Drive is an optional peer: a resource with file or image fields fails at boot without it.
 
-**Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter.
+**Filters:** `select`, `boolean`, `dateRange`, `belongsTo`, `custom(label, queryFn)`. Each serialises to a URL query parameter named after it (FR-13):
+
+| Filter | Parameter | Query |
+| --- | --- | --- |
+| `select('status', options)` | `status=published`, one of the options | `status = 'published'` |
+| `boolean('isFeatured')` | `isFeatured=true` or `false` | `is_featured = true` |
+| `dateRange('createdAt')` | `createdAt=2026-10-01..2026-10-31`, either end optional | A `date` column compares dates. A datetime column covers whole days in the admin timezone: from midnight on the first day up to midnight after the last, compared in the form Lucid writes datetimes (the dialect's `dateTimeFormat`, in the server process's timezone) |
+| `belongsTo('category')` | `category=3`, the related record's key | The foreign key (`category_id = 3`) |
+| `custom('Low stock', q => …)` | `low-stock=1` (the label, kebab case) | The query function, typed against the model |
+
+- **Parsing** lives in `@mezielabs/azu/shared` (`list_filters.ts`), shared by the server and the front end. A value that doesn't fit its filter (an unknown option, an impossible date, a malformed key) is dropped, and the list shows without it.
+- **Names:** a filter can't use the list's own parameters (`page`, `perPage`, `sort`, `direction`, `search`), and two filters can't share a name. Both are errors at boot.
+- **Page reset:** changing a filter goes back to page 1. Filters combine with search and sort, and a page past the end redirects to the last page with the filters kept.
+- **`belongsTo` filters** reuse the `belongsTo` field's options query and its `viewList` rule. Options come from `GET /admin/resources/<name>/filters/<filter>/options?search=…`, which needs the resource's `viewList` (it gates the list) and the related resource's `viewList`, failing closed. A user without the related `viewList` doesn't get the filter, and its parameter is ignored. A key that names no related record through the related resource's `query` hook turns the filter off, so a list is never filtered by a record the user can't see.
+- **The page** gets `list.filters`: the usable filters, each with its URL value, its selected record (`belongsTo`) and its options URL.
 
 **Actions:** row actions (one record) and bulk actions (selected rows; all filtered rows per FR-17, in chunks of 500 with a transaction per chunk). Both support `confirm(message)`, dialog form fields with their validator (`fields(fields, validator)`), `ability`, `destructive()`, and return `{ message }` or `{ redirect }`. A thrown error rolls back and shows an error toast. In bulk, records failing the ability are skipped and reported.
 
@@ -285,7 +299,7 @@ Named slots on every page (`header`, `toolbar`, `beforeTable`, `afterForm`) cove
 
 **Theming:** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
 
-**URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, and `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+**URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 
 **Records:** clicking a list row opens its detail page when the policy's `view` allows it; selection stays on the checkboxes. Forms render required markers and limits (lengths, `min`/`max`/`step`, enum choices) from the operation's validator (§4). Leaving a form with unsaved changes asks first: a dialog for in-app navigation, and the browser's prompt for reloads and closing the tab. The browser's back button between admin pages can't be intercepted. Toasts appear in Azu's own `aria-live` region, rendered once beside the Inertia app so they survive the page change after a save.
 
@@ -327,7 +341,7 @@ export default defineConfig({
 - **Integration (Japa API client):** each controller against the demo app on Postgres, MySQL, SQLite, with a forbidden-path test for every policy method.
 - **Browser (Japa browser client):** install to first resource, create/edit with validation errors, a bulk action, dark mode.
 - **Performance:** seeded 100,000-row table against the 200 ms p95 target, run before each release.
-- **Accessibility:** automated axe checks on core pages in CI.
+- **Accessibility:** automated axe checks (axe-core, WCAG 2.1 A and AA) on core pages in CI, in the demo's browser suite (`tests/browser`), with popovers, menus and dialogs open as well as closed. One exception: while a React Aria popover is open, `aria-hidden-focus` is off for that scan (see `docs/decisions.md`).
 
 ## 11. Milestones
 

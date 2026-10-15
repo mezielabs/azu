@@ -48,6 +48,12 @@ const routes = {
     tokens: [{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"fields","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":1,"val":"field","end":""},{"old":"/admin/resources/:resource/fields/:field/options","type":0,"val":"options","end":""}],
     types: placeholder as Registry['azu.resources.fields.options']['types'],
   },
+  'azu.resources.filters.options': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/resources/:resource/filters/:filter/options',
+    tokens: [{"old":"/admin/resources/:resource/filters/:filter/options","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/filters/:filter/options","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/filters/:filter/options","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/filters/:filter/options","type":0,"val":"filters","end":""},{"old":"/admin/resources/:resource/filters/:filter/options","type":1,"val":"filter","end":""},{"old":"/admin/resources/:resource/filters/:filter/options","type":0,"val":"options","end":""}],
+    types: placeholder as Registry['azu.resources.filters.options']['types'],
+  },
   'azu.resources.show': {
     methods: ["GET","HEAD"],
     pattern: '/admin/resources/:resource/:id',

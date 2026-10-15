@@ -1,8 +1,9 @@
 /**
  * Exercises every FR-06 form field kind, an optional belongsTo (FR-08),
- * and the default `{ record }` validator metadata.
+ * the default `{ record }` validator metadata, and filters on a boolean,
+ * an optional belongsTo and a date-only column (FR-13).
  */
-import { column, defineResource, field } from '@mezielabs/azu'
+import { column, defineResource, field, filter } from '@mezielabs/azu'
 import Coupon from '#models/coupon'
 import CouponPolicy from '#policies/coupon_policy'
 import { createCouponValidator, updateCouponValidator } from '#validators/coupon'
@@ -46,5 +47,16 @@ export default defineResource(Coupon, {
     field.boolean('isActive').default(true),
     field.date('startsOn'),
     field.datetime('expiresAt'),
+  ],
+
+  filters: [
+    filter.select('kind', {
+      percent: 'Percent off',
+      fixed: 'Fixed amount',
+      free_shipping: 'Free shipping',
+    }),
+    filter.boolean('isActive').label('Active'),
+    filter.belongsTo('category'),
+    filter.dateRange('startsOn'),
   ],
 })

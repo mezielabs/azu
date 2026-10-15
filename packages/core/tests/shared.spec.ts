@@ -1,6 +1,12 @@
 import { test } from '@japa/runner'
 import { escapeLike } from '../src/list/list_records.ts'
 import {
+  activeFilters,
+  dateRangeValue,
+  isDate,
+  parseDateRange,
+  parseFilterValue,
+  withFilter,
   actionUrl,
   bulkActionsFor,
   dismissLabel,
@@ -19,7 +25,14 @@ import {
 import type { ActionSchema, ListRow } from '../src/schema.ts'
 
 const options = { defaultPerPage: 25 as const, sortable: ['name', 'price'] }
-const base: ListState = { page: 1, perPage: 25, sort: null, direction: 'asc', search: '' }
+const base: ListState = {
+  page: 1,
+  perPage: 25,
+  sort: null,
+  direction: 'asc',
+  search: '',
+  filters: {},
+}
 
 test.group('List state (URL)', () => {
   test('reads a full state from the query string', ({ assert }) => {
@@ -33,6 +46,7 @@ test.group('List state (URL)', () => {
       sort: 'price',
       direction: 'desc',
       search: 'pot',
+      filters: {},
     })
   })
 
@@ -62,6 +76,7 @@ test.group('List state (URL)', () => {
       sort: 'name',
       direction: 'desc',
       search: 'a b',
+      filters: {},
     }
     const url = listStateUrl('/admin/resources/products', state, options)
 
@@ -196,5 +211,103 @@ test.group('Actions (FR-12)', () => {
     assert.equal(dismissLabel({ label: 'Cancel' }), 'Close')
     assert.equal(dismissLabel({ label: 'Cancel orders' }), 'Close')
     assert.equal(dismissLabel({ label: 'Cancellation report' }), 'Cancel')
+  })
+})
+
+test.group('List filters (URL, FR-13)', () => {
+  const filters = [
+    {
+      name: 'status',
+      kind: 'select' as const,
+      options: { draft: 'Draft', published: 'Published' },
+    },
+    { name: 'isFeatured', kind: 'boolean' as const, options: null },
+    { name: 'createdAt', kind: 'dateRange' as const, options: null },
+    { name: 'category', kind: 'belongsTo' as const, options: null },
+    { name: 'low-stock', kind: 'custom' as const, options: null },
+  ]
+  const withFilters = { ...options, filters }
+
+  test('reads each kind of filter from its own parameter', ({ assert }) => {
+    const state = parseListState(
+      new URLSearchParams(
+        'status=published&isFeatured=false&createdAt=2026-10-01..2026-10-31&category=3&low-stock=1'
+      ),
+      withFilters
+    )
+    assert.deepEqual(state.filters, {
+      'status': 'published',
+      'isFeatured': 'false',
+      'createdAt': '2026-10-01..2026-10-31',
+      'category': '3',
+      'low-stock': '1',
+    })
+  })
+
+  test('drops values that do not fit their filter, and unknown parameters', ({ assert }) => {
+    const state = parseListState(
+      {
+        'status': 'archived',
+        'isFeatured': 'yes',
+        'createdAt': '2026-02-30..',
+        'category': "3' or 1=1",
+        'low-stock': 'true',
+        'secret': 'x',
+      },
+      withFilters
+    )
+    assert.deepEqual(state.filters, {})
+    // Without the filter list (a hasMany table), no filter is read
+    assert.deepEqual(parseListState({ status: 'draft' }, options).filters, {})
+  })
+
+  test('date ranges: either end optional, real dates only, ends in order', ({ assert }) => {
+    assert.deepEqual(parseDateRange('2026-10-01..'), { from: '2026-10-01', to: null })
+    assert.deepEqual(parseDateRange('..2026-10-31'), { from: null, to: '2026-10-31' })
+    assert.deepEqual(parseDateRange('2026-10-31..2026-10-01'), {
+      from: '2026-10-01',
+      to: '2026-10-31',
+    })
+    assert.isNull(parseDateRange('..'))
+    assert.isNull(parseDateRange('2026-10-01'))
+    assert.isNull(parseDateRange('2026-13-01..'))
+    assert.isTrue(isDate('2028-02-29'))
+    assert.isFalse(isDate('2026-02-29'))
+    assert.equal(dateRangeValue({ from: null, to: '2026-10-31' }), '..2026-10-31')
+    assert.isNull(dateRangeValue({ from: null, to: null }))
+    assert.equal(
+      parseFilterValue({ kind: 'dateRange', options: null }, '2026-10-31..2026-10-01'),
+      '2026-10-01..2026-10-31'
+    )
+  })
+
+  test('filtered URLs round-trip with search and sort, so they can be bookmarked', ({ assert }) => {
+    const state: ListState = {
+      ...base,
+      search: 'pot',
+      sort: 'price',
+      direction: 'desc',
+      filters: { 'status': 'published', 'low-stock': '1' },
+    }
+    const url = listStateUrl('/admin/resources/products', state, options)
+    assert.equal(
+      url,
+      '/admin/resources/products?search=pot&status=published&low-stock=1&sort=price&direction=desc'
+    )
+    assert.deepEqual(parseListState(new URL(url, 'http://x').searchParams, withFilters), state)
+  })
+
+  test('changing a filter goes back to page 1', ({ assert }) => {
+    const onPage3 = { ...base, page: 3 }
+    const next = nextListState(onPage3, { filters: withFilter({}, 'status', 'draft') })
+    assert.equal(next.page, 1)
+    assert.deepEqual(next.filters, { status: 'draft' })
+  })
+
+  test('withFilter sets and clears; activeFilters counts', ({ assert }) => {
+    const values = withFilter({ status: 'draft' }, 'category', '3')
+    assert.deepEqual(values, { status: 'draft', category: '3' })
+    assert.deepEqual(withFilter(values, 'status', null), { category: '3' })
+    assert.equal(activeFilters(values, filters), 2)
   })
 })

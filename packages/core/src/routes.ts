@@ -38,6 +38,10 @@ export function registerRoutes(
           router.post('/actions/:kind/:action', (ctx) => resources.action(ctx)).as('actions.run')
           // A belongsTo field's options, as JSON (FR-08)
           router.get('/fields/:field/options', (ctx) => resources.options(ctx)).as('fields.options')
+          // A belongsTo filter's options, as JSON (FR-13)
+          router
+            .get('/filters/:filter/options', (ctx) => resources.filterOptions(ctx))
+            .as('filters.options')
           router.get('/:id', (ctx) => resources.show(ctx)).as('show')
           router.get('/:id/edit', (ctx) => resources.edit(ctx)).as('edit')
           router.put('/:id/edit', (ctx) => resources.update(ctx)).as('update')

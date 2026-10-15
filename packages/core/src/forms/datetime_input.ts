@@ -64,7 +64,7 @@ function asUtc(clock: WallClock) {
 /**
  * The timezone's UTC offset at an instant, in milliseconds.
  */
-function offsetAt(instant: number, timezone: string) {
+export function offsetAt(instant: number, timezone: string) {
   const whole = Math.floor(instant / 1000) * 1000
   return asUtc(wallClockAt(whole, timezone)) - whole
 }

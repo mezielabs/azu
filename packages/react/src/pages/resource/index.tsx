@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   actionKey,
   bulkActionsFor,
@@ -10,6 +10,7 @@ import {
 import {
   AdminLayout,
   DataTable,
+  FilterBar,
   Head,
   Link,
   ListToolbar,
@@ -20,9 +21,10 @@ import {
 } from '@mezielabs/azu-react'
 
 /**
- * The resource list (FR-05). Every change (page, size, sort, search)
- * is a URL change through an Inertia partial reload of `list`, so the
- * state survives reload and the server does all the work.
+ * The resource list (FR-05). Every change (page, size, sort, search,
+ * filters) is a URL change through an Inertia partial reload of
+ * `list`, so the state survives reload, a filtered view can be
+ * bookmarked, and the server does all the work.
  *
  * Row actions sit in each row's menu, and bulk actions in a toolbar
  * over the selection (FR-12). After one runs, the list reloads, the
@@ -50,10 +52,17 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const rowActions = resource.actions.filter((action) => action.kind === 'row')
   const bulkActions = bulkActionsFor(resource.actions, list.rows, selected)
 
+  // The state the user last asked for. A second change before the list
+  // reloads (typing a search right after picking a filter) builds on
+  // the first, not on props the reload hasn't replaced yet
+  const [requested, setRequested] = useState<ListState | null>(null)
+  useEffect(() => setRequested(null), [list.state])
+  const current = requested ?? list.state
+
   function go(change: Partial<ListState>, replace = false) {
-    const url = listStateUrl(path, nextListState(list.state, change), {
-      defaultPerPage: list.defaultPerPage,
-    })
+    const next = nextListState(current, change)
+    setRequested(next)
+    const url = listStateUrl(path, next, { defaultPerPage: list.defaultPerPage })
     router.get(url, {}, { only: ['list'], preserveState: true, preserveScroll: true, replace })
   }
 
@@ -75,11 +84,17 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         )}
       </div>
       <ListToolbar
-        state={list.state}
+        state={current}
         label={resource.label}
         searchable={resource.search.length > 0}
         onSearch={(search) => go({ search }, true)}
         onPerPage={(perPage) => go({ perPage })}
+      />
+      <FilterBar
+        filters={list.filters}
+        values={current.filters}
+        label={resource.label}
+        onChange={(filters) => go({ filters })}
       />
       {/*
         Always rendered, so the table doesn't move when the first row is

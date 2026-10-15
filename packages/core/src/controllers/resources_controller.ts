@@ -12,6 +12,7 @@ import {
 import { saveRecord } from '../forms/save_record.ts'
 import { fileValues } from '../files/uploads.ts'
 import { actionAbilities, runAction } from '../actions/run_action.ts'
+import { listFilters, selectedRelations, usableFilters } from '../list/filters.ts'
 import { listRecords } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
 import {
@@ -82,9 +83,9 @@ export class ResourcesController {
   }
 
   /**
-   * The list screen (FR-05): server-side pagination, sorting and
-   * search, all in the URL. The policy check runs on every request,
-   * partial reloads included.
+   * The list screen (FR-05, FR-13): server-side pagination, sorting,
+   * search and filters, all in the URL. The policy check runs on every
+   * request, partial reloads included.
    */
   async index(ctx: HttpContext) {
     const { config } = this.context
@@ -93,13 +94,18 @@ export class ResourcesController {
     if (!(await canList(ctx, resource))) return forbidden(ctx, this.context)
 
     const schema = resource.toSchema()
+    const filters = await usableFilters(ctx, this.context, resource)
     const options = {
       defaultPerPage: config.perPage,
       sortable: schema.columns.filter((column) => column.sortable).map((column) => column.name),
+      filters,
     }
-    const state = parseListState(ctx.request.qs(), options)
+    const parsed = parseListState(ctx.request.qs(), options)
+    const relations = await selectedRelations(this.context, resource, filters, parsed.filters)
+    const state = { ...parsed, filters: relations.values }
     const { rows, meta } = await listRecords(ctx, resource, state, {
       defaultDisk: config.defaultDisk,
+      timezone: config.timezone,
     })
 
     // Past the last page (say, after deleting rows): go to the last one
@@ -119,7 +125,18 @@ export class ResourcesController {
 
     return renderPage(ctx, this.context, 'azu/resource/index', {
       resource: schema,
-      list: { rows, meta, state, defaultPerPage: config.perPage },
+      list: {
+        rows,
+        meta,
+        state,
+        defaultPerPage: config.perPage,
+        filters: listFilters(
+          filters,
+          state.filters,
+          relations.selected,
+          resourcePath(this.context, resource)
+        ),
+      },
       abilities: { create: await allows(ctx, resource, 'create') },
     })
   }
@@ -278,6 +295,39 @@ export class ResourcesController {
 
     const term = typeof search === 'string' ? search.trim().slice(0, 100) : ''
     return { options: await relationOptions(this.context, resource.model, field, term) }
+  }
+
+  /**
+   * Options for a `belongsTo` filter's select (FR-13), as JSON. The
+   * same query and rule as a field's options: the user must pass the
+   * resource's `viewList` (it gates the list the filter is on) and the
+   * related resource's `viewList`, failing closed.
+   */
+  async filterOptions(ctx: HttpContext): Promise<RelationOptionsResponse | unknown> {
+    const resource = this.context.azu.resources.get(ctx.params.resource)
+    if (!resource) return ctx.response.status(404).send({ error: 'Not found' })
+    if (!(await canList(ctx, resource))) {
+      return ctx.response.status(403).send({ error: 'Forbidden' })
+    }
+
+    const filter = resource
+      .toSchema()
+      .filters.find((item) => item.name === ctx.params.filter && item.kind === 'belongsTo')
+    if (!filter) return ctx.response.status(404).send({ error: 'Not found' })
+    if (!(await canListRelated(ctx, this.context, resource.model, filter))) {
+      return ctx.response.status(403).send({ error: 'Forbidden' })
+    }
+
+    const { search } = ctx.request.qs()
+    const term = typeof search === 'string' ? search.trim().slice(0, 100) : ''
+    return {
+      options: await relationOptions(
+        this.context,
+        resource.model,
+        { name: filter.name, searchable: null },
+        term
+      ),
+    }
   }
 
   /**

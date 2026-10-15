@@ -1,4 +1,5 @@
-import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
+import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { Resource } from '../resources/define_resource.ts'
 
 /**
@@ -7,7 +8,35 @@ import type { Resource } from '../resources/define_resource.ts'
  * or `numeric_value_out_of_range`. That's a record that can't exist,
  * not a server error.
  */
-const IMPOSSIBLE_KEY = new Set(['22P02', '22003'])
+export const IMPOSSIBLE_KEY = new Set(['22P02', '22003'])
+
+/**
+ * The first record whose `column` is `value`, or `null`, including
+ * when the key can't exist. Inside a transaction (an app's tests run in
+ * a global one) the lookup gets a savepoint: a rejected key aborts a
+ * Postgres transaction, and every query after it would fail.
+ */
+export async function firstByKey(
+  query: ModelQueryBuilderContract<LucidModel>,
+  column: string,
+  value: unknown
+): Promise<LucidRow | null> {
+  const client = query.client
+  try {
+    if (client.isTransaction) {
+      return await (client as TransactionClientContract).transaction((savepoint) =>
+        query
+          .useTransaction(savepoint)
+          .where(column, value as never)
+          .first()
+      )
+    }
+    return await query.where(column, value as never).first()
+  } catch (error) {
+    if (IMPOSSIBLE_KEY.has((error as { code?: string }).code ?? '')) return null
+    throw error
+  }
+}
 
 /**
  * One record by primary key, through the resource's `query` hook so a
@@ -23,10 +52,5 @@ export async function findRecord(
   resource.options.query?.(query)
 
   const key = model.$getColumn(model.primaryKey)?.columnName ?? model.primaryKey
-  try {
-    return await query.where(key, id).first()
-  } catch (error) {
-    if (IMPOSSIBLE_KEY.has((error as { code?: string }).code ?? '')) return null
-    throw error
-  }
+  return firstByKey(query, key, id)
 }

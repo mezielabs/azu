@@ -1,6 +1,8 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import { actionAbilities } from '../actions/run_action.ts'
+import { processTimezone } from '../define_config.ts'
+import { applyFilters } from './filters.ts'
 import { allows } from '../resources/abilities.ts'
 import { diskFor, fileValue } from '../files/uploads.ts'
 import type { Resource } from '../resources/define_resource.ts'
@@ -91,8 +93,8 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
 }
 
 /**
- * One page of a resource's records, searched, sorted and serialised to
- * plain JSON rows.
+ * One page of a resource's records, searched, filtered, sorted and
+ * serialised to plain JSON rows.
  *
  * Relations shown in `belongsTo` columns are preloaded with
  * `preloadOnce`, which keeps a preload the resource's `query` hook
@@ -108,6 +110,8 @@ export async function listRecords(
     scope?: (query: ModelQueryBuilderContract<LucidModel>) => void
     /** `defaultDisk` from config/admin.ts, for image columns */
     defaultDisk?: string
+    /** The admin's timezone, for `dateRange` filters */
+    timezone?: string
   } = {}
 ): Promise<{ rows: ListRow[]; meta: ListMeta }> {
   const model: LucidModel = resource.model
@@ -122,6 +126,9 @@ export async function listRecords(
 
   options.scope?.(query)
   if (state.search) whereSearch(query, model, schema.search, state.search)
+  applyFilters(query, resource, state.filters, {
+    timezone: options.timezone ?? processTimezone(),
+  })
 
   if (state.sort) query.orderBy(columnName(model, state.sort), state.direction)
   // A stable tie-break, so a page always holds the same rows
