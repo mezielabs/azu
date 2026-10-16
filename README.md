@@ -9,8 +9,10 @@ Azu is an admin panel for AdonisJS 7. It reads the models, policies, and validat
 > [!NOTE]
 > **Azu is pre-release.** This README describes the planned v1 API, and it will change based on feedback. If you'd use Azu on a real project in the next few months, [tell us about it](https://github.com/mezielabs/azu/discussions). Early testers get preview builds from week three.
 
-<!-- Screenshot: replace with a real capture once the demo app exists -->
-![Azu product list in light mode](./docs/screenshot.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/list-dark.png">
+  <img alt="Azu's product list in the demo store: search, filters, thumbnails, prices, status badges and stock levels" src="./docs/screenshots/list-light.png">
+</picture>
 
 ---
 
@@ -124,6 +126,13 @@ export default defineResource(Product, {
 ```
 
 Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo.
+
+The fields become the create and edit forms, checked by your validators:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/form-dark.png">
+  <img alt="The demo's product edit form: name, SKU, price, a category select, tags, status and a rich text description" src="./docs/screenshots/form-light.png">
+</picture>
 
 The list screen pages, sorts, searches and filters on the server, and keeps it all in the URL, so a reload, a bookmark or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
 

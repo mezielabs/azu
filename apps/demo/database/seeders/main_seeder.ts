@@ -1,3 +1,4 @@
+import drive from '@adonisjs/drive/services/main'
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { DateTime } from 'luxon'
 import Category from '#models/category'
@@ -14,6 +15,74 @@ import User from '#models/user'
  */
 function toDecimal(minor: number) {
   return `${Math.trunc(minor / 100)}.${String(minor % 100).padStart(2, '0')}`
+}
+
+/**
+ * Ten product names per category, in the categories' order.
+ */
+const PRODUCT_NAMES: Record<string, string[]> = {
+  Kitchen: [
+    'Clay cooking pot',
+    'Cast iron skillet',
+    'Wooden spoon set',
+    'Enamel stock pot',
+    'Bamboo chopping board',
+    'Stainless steel kettle',
+    'Mortar and pestle',
+    'Ceramic serving bowl',
+    'Non-stick frying pan',
+    'Spice rack',
+  ],
+  Fashion: [
+    'Ankara wrap dress',
+    'Aso-oke head tie',
+    'Beaded necklace',
+    'Leather sandals',
+    'Adire kaftan',
+    'Woven raffia bag',
+    'Agbada set',
+    'Coral bead bracelet',
+    'Kente scarf',
+    'Brass cuff',
+  ],
+  Electronics: [
+    'Bluetooth speaker',
+    'Solar power bank',
+    'Wireless earbuds',
+    'Rechargeable fan',
+    'Smart plug',
+    'USB-C charger',
+    'LED desk lamp',
+    'Portable radio',
+    'Phone tripod',
+    'Surge protector',
+  ],
+  Books: [
+    'Things Fall Apart',
+    'Half of a Yellow Sun',
+    'The Famished Road',
+    'Stay With Me',
+    'Purple Hibiscus',
+    'Americanah',
+    'Freshwater',
+    'My Sister, the Serial Killer',
+    'An Orchestra of Minorities',
+    'Lagos Noir',
+  ],
+}
+
+/** A thumbnail per category: a coloured tile with its initial */
+const TILE_COLORS: Record<string, string> = {
+  Kitchen: '#c2410c',
+  Fashion: '#7c3aed',
+  Electronics: '#0369a1',
+  Books: '#15803d',
+}
+
+function thumbnail(category: string, index: number) {
+  const color = TILE_COLORS[category] ?? '#52525b'
+  const shade = 0.55 + (index % 5) * 0.09
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="${color}" fill-opacity="${shade.toFixed(2)}"/><text x="32" y="42" font-family="system-ui, sans-serif" font-size="28" font-weight="600" text-anchor="middle" fill="#fff">${category[0]}</text></svg>`
 }
 
 /**
@@ -47,16 +116,20 @@ export default class MainSeeder extends BaseSeeder {
     for (let i = 1; i <= 40; i++) {
       const category = categories[i % categories.length]
       const priceMinor = (1500 + i * 250) * 100
+      const name = PRODUCT_NAMES[category.name][Math.floor((i - 1) / categories.length)]
+      // Every fifth product has no image, so the list shows both
+      const image = i % 5 === 0 ? null : `seed/products/${String(i).padStart(2, '0')}.svg`
+      if (image) await drive.use().put(image, thumbnail(category.name, i))
       const product = await Product.create({
         categoryId: category.id,
-        name: `${category.name} item ${i}`,
+        name,
         sku: `SKU-${String(i).padStart(4, '0')}`,
-        description: i % 3 === 0 ? null : `<p>Description for ${category.name} item ${i}</p>`,
+        description: i % 3 === 0 ? null : `<p>${name}, from the ${category.name} range.</p>`,
         price: toDecimal(priceMinor),
         stock: (i * 7) % 50,
         status: i % 4 === 0 ? 'draft' : 'published',
         isFeatured: i % 10 === 0,
-        thumbnail: null,
+        thumbnail: image,
         publishedAt: i % 4 === 0 ? null : DateTime.utc(2026, 9, 1).plus({ days: i }),
       })
       await product
