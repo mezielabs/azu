@@ -4,6 +4,7 @@
  * package render from the same contract. Absent values are `null`,
  * never `undefined`, so the schema survives serialisation unchanged.
  */
+import type { SlotName } from './shared/slots.ts'
 
 export type ColumnKind =
   | 'text'
@@ -148,6 +149,8 @@ export type ResourceSchema = {
   fields: FieldSchema[]
   filters: FilterSchema[]
   actions: ActionSchema[]
+  /** Slot → the app component rendered there, by registered name (FR-15) */
+  slots: Record<SlotName, string | null>
 }
 
 export type NavigationItem = {

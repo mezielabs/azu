@@ -18,6 +18,7 @@ import {
   ListToolbar,
   Pagination,
   RowActionsMenu,
+  Slot,
   useActions,
   type ResourceIndexPageProps,
 } from '@mezielabs/azu-react'
@@ -43,6 +44,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const [cleared, setCleared] = useState(0)
   const table = useRef<HTMLDivElement>(null)
   const path = `${azu.path}/resources/${resource.name}`
+  const slot = { resource, page: 'index', record: null, path } as const
 
   const actions = useActions({
     path: azu.path,
@@ -86,12 +88,16 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         >
           {resource.label}
         </h1>
-        {abilities.create && (
-          <Link href={`${path}/create`} className="azu-button azu-button-primary">
-            New {resource.singularLabel.toLowerCase()}
-          </Link>
-        )}
+        <div className="azu-toolbar">
+          <Slot name="toolbar" {...slot} />
+          {abilities.create && (
+            <Link href={`${path}/create`} className="azu-button azu-button-primary">
+              New {resource.singularLabel.toLowerCase()}
+            </Link>
+          )}
+        </div>
       </div>
+      <Slot name="header" {...slot} />
       <ListToolbar
         state={current}
         label={resource.label}
@@ -105,6 +111,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         label={resource.label}
         onChange={(filters) => go({ filters })}
       />
+      <Slot name="beforeTable" {...slot} />
       {/*
         Always rendered, so the table doesn't move when the first row is
         selected and the next click lands where the user aimed

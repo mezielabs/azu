@@ -940,6 +940,15 @@
     @apply mb-0 mr-2;
   }
 
+  /* App components in a resource's slots (FR-15) */
+  .azu-slot {
+    @apply mb-3;
+  }
+
+  .azu-toolbar > .azu-slot {
+    @apply mb-0;
+  }
+
   /* "Select all N matching" and "Clear selection" (FR-17) */
   .azu-selection-scope {
     @apply cursor-pointer text-sm font-medium;

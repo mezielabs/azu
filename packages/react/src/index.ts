@@ -10,6 +10,7 @@ export { Head, Link } from '@inertiajs/react'
 export { createAzuApp, type CreateAzuAppOptions } from './app.tsx'
 export { AdminLayout, type AdminLayoutProps } from './components/admin_layout.tsx'
 export { useComponent } from './components/registry.tsx'
+export { Slot } from './components/slot.tsx'
 export { DataTable, selectedIds } from './components/list/data_table.tsx'
 export { ListCell } from './components/list/cell.tsx'
 export { ListToolbar } from './components/list/list_toolbar.tsx'
@@ -34,6 +35,9 @@ export { RowActionsMenu } from './components/actions/row_actions.tsx'
  */
 export type {
   FieldProps,
+  CellProps,
+  SlotProps,
+  SlotName,
   DashboardPageProps,
   ResourceIndexPageProps,
   ResourceCreatePageProps,

@@ -308,25 +308,68 @@ Azu gives you three levels of control. Start with the smallest one that works.
 **2. Swap a component.** Point any field or column at your own React component:
 
 ```ts
-field.text('sku').component('SkuInput')
+field.text('sku').component('SkuInput'),
+column.custom('stock', 'StockBar'),
 ```
 
 ```tsx
 // inertia/admin/components/sku_input.tsx
 import type { FieldProps } from '@mezielabs/azu-react'
 
-export default function SkuInput({ value, onChange, errors }: FieldProps<string>) {
+export default function SkuInput({ field, value, onChange, errors }: FieldProps<string>) {
   return (
-    <input
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value.toUpperCase())}
-      aria-invalid={errors.length > 0}
-    />
+    <label className="azu-field">
+      <span className="azu-label">{field.label}</span>
+      <input
+        className="azu-input"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        aria-invalid={errors.length > 0}
+      />
+      {errors.length > 0 && <span className="azu-field-error">{errors.join(' ')}</span>}
+    </label>
   )
 }
 ```
 
-Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`.
+```tsx
+// inertia/admin/components/stock_bar.tsx
+import type { CellProps } from '@mezielabs/azu-react'
+
+export default function StockBar({ value }: CellProps<number>) {
+  const stock = value ?? 0
+  return (
+    <span style={{ color: stock < 10 ? 'var(--azu-danger)' : undefined }}>{stock} in stock</span>
+  )
+}
+```
+
+Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
+
+**Slots.** To add something to a page without replacing it, name a component for one of a resource's slots:
+
+```ts
+export default defineResource(Product, {
+  // ...
+  slots: { beforeTable: 'LowStockNotice' },
+})
+```
+
+```tsx
+// inertia/admin/components/low_stock_notice.tsx
+import { Link, type SlotProps } from '@mezielabs/azu-react'
+
+export default function LowStockNotice({ path }: SlotProps) {
+  return (
+    <p>
+      Running low?{' '}
+      <Link href={`${path}?low-stock=1`}>Show products with fewer than 10 in stock</Link>
+    </p>
+  )
+}
+```
+
+The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, and the resource's list URL as `path`.
 
 **3. Publish a page.** Copy any page into your app and edit it however you like:
 
@@ -334,7 +377,7 @@ Components in `inertia/admin/components` are registered by file name, so `sku_in
 node ace admin:publish resource/index
 ```
 
-This copies the page to `inertia/admin/pages/resource/index.tsx`. Page names are snake_case paths, like your app's own Inertia pages; the older `Resource/Index` spelling works too.
+This copies the page to `inertia/admin/pages/resource/index.tsx`, with a comment at the top recording the Azu version it came from. Page names are snake_case paths, like your app's own Inertia pages; the older `Resource/Index` spelling works too. Run `node ace admin:publish` without a page to list them. It won't replace a page you've already published unless you pass `--force`.
 
 Azu renders your copy from then on. It's the most flexible option, but you now own that page through upgrades. Run `node ace admin:doctor` after upgrading to see which published files drifted from the new version.
 
@@ -371,8 +414,8 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
 | `node ace make:admin-resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
 | `node ace make:admin-action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
-| `node ace admin:publish [page]` | Copies a page or component into your app for editing |
-| `node ace admin:doctor` | Checks config, missing policy methods, and drifted published files |
+| `node ace admin:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
+| `node ace admin:doctor` | Checks config, missing policy methods, validators that miss form fields, component names with no file, and published pages that drifted. Exits with 1 on an error |
 
 ## Azu Pro
 
