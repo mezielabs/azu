@@ -31,7 +31,7 @@ Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval o
 | `publishConfig` | ✅ `access: public`, `provenance: true` | ✅ same | |
 | `peerDependencies` | ✅ AdonisJS 7 ranges; Drive and Vite optional | ✅ React 19, Inertia 3; Tiptap and `lucide-react` optional | |
 | `sideEffects` | not set (server package) | ✅ `["*.css"]` | |
-| README | ⬜ none in the package | ⬜ none in the package | npm shows a package's own README. A short one per package that links to the repo README, so the two can't drift |
+| README | ⬜ none in the package | ⬜ none in the package | npm shows a package's own README. A short one per package that links to the repo README, so the two can't drift. Images need absolute URLs (`https://raw.githubusercontent.com/mezielabs/azu/main/docs/screenshots/list-light.png`): npmjs.com doesn't resolve relative paths like the repo README's `./docs/screenshots/…`, and its sanitiser may not keep `<picture>` sources (unverified), so a plain `<img>` with the light capture is the safe choice. Check the rendered page after publishing |
 
 ## 3. Files and exports
 
