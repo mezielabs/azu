@@ -39,7 +39,13 @@ If your API rejects a request, Azu rejects it too. There's one source of truth, 
 
 ## Installation
 
-Install and configure Azu with one command:
+Azu's access gate is a Bouncer ability. The AdonisJS starter kits don't include Bouncer, so add it first if your app doesn't have it:
+
+```sh
+node ace add @adonisjs/bouncer
+```
+
+Then install and configure Azu with one command:
 
 ```sh
 node ace add @mezielabs/azu
@@ -59,13 +65,15 @@ export const accessAdmin = Bouncer.ability((user: User) => {
 })
 ```
 
-If your app doesn't use Bouncer yet, run `node ace add @adonisjs/bouncer` first, then `node ace configure @mezielabs/azu`. Without Bouncer, Azu denies everyone.
+The starter kits' `User` model has no `role` column. While you try Azu on a fresh app, `return true` lets every signed-in user in; narrow it before the app goes anywhere.
+
+If you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` to add the ability. Without Bouncer, Azu denies everyone.
 
 Note: Azu uses your app's existing auth guard. Guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403.
 
 ## Quick start
 
-Generate a resource from an existing model:
+Generate a resource from an existing model (on a fresh starter kit, try `User`):
 
 ```sh
 node ace make:admin-resource Product --policy
