@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { SlotName, SlotProps } from '@mezielabs/azu/types'
 import { useComponent } from './registry.tsx'
 
@@ -14,7 +15,11 @@ export function Slot(props: SlotProps & { name: SlotName }) {
   if (!Component) return null
   return (
     <div className="azu-slot" data-azu-slot={name}>
-      <Component {...slot} />
+      {/* The app loads a page's slot components before rendering it, so
+          this shows only if that load failed or was cut short */}
+      <Suspense fallback={<div className="azu-slot-loading" aria-busy="true" />}>
+        <Component {...slot} />
+      </Suspense>
     </div>
   )
 }

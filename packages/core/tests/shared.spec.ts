@@ -14,6 +14,7 @@ import {
   actionUrl,
   bulkActionsFor,
   chunkedRunNote,
+  usedComponentNames,
   offersAllMatching,
   selectionSummary,
   dismissLabel,
@@ -362,5 +363,45 @@ test.group('Bulk runs on all matching rows (FR-17)', () => {
   test('warns about batches only when a run takes more than one', ({ assert }) => {
     assert.isNull(chunkedRunNote(500))
     assert.match(chunkedRunNote(501)!, /^It runs in batches of 500, each saved on its own\./)
+  })
+})
+
+test.group('App components a page renders (lazy registry)', () => {
+  test('collects the components a page renders', ({ assert }) => {
+    const resource = {
+      columns: [
+        { name: 'stock', component: 'StockBar' },
+        { name: 'name', component: null },
+      ],
+      // Only forms render field components
+      fields: [{ name: 'sku', component: 'SkuInput' }],
+      actions: [{ fields: [{ name: 'note', component: 'NoteInput' }] }],
+      slots: { header: null, beforeTable: 'LowStockNotice' },
+    }
+
+    assert.sameMembers(
+      [...usedComponentNames('azu/resource/index', { resource, list: { rows: [] } })],
+      ['StockBar', 'NoteInput', 'LowStockNotice']
+    )
+    assert.sameMembers(
+      [
+        ...usedComponentNames('azu/resource/create', {
+          resource: { ...resource, slots: { ...resource.slots, afterForm: 'PricingHelp' } },
+          form: { fields: [{ component: 'SkuInput' }] },
+        }),
+      ],
+      // The form's fields and its own slots; no columns, no beforeTable
+      ['SkuInput', 'PricingHelp']
+    )
+    assert.sameMembers(
+      [
+        ...usedComponentNames('azu/resource/show', {
+          resource,
+          relations: [{ columns: [{ component: 'OrderTotal' }] }],
+        }),
+      ],
+      ['OrderTotal', 'NoteInput']
+    )
+    assert.equal(usedComponentNames('azu/dashboard', undefined).size, 0)
   })
 })

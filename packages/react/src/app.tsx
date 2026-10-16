@@ -3,7 +3,12 @@ import { RouterProvider } from 'react-aria-components'
 import type { ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { packagePages, type PageModule } from './pages/index.ts'
-import { RegistryProvider, type ComponentModules } from './components/registry.tsx'
+import { usedComponentNames } from '@mezielabs/azu/shared'
+import {
+  ComponentRegistry,
+  RegistryProvider,
+  type ComponentModules,
+} from './components/registry.tsx'
 import { ToastRegion } from './components/toast.tsx'
 
 export type CreateAzuAppOptions = {
@@ -14,8 +19,9 @@ export type CreateAzuAppOptions = {
   pages?: Record<string, () => Promise<unknown>>
 
   /**
-   * The app's custom components:
-   * `import.meta.glob('./components/**\/*.tsx', { eager: true })`.
+   * The app's custom components: `import.meta.glob('./components/**\/*.tsx')`.
+   * Each loads when a page that uses it opens, so none of them weigh on
+   * the admin entry. An eager glob (`{ eager: true }`) works too.
    */
   components?: Record<string, unknown>
 }
@@ -40,6 +46,8 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
     ])
   )
 
+  const registry = new ComponentRegistry((options.components ?? {}) as ComponentModules)
+
   return createInertiaApp({
     // The app's name (`brand.name` in config/admin.ts), from the root view
     title: (title) => {
@@ -47,18 +55,23 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
         document.querySelector<HTMLMetaElement>('meta[name="azu-app-name"]')?.content || 'Admin'
       return title ? `${title} · ${name}` : name
     },
-    resolve: async (name) => {
+    // The page, and the app components its props name, load together,
+    // so a lazily registered component is ready when the page renders
+    resolve: async (name, page) => {
       const key = name.replace(/^azu\//, '')
       const load = overrides[key] ?? packagePages[key]
       if (!load) {
         throw new Error(`Azu page "${name}" not found in the app or in @mezielabs/azu-react`)
       }
-      const page = await load()
-      return page.default as ComponentType
+      const [module] = await Promise.all([
+        load(),
+        registry.preload(usedComponentNames(name, page?.props)),
+      ])
+      return module.default as ComponentType
     },
     setup({ el, App, props }) {
       createRoot(el).render(
-        <RegistryProvider modules={(options.components ?? {}) as ComponentModules}>
+        <RegistryProvider registry={registry}>
           {/* React Aria links (table rows with an href) navigate through Inertia */}
           <RouterProvider navigate={(href) => router.visit(href)}>
             <App {...props} />

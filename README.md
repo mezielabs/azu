@@ -344,7 +344,7 @@ export default function StockBar({ value }: CellProps<number>) {
 }
 ```
 
-Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
+Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. Each one loads only when a page that uses it opens, so they add nothing to the admin's initial JavaScript. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
 
 **Slots.** To add something to a page without replacing it, name a component for one of a resource's slots:
 

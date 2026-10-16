@@ -32,7 +32,8 @@ const RelationsControl = lazy(async () => ({
 /**
  * One form field, by kind, or the app's component when the field names
  * one (`field.text('sku').component('SkuInput')`). Custom components
- * get `FieldProps`.
+ * get `FieldProps`, and may load lazily: until then, a placeholder the
+ * size of a labelled input holds their place.
  */
 export function FormField(props: ControlProps & { values: Record<string, FieldValue> }) {
   const { field, value, onChange, errors, values } = props
@@ -42,7 +43,19 @@ export function FormField(props: ControlProps & { values: Record<string, FieldVa
     const custom: FieldProps<FieldValue> = { value, onChange, errors, field, record: values }
     return (
       <div className="azu-field" data-azu-field={field.name}>
-        <Custom {...custom} />
+        {/* A label and an input's height, so the form doesn't move when it loads */}
+        <Suspense
+          fallback={
+            <div className="azu-field" aria-busy="true">
+              <span className="azu-label">{field.label}</span>
+              <div className="azu-input azu-placeholder" aria-hidden="true">
+                {'\u00a0'}
+              </div>
+            </div>
+          }
+        >
+          <Custom {...custom} />
+        </Suspense>
       </div>
     )
   }
