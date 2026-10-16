@@ -63,7 +63,7 @@ export default function ResourceShow({
               type="button"
               className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
               disabled={actions.busy}
-              onClick={() => actions.run(action, [record.id])}
+              onClick={() => actions.run(action, { ids: [record.id] })}
             >
               {action.label}
             </button>

@@ -34,7 +34,8 @@ function SelectionCheckbox() {
 
 /**
  * The ids a selection covers on this page. React Aria reports "select
- * all" as the sentinel `'all'`; FR-17 will offer "all N matching".
+ * all" as the sentinel `'all'`. Rows past this page ("Select all N
+ * matching", FR-17) are the list page's to offer.
  */
 export function selectedIds(selection: Selection, rows: ListRow[]): (string | number)[] {
   if (selection === 'all') return rows.map((row) => row.id)

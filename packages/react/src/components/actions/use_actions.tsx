@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { actionUrl, requestAction } from '@mezielabs/azu/shared'
+import { actionUrl, requestAction, type MatchingRows } from '@mezielabs/azu/shared'
 import type {
   ActionResponse,
   ActionSchema,
@@ -17,13 +17,21 @@ const ActionDialog = lazy(async () => ({
   default: (await import('./action_dialog.tsx')).ActionDialog,
 }))
 
-type Pending = { action: ActionSchema; ids: (string | number)[] }
+/**
+ * What an action runs on: the selected rows, or every row the list's
+ * search and filters match (FR-17).
+ */
+export type ActionTarget = { ids: (string | number)[] } | { matching: MatchingRows }
+
+type Pending = { action: ActionSchema; target: ActionTarget }
 
 /**
  * Runs a resource's actions (FR-12): opens the confirm dialog when the
  * action asks for confirmation or has fields, sends it to the server,
- * and shows the result as a toast. `onDone` runs after a success, to
- * reload the page, clear the selection and move focus.
+ * and shows the result as a toast. A run on all matching rows always
+ * confirms first. `onDone` runs after a success, to reload the page,
+ * clear the selection and move focus, including after a run that
+ * stopped partway (FR-17), whose committed chunks changed rows.
  */
 export function useActions(options: {
   path: string
@@ -39,15 +47,13 @@ export function useActions(options: {
     setBusy(true)
     const outcome = await requestAction(
       actionUrl(options.path, options.resource.name, next.action),
-      {
-        ids: next.ids,
-        input,
-      }
+      { ...next.target, input }
     )
     setBusy(false)
     if (outcome.ok) {
       setPending(null)
-      showToast(outcome.result.message ?? `${next.action.label}: done`)
+      const message = outcome.result.message ?? `${next.action.label}: done`
+      showToast(message, outcome.result.failed > 0 ? 'error' : undefined)
       options.onDone(outcome.result, next.action)
     } else if (outcome.status === 422 && Object.keys(outcome.errors).length > 0) {
       // Keep the dialog open, with the errors under their fields
@@ -59,10 +65,10 @@ export function useActions(options: {
     }
   }
 
-  function run(action: ActionSchema, ids: (string | number)[]) {
+  function run(action: ActionSchema, target: ActionTarget) {
     setErrors({})
-    const next = { action, ids }
-    if (action.confirm || action.fields.length > 0) setPending(next)
+    const next = { action, target }
+    if ('matching' in target || action.confirm || action.fields.length > 0) setPending(next)
     else void execute(next)
   }
 
@@ -71,7 +77,8 @@ export function useActions(options: {
       <ActionDialog
         key={`${pending.action.kind}.${pending.action.name}`}
         action={pending.action}
-        count={pending.ids.length}
+        count={'ids' in pending.target ? pending.target.ids.length : pending.target.matching.count}
+        matching={'matching' in pending.target}
         noun={{
           one: options.resource.singularLabel.toLowerCase(),
           many: options.resource.label.toLowerCase(),

@@ -66,6 +66,7 @@ test.group('Admin / row actions (FR-12)', (group) => {
       redirect: null,
       done: 1,
       skipped: 0,
+      failed: 0,
     })
     await product.refresh()
     assert.equal(product.stock, 7)

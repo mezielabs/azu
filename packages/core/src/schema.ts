@@ -120,8 +120,18 @@ export type ActionResponse = {
   redirect: string | null
   /** Records the action ran on */
   done: number
-  /** Records skipped because the user may not run the action on them */
+  /**
+   * Records skipped because the user may not run the action on them, or,
+   * in a run on all matching rows, because they no longer matched when
+   * their chunk ran
+   */
   skipped: number
+  /**
+   * A run on all matching rows (FR-17) that stopped at a failed chunk:
+   * the records left unchanged, in that chunk and the ones after it.
+   * Chunks before it stay committed. Otherwise 0
+   */
+  failed: number
 }
 
 export type ResourceSchema = {

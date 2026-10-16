@@ -13,6 +13,9 @@ import {
   withFilter,
   actionUrl,
   bulkActionsFor,
+  chunkedRunNote,
+  offersAllMatching,
+  selectionSummary,
   dismissLabel,
   formatDateTime,
   formatDecimal,
@@ -338,5 +341,26 @@ test.group('Theme choice (FR-14)', () => {
     assert.include(script, 'localStorage.getItem("azu-theme")')
     assert.include(script, 'setAttribute("data-azu-theme",t)')
     assert.match(script, /^try\{.*\}catch\(e\)\{\}$/)
+  })
+})
+
+test.group('Bulk runs on all matching rows (FR-17)', () => {
+  test('offers every matching row once the whole page is selected and more match', ({ assert }) => {
+    assert.isTrue(offersAllMatching(25, 25, 1204))
+    assert.isFalse(offersAllMatching(24, 25, 1204))
+    // Everything matching is already on the page
+    assert.isFalse(offersAllMatching(25, 25, 25))
+    assert.isFalse(offersAllMatching(0, 0, 0))
+  })
+
+  test('summarises the selection', ({ assert }) => {
+    assert.equal(selectionSummary(0, null), '')
+    assert.equal(selectionSummary(3, null), '3 selected')
+    assert.equal(selectionSummary(25, 1204), 'All 1,204 matching selected')
+  })
+
+  test('warns about batches only when a run takes more than one', ({ assert }) => {
+    assert.isNull(chunkedRunNote(500))
+    assert.match(chunkedRunNote(501)!, /^It runs in batches of 500, each saved on its own\./)
   })
 })

@@ -283,6 +283,13 @@ actions: [
 
 `.ability('publish')` checks the `publish` method on your policy for each record; without `.ability()`, an action checks `update`. In a bulk action, records the user can't touch are skipped and reported, rather than failing the whole batch.
 
+Once every row on the page is selected, the bulk toolbar offers **Select all N matching**. The action then runs on every row the list's search and filters match, up to 10,000:
+
+- **In chunks:** 500 records at a time, each chunk in its own transaction, with the same policy check per record. Your handler is called once per chunk, so it shouldn't assume it sees every record at once.
+- **Partial success:** if a chunk fails, it rolls back and the run stops, but the chunks before it stay done. The confirm dialog says so before a run of more than 500, and the toast reports how many were done, skipped and not changed. Azu writes that toast, so a handler's `{ message }` isn't shown, and `{ redirect }` applies only when the whole run succeeds.
+- **Which rows:** the ones that matched when the run started. Rows added meanwhile are left out, and a row that no longer matches when its chunk runs is skipped. If more rows match than the count the user confirmed, nothing runs.
+- **The limit:** with more than 10,000 matching rows, the action is refused before anything changes. Narrow the filters and run it on each part.
+
 The handler runs in a transaction, with its records bound to it. Run your other queries through `trx` too, so that if the handler throws, all its changes roll back and the user sees an error toast. An AdonisJS `Exception` with a status below 500 shows its message; any other error shows a generic message and goes to your log.
 
 `.fields()` asks for input in the action's dialog. The input goes through the validator you pass, like a form's, and the handler gets the validator's output as `input`. `.destructive()` styles the action like Delete. Return `{ message }` for a toast, or `{ redirect }` to go somewhere else.
