@@ -65,7 +65,13 @@ export const accessAdmin = Bouncer.ability((user: User) => {
 })
 ```
 
-The starter kits' `User` model has no `role` column. While you try Azu on a fresh app, `return true` lets every signed-in user in; narrow it before the app goes anywhere.
+The starter kits' `User` model has no `role` column, and their signup page is public, so don't let every signed-in user in. While you try Azu on a fresh app, let yourself in by email, and narrow it before the app goes anywhere:
+
+```ts
+export const accessAdmin = Bouncer.ability((user: User) => {
+  return user.email === 'you@example.com'
+})
+```
 
 If you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` to add the ability. Without Bouncer, Azu denies everyone.
 

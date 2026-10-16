@@ -38,15 +38,17 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 
    It writes `config/admin.ts`, `start/admin.ts` and `inertia/admin/app.tsx`, registers the provider, commands and preload file, adds the `#admin/*` alias and the `azu()` Vite plugin, and adds `accessAdmin` to `app/abilities/main.ts`.
 
-3. **Access.** `accessAdmin` returns `false`, so no one gets in yet. The starter kit's User has no role column, so while you try Azu, let every signed-in user in:
+3. **Access.** `accessAdmin` returns `false`, so no one gets in yet. The starter kit's User has no role column, and its signup page is public, so letting every signed-in user in would let in anyone who registers. While you try Azu, let yourself in by email:
 
    ```ts
-   export const accessAdmin = Bouncer.ability(() => {
-     return true
+   import type User from '#models/user'
+
+   export const accessAdmin = Bouncer.ability((user: User) => {
+     return user.email === 'you@example.com'
    })
    ```
 
-   Narrow it before the app goes anywhere, for example to a role you add.
+   Narrow it before the app goes anywhere, for example to a role you add. (The timed run used `return true`, which takes the same half a minute to type; the README and this step now check the email, because of the public signup.)
 
 4. **A resource.** The starter kit's only model is User:
 
@@ -62,7 +64,7 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 
 - **Fixed: configure asked about a package that was already installed.** When `@mezielabs/azu-react` was already in `package.json` (installed alongside core, or a workspace package), configure still prompted to install it, or with `--no-install` printed "Please install `@mezielabs/azu-react`". It now checks `package.json` first and skips both. Tested in `packages/core/tests/configure.spec.ts`.
 - **README: Bouncer comes first.** The README said to add Bouncer and then re-run configure if the app didn't have it. With the React starter kit that's always the case, so the README now says to add Bouncer before Azu.
-- **README: an access rule for a fresh app.** The README's `accessAdmin` example uses `user.role`, which the starter kit's User doesn't have. The Installation section now says what to use while trying it out.
+- **README: an access rule for a fresh app.** The README's `accessAdmin` example uses `user.role`, which the starter kit's User doesn't have. The Installation section now shows an email check to use while trying it out. It doesn't suggest letting every signed-in user in, since the kits' signup is public.
 - **README: try it with User.** The Quick start's `Product` model doesn't exist in a fresh app; the README now says to use `User` on one.
 - **Not Azu's:** `npm run typecheck` on a fresh app with Bouncer fails on `#generated/policies` until the dev server or `node ace codegen` has run once. That's Bouncer's generated index, created by AdonisJS's codegen.
 
