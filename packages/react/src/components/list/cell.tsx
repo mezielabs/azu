@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   formatDateTime,
   formatDecimal,
@@ -22,7 +23,14 @@ export function ListCell(props: {
 }) {
   const { column, value, row, timezone } = props
   const Custom = useComponent(column.component ?? undefined)
-  if (Custom) return <Custom value={value} record={row} column={column} />
+  if (Custom) {
+    // One line of text, the height of a cell, while a lazy component loads
+    return (
+      <Suspense fallback={<span className="azu-cell-loading" aria-busy="true" />}>
+        <Custom value={value} record={row} column={column} />
+      </Suspense>
+    )
+  }
 
   switch (column.kind) {
     case 'belongsTo': {

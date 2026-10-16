@@ -83,4 +83,60 @@ test.group('Customising (FR-15)', (group) => {
     const page = await visit('/admin')
     await page.getByText('Welcome to the Azu demo store.').waitFor()
   })
+
+  test('app components load only on pages that use them, without moving the page', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-custom-lazy' })
+    await Product.create({
+      categoryId: category.id,
+      name: 'Clay pot',
+      sku: 'CUS-LAZY',
+      price: '5.00',
+      stock: 3,
+      status: 'draft',
+      isFeatured: false,
+    })
+    const loaded = (page: { evaluate: (fn: () => string[]) => Promise<string[]> }) =>
+      page.evaluate(() =>
+        (globalThis as any).performance
+          .getEntriesByType('resource')
+          .map((entry: { name: string }) => entry.name)
+          .filter((name: string) => name.includes('/inertia/admin/components/'))
+          .map((name: string) => name.split('/').pop()!.split('?')[0])
+      )
+    const layoutShift = (page: { evaluate: (fn: () => Promise<number>) => Promise<number> }) =>
+      page.evaluate(
+        () =>
+          new Promise<number>((resolve) => {
+            new (globalThis as any).PerformanceObserver((list: any) => {
+              resolve(
+                list
+                  .getEntries()
+                  .reduce((sum: number, entry: { value: number }) => sum + entry.value, 0)
+              )
+            }).observe({ type: 'layout-shift', buffered: true })
+            setTimeout(() => resolve(0), 500)
+          })
+      )
+
+    const dashboard = await visit('/admin')
+    await dashboard.getByText('Welcome to the Azu demo store.').waitFor()
+    assert.deepEqual(await loaded(dashboard), [])
+
+    const list = await visit('/admin/resources/products')
+    await list.getByText('3 in stock').waitFor()
+    assert.sameMembers(await loaded(list), ['stock_bar.tsx', 'low_stock_notice.tsx'])
+    assert.equal(await list.locator('.azu-cell-loading, .azu-slot-loading').count(), 0)
+    assert.isBelow(await layoutShift(list), 0.01)
+
+    const form = await visit('/admin/resources/products/create')
+    await form.getByLabel('Sku', { exact: true }).waitFor()
+    assert.sameMembers(await loaded(form), ['sku_input.tsx'])
+    assert.equal(await form.locator('.azu-placeholder').count(), 0)
+    assert.isBelow(await layoutShift(form), 0.01)
+  })
 })

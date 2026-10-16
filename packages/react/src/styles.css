@@ -949,6 +949,20 @@
     @apply mb-0;
   }
 
+  /* While a lazily registered app component loads */
+  .azu-slot-loading {
+    min-height: 1lh;
+  }
+
+  .azu-cell-loading {
+    @apply inline-block;
+    min-height: 1lh;
+  }
+
+  .azu-placeholder {
+    background: var(--azu-subtle);
+  }
+
   /* "Select all N matching" and "Clear selection" (FR-17) */
   .azu-selection-scope {
     @apply cursor-pointer text-sm font-medium;
