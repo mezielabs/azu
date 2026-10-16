@@ -10,13 +10,19 @@ import User from '#models/user'
 const OUT = app.makePath('../../docs/screenshots')
 
 /**
- * The README's screenshots, from the seeded demo: `pnpm screenshots`.
+ * The README's screenshots, from the seeded demo on Postgres:
+ * `pnpm screenshots` with `DB_CONNECTION=pg` and the `DB_*` settings.
  * Skipped in the normal test run, so tests never write to docs/.
  */
 test.group('README screenshots', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('captures the list, the form and dark mode', async ({ browser }) => {
+    // Postgres, the primary database: SQLite returns decimals as numbers,
+    // so the form would show a price of 3250 rather than 3250.00
+    if (db.connection().dialect.name !== 'postgres') {
+      throw new Error('Capture the screenshots on Postgres: DB_CONNECTION=pg, see CLAUDE.md')
+    }
     await new MainSeeder(db.connection()).run()
     await mkdir(OUT, { recursive: true })
     const admin = await User.findByOrFail('role', 'admin')
