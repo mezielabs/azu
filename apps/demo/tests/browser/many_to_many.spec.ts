@@ -62,4 +62,50 @@ test.group('manyToMany picker (FR-09)', (group) => {
       [gift.id]
     )
   })
+
+  test('past 200 attached, the picker is read-only, says why, and a save keeps them all', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-m2m-many' })
+    const tags = await Tag.createMany(
+      Array.from({ length: 250 }, (_, index) => ({
+        name: `Bulk ${String(index).padStart(3, '0')}`,
+        slug: `bulk-m2m-${index}`,
+      }))
+    )
+    const product = await Product.create({
+      categoryId: category.id,
+      name: 'Clay pot',
+      sku: 'M2M-MANY',
+      price: '12.50',
+      stock: 3,
+      status: 'draft',
+      isFeatured: false,
+    })
+    await product.related('tags').attach(tags.map((tag) => tag.id))
+
+    const page = await visit(`/admin/resources/products/${product.id}/edit`)
+    const picker = page.locator('[data-azu-field="tags"]')
+    const tagGroup = picker.getByRole('grid', { name: 'Tags' })
+    await tagGroup.waitFor()
+    assert.equal(
+      await tagGroup
+        .getAttribute('aria-describedby')
+        .then((ids) => page.locator(`[id="${ids}"]`).textContent()),
+      '250 tags attached; too many to edit here'
+    )
+    assert.equal(await picker.getByRole('combobox').count(), 0)
+    assert.equal(await picker.getByRole('button', { name: /^Remove/ }).count(), 0)
+
+    await page.locator('[data-azu-field="name"] input').fill('Renamed pot')
+    await page.click('form button[type="submit"]')
+    await page.waitForURL(`**/admin/resources/products/${product.id}`)
+    await product.refresh()
+    await product.load('tags')
+    assert.equal(product.name, 'Renamed pot')
+    assert.lengthOf(product.tags, 250)
+  })
 })

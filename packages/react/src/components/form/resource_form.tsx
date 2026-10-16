@@ -83,9 +83,11 @@ export function ResourceForm(props: {
   function submit(event: FormEvent) {
     event.preventDefault()
     // Each field submits under its input: a belongsTo field sends its
-    // foreign key, a manyToMany field its records' keys (`tagIds`). Datetimes go as the exact instant the picker resolved;
-    // the server hands them to the validator in the format vine.date()
-    // expects.
+    // foreign key, a manyToMany field its records' keys (`tagIds`).
+    // A read-only manyToMany field isn't sent: it may show only some of
+    // the attached records. Datetimes go as the exact instant the picker
+    // resolved; the server hands them to the validator in the format
+    // vine.date() expects.
     // Uploads send a chosen File, or null to remove the stored file; an
     // untouched upload isn't sent, so the server keeps it. With a File in
     // the data, Inertia sends multipart form data.
@@ -99,6 +101,7 @@ export function ResourceForm(props: {
       } else if (field.kind === 'belongsTo') {
         data[field.input] = (value as RelationValue | null)?.id ?? null
       } else if (field.kind === 'manyToMany') {
+        if (field.readOnly) continue
         // The related records' keys: `tagIds`
         data[field.input] = ((value as RelationValue[] | null) ?? []).map((item) => item.id)
       } else {

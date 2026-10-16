@@ -172,6 +172,36 @@ export async function manyToManyIds(record: LucidRow, name: string): Promise<(st
 }
 
 /**
+ * How many records a `manyToMany` field has attached, unscoped: its
+ * pivot rows for the record.
+ */
+export async function manyToManyCount(record: LucidRow, name: string): Promise<number> {
+  const [row] = (await (
+    record as unknown as {
+      related(name: string): {
+        pivotQuery(): { count(column: string): { pojo(): Promise<{ total: unknown }[]> } }
+      }
+    }
+  )
+    .related(name)
+    .pivotQuery()
+    .count('* as total')
+    .pojo()) as { total: unknown }[]
+  return Number(row?.total ?? 0)
+}
+
+/**
+ * Why an edit form shows a `manyToMany` field read-only: more records
+ * are attached than it loads, so submitting what it shows would detach
+ * the rest. `null` when the form can edit them all.
+ */
+export function tooManyAttached(field: Pick<FieldSchema, 'label'>, count: number): string | null {
+  if (count <= MANY_TO_MANY_LIMIT) return null
+  const total = new Intl.NumberFormat('en').format(count)
+  return `${total} ${field.label.toLowerCase()} attached; too many to edit here`
+}
+
+/**
  * Whether the user may list what a `belongsTo` or `manyToMany` field, or
  * a `belongsTo` filter, points at: the related resource's `viewList`.
  * Fails closed: no resource for the related model, or no `viewList` on

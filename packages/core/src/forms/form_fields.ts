@@ -106,6 +106,7 @@ export function withHints(
     ...field,
     input,
     optionsUrl: null,
+    readOnlyReason: null,
     min: field.min ?? hints?.min ?? null,
     max: field.max ?? hints?.max ?? null,
     step: field.step ?? hints?.step ?? null,

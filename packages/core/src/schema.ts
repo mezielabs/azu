@@ -251,8 +251,13 @@ export type FormFieldSchema = FieldSchema & {
    * `categoryId`)
    */
   input: string
-  /** `belongsTo`: where the select searches for options */
+  /** `belongsTo` and `manyToMany`: where the picker searches for options */
   optionsUrl: string | null
+  /**
+   * Why the form shows the field read-only, shown under it: a
+   * `manyToMany` field with more records attached than the form loads
+   */
+  readOnlyReason: string | null
   /** Not optional and not nullable in the validator, with no conditional rule */
   required: boolean
   minLength: number | null

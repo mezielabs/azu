@@ -184,6 +184,7 @@ test.group('Admin / manyToMany (FR-09)', (group) => {
       input: 'tagIds',
       readOnly: false,
       optionsUrl: `${PRODUCTS}/fields/tags/options?record=${product.id}`,
+      readOnlyReason: null,
     })
     // By title
     assert.deepEqual(edit.body().props.form.values.tags, expected)
@@ -202,6 +203,64 @@ test.group('Admin / manyToMany (FR-09)', (group) => {
 
     response.assertStatus(200)
     assert.deepEqual(response.body(), { options: [{ id: gift.id, title: gift.name }] })
+  })
+
+  test('past 200 attached, the edit form is read-only and an edit detaches none', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const { prefix, category } = await catalog()
+    const tags = await Tag.createMany(
+      Array.from({ length: 250 }, (_, index) => ({
+        name: `Bulk ${prefix} ${String(index).padStart(3, '0')}`,
+        slug: `bulk-${prefix}-${index}`,
+      }))
+    )
+    const product = await Product.create({ ...payload(category), stock: 1, isFeatured: false })
+    await product.related('tags').attach(tags.map((tag) => tag.id))
+
+    const edit = await client.get(`${PRODUCTS}/${product.id}/edit`).loginAs(admin).withInertia()
+    const field = edit.body().props.form.fields.find((item: any) => item.name === 'tags')
+    assert.containsSubset(field, {
+      readOnly: true,
+      optionsUrl: null,
+      readOnlyReason: '250 tags attached; too many to edit here',
+    })
+    const shown: { id: number }[] = edit.body().props.form.values.tags
+    assert.lengthOf(shown, 200)
+
+    const options = await client
+      .get(`${PRODUCTS}/fields/tags/options?record=${product.id}`)
+      .loginAs(admin)
+    options.assertStatus(403)
+
+    // What the form sends: tagIds left out
+    const renamed = await client
+      .put(`${PRODUCTS}/${product.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(payload(category, { sku: product.sku, name: 'Renamed pot' }))
+      .redirects(0)
+    renamed.assertStatus(303)
+    await product.refresh()
+    assert.equal(product.name, 'Renamed pot')
+    assert.lengthOf(await tagIds(product), 250)
+
+    // A client that sends the 200 it was shown still detaches nothing
+    const partial = await client
+      .put(`${PRODUCTS}/${product.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(payload(category, { sku: product.sku, tagIds: shown.map((tag) => tag.id) }))
+      .redirects(0)
+    partial.assertStatus(303)
+    assert.deepEqual(
+      await tagIds(product),
+      tags.map((tag) => tag.id).sort((a, b) => a - b)
+    )
   })
 
   test('forbidden: staff, who cannot list tags, get them read-only and cannot change them', async ({

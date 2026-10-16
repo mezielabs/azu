@@ -7,7 +7,7 @@ import type { FormErrors, FormFieldSchema } from '../schema.ts'
 import { processTimezone } from '../define_config.ts'
 import { sanitizeRichText } from '../files/sanitize_html.ts'
 import { FILE_KINDS, deleteFiles, diskFor, planUploads, storeUploads } from '../files/uploads.ts'
-import { manyToManyIds } from '../records/relations.ts'
+import { MANY_TO_MANY_LIMIT, manyToManyCount, manyToManyIds } from '../records/relations.ts'
 import { toValidatorDateTime } from './datetime_input.ts'
 import { validatorFor, type FormMode } from './form_fields.ts'
 
@@ -114,7 +114,9 @@ export function missingValidatorMessage(resource: Resource<any, any>, mode: Form
  *    fields, never the raw payload. Hooks, the save and `manyToMany`
  *    pivot syncs share a transaction. A `manyToMany` key list the
  *    validator outputs replaces the attached records; one it leaves out
- *    changes nothing.
+ *    changes nothing. A read-only `manyToMany` field is never synced,
+ *    including one with more records attached than the form loads; its
+ *    keys reach the validator only up to that limit.
  *
  * Returns the saved record, or the validation errors.
  */
@@ -179,7 +181,11 @@ export async function saveRecord(
     for (const field of fields) {
       const failedUpload = Object.hasOwn(files.errors, field.input)
       if (field.kind === 'manyToMany' && field.readOnly) {
-        data[field.input] = await manyToManyIds(record, field.name)
+        // Past what the form loads, the keys stay out of validation too,
+        // so a limit meant for the form (a maxLength) can't block the save
+        if ((await manyToManyCount(record, field.name)) <= MANY_TO_MANY_LIMIT) {
+          data[field.input] = await manyToManyIds(record, field.name)
+        }
       } else if (field.readOnly || kept.has(field.input) || failedUpload) {
         data[field.input] = currentInput(record, field, timezones)
       }

@@ -10,7 +10,6 @@ import {
   Tag,
   TagGroup,
   TagList,
-  Text,
   useAsyncList,
 } from 'react-aria-components'
 import { fetchRelationOptions } from '@mezielabs/azu/shared'
@@ -28,8 +27,10 @@ function optionLabel(option: { id: string | number; title: string | null }) {
  * and a searchable select that adds one at a time, from the field's
  * policy-checked options endpoint (the `belongsTo` field's, with its
  * `viewList` rule). Picking a record adds it and clears the search, so
- * the next can be found straight away. Read-only (set on the field, or
- * because the user can't list the related resource): the tags alone.
+ * the next can be found straight away. Read-only (set on the field,
+ * because the user can't list the related resource, or because more
+ * records are attached than the form loads, which it says): the tags
+ * alone.
  *
  * The form submits the records' keys under the field's input
  * (`tagIds`).
@@ -40,7 +41,16 @@ export function RelationsControl(props: ControlProps) {
   const current = useRef(selected)
   current.current = selected
   const labelId = useId()
+  const helpId = useId()
+  const reasonId = useId()
   const errorId = useId()
+  const describedBy = [
+    field.help && helpId,
+    field.readOnlyReason && reasonId,
+    errors.length > 0 && errorId,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   const list = useAsyncList<RelationOption>({
     async load({ signal, filterText = '' }) {
@@ -70,7 +80,7 @@ export function RelationsControl(props: ControlProps) {
       <TagGroup
         className="azu-tag-group"
         aria-labelledby={labelId}
-        aria-describedby={errors.length > 0 ? errorId : undefined}
+        aria-describedby={describedBy || undefined}
         onRemove={editable ? (keys) => remove(keys as Set<string | number>) : undefined}
       >
         <Label id={labelId} className="azu-label">
@@ -139,9 +149,14 @@ export function RelationsControl(props: ControlProps) {
         </ComboBox>
       )}
       {field.help && (
-        <Text slot="description" className="azu-description">
+        <p id={helpId} className="azu-description">
           {field.help}
-        </Text>
+        </p>
+      )}
+      {field.readOnlyReason && (
+        <p id={reasonId} className="azu-description" data-azu-read-only-reason>
+          {field.readOnlyReason}
+        </p>
       )}
       {errors.length > 0 && (
         <p id={errorId} className="azu-field-error">
