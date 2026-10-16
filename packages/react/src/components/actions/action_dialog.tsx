@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, type FormEvent } from 'react'
 import { Button, Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components'
-import { dismissLabel } from '@mezielabs/azu/shared'
+import { chunkedRunNote, dismissLabel } from '@mezielabs/azu/shared'
 import type { ActionSchema, FieldValue, FormErrors } from '@mezielabs/azu/types'
 
 const DialogFields = lazy(async () => ({
@@ -17,6 +17,8 @@ export function ActionDialog(props: {
   action: ActionSchema
   /** Records it will run on */
   count: number
+  /** It runs on every matching row (FR-17), not a selection */
+  matching?: boolean
   noun: { one: string; many: string }
   errors: FormErrors
   busy: boolean
@@ -43,7 +45,14 @@ export function ActionDialog(props: {
     props.onSubmit(values)
   }
 
-  const target = count === 1 ? `1 ${props.noun.one}` : `${count} ${props.noun.many}`
+  const total = new Intl.NumberFormat('en').format(count)
+  const target = props.matching
+    ? `all ${total} matching ${count === 1 ? props.noun.one : props.noun.many}`
+    : count === 1
+      ? `1 ${props.noun.one}`
+      : `${total} ${props.noun.many}`
+  // A run in more than one chunk can partly succeed: say so up front
+  const note = props.matching ? chunkedRunNote(count) : null
 
   return (
     <ModalOverlay
@@ -64,6 +73,7 @@ export function ActionDialog(props: {
                 <span className="azu-dialog-count"> ({target})</span>
               )}
             </p>
+            {note && <p className="azu-dialog-body azu-dialog-note">{note}</p>}
             {action.fields.length > 0 && (
               <Suspense fallback={null}>
                 <DialogFields

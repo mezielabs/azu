@@ -5,6 +5,8 @@ import {
   bulkActionsFor,
   listStateUrl,
   nextListState,
+  offersAllMatching,
+  selectionSummary,
   type ListState,
 } from '@mezielabs/azu/shared'
 import {
@@ -29,9 +31,15 @@ import {
  * Row actions sit in each row's menu, and bulk actions in a toolbar
  * over the selection (FR-12). After one runs, the list reloads, the
  * selection clears and focus moves to the table (docs/ui-check.md §3).
+ * With every row on the page selected, "Select all N matching" widens
+ * the selection to every row the search and filters match (FR-17); the
+ * server runs the action on those in chunks.
  */
 export default function ResourceIndex({ azu, resource, list, abilities }: ResourceIndexPageProps) {
   const [selected, setSelected] = useState<(string | number)[]>([])
+  // Every matching row, past this page (FR-17). A narrower selection,
+  // or another page, search or filter, ends it
+  const [allMatching, setAllMatching] = useState(false)
   const [cleared, setCleared] = useState(0)
   const table = useRef<HTMLDivElement>(null)
   const path = `${azu.path}/resources/${resource.name}`
@@ -57,6 +65,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   // the first, not on props the reload hasn't replaced yet
   const [requested, setRequested] = useState<ListState | null>(null)
   useEffect(() => setRequested(null), [list.state])
+  useEffect(() => setAllMatching(false), [list.state])
   const current = requested ?? list.state
 
   function go(change: Partial<ListState>, replace = false) {
@@ -102,8 +111,28 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
       */}
       <div className="azu-toolbar azu-bulk-toolbar" role="toolbar" aria-label="Bulk actions">
         <p className="azu-selection-summary" role="status">
-          {selected.length > 0 ? `${selected.length} selected` : ''}
+          {selectionSummary(selected.length, allMatching ? list.meta.total : null)}
         </p>
+        {!allMatching &&
+          bulkActions.length > 0 &&
+          offersAllMatching(selected.length, list.rows.length, list.meta.total) && (
+            <button
+              type="button"
+              className="azu-selection-scope"
+              onClick={() => setAllMatching(true)}
+            >
+              Select all {new Intl.NumberFormat('en').format(list.meta.total)} matching
+            </button>
+          )}
+        {allMatching && (
+          <button
+            type="button"
+            className="azu-selection-scope"
+            onClick={() => setCleared((count) => count + 1)}
+          >
+            Clear selection
+          </button>
+        )}
         {selected.length > 0 &&
           bulkActions.map((action) => (
             <button
@@ -111,7 +140,20 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               type="button"
               className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
               disabled={actions.busy}
-              onClick={() => actions.run(action, selected)}
+              onClick={() =>
+                actions.run(
+                  action,
+                  allMatching
+                    ? {
+                        matching: {
+                          search: list.state.search,
+                          filters: list.state.filters,
+                          count: list.meta.total,
+                        },
+                      }
+                    : { ids: selected }
+                )
+              }
             >
               {action.label}
             </button>
@@ -126,7 +168,10 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
           state={list.state}
           timezone={azu.timezone}
           onSort={(sort, direction) => go({ sort, direction })}
-          onSelectionChange={setSelected}
+          onSelectionChange={(ids) => {
+            setSelected(ids)
+            if (ids.length < list.rows.length) setAllMatching(false)
+          }}
           rowHref={(row) =>
             row.abilities.view ? `${path}/${encodeURIComponent(String(row.id))}` : undefined
           }
@@ -139,7 +184,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
                       row.abilities.actions.includes(actionKey(action))
                     )}
                     title={row.title ?? String(row.id)}
-                    onAction={(action) => actions.run(action, [row.id])}
+                    onAction={(action) => actions.run(action, { ids: [row.id] })}
                   />
                 )
               : undefined

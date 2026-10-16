@@ -261,6 +261,7 @@ export class ResourcesController {
     const outcome = await runAction(ctx, resource, kind, ctx.params.action, {
       timezone: this.context.config.timezone,
       defaultDisk: this.context.config.defaultDisk,
+      context: this.context,
     })
     return ctx.response.status(outcome.status).send(outcome.body)
   }

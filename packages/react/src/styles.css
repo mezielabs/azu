@@ -940,6 +940,20 @@
     @apply mb-0 mr-2;
   }
 
+  /* "Select all N matching" and "Clear selection" (FR-17) */
+  .azu-selection-scope {
+    @apply cursor-pointer text-sm font-medium;
+    color: var(--azu-brand);
+  }
+
+  .azu-selection-scope:hover {
+    @apply underline;
+  }
+
+  .azu-dialog-note {
+    @apply mt-2;
+  }
+
   .azu-th-actions,
   .azu-td-actions {
     @apply w-12 text-right;

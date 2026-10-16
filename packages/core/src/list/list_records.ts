@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 import type { LucidModel, LucidRow, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import { actionAbilities } from '../actions/run_action.ts'
 import { processTimezone } from '../define_config.ts'
@@ -93,6 +94,24 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
 }
 
 /**
+ * The records a list's search and filters match, through the
+ * resource's `query` hook: what a list page shows, and what a bulk run
+ * on all matching rows (FR-17) acts on.
+ */
+export function matchingQuery(
+  resource: Resource<any, any>,
+  state: Pick<ListState, 'search' | 'filters'>,
+  options: { timezone: string; client?: QueryClientContract }
+): ModelQueryBuilderContract<LucidModel> {
+  const model: LucidModel = resource.model
+  const query = options.client ? model.query({ client: options.client }) : model.query()
+  resource.options.query?.(query)
+  if (state.search) whereSearch(query, model, resource.toSchema().search, state.search)
+  applyFilters(query, resource, state.filters, { timezone: options.timezone })
+  return query
+}
+
+/**
  * One page of a resource's records, searched, filtered, sorted and
  * serialised to plain JSON rows.
  *
@@ -116,19 +135,13 @@ export async function listRecords(
 ): Promise<{ rows: ListRow[]; meta: ListMeta }> {
   const model: LucidModel = resource.model
   const schema = resource.toSchema()
-  const query = model.query()
-
-  resource.options.query?.(query)
+  const query = matchingQuery(resource, state, { timezone: options.timezone ?? processTimezone() })
 
   for (const column of schema.columns) {
     if (column.kind === 'belongsTo') query.preloadOnce(column.name as never)
   }
 
   options.scope?.(query)
-  if (state.search) whereSearch(query, model, schema.search, state.search)
-  applyFilters(query, resource, state.filters, {
-    timezone: options.timezone ?? processTimezone(),
-  })
 
   if (state.sort) query.orderBy(columnName(model, state.sort), state.direction)
   // A stable tie-break, so a page always holds the same rows

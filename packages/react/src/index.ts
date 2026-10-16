@@ -25,7 +25,7 @@ export { RelationControl } from './components/form/relation_control.tsx'
 export { RichTextControl } from './components/form/rich_text_control.tsx'
 export { showToast, ToastRegion } from './components/toast.tsx'
 export { ActionDialog } from './components/actions/action_dialog.tsx'
-export { useActions } from './components/actions/use_actions.tsx'
+export { useActions, type ActionTarget } from './components/actions/use_actions.tsx'
 export { RowActionsMenu } from './components/actions/row_actions.tsx'
 
 /**
