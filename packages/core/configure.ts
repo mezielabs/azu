@@ -61,13 +61,31 @@ async function addAccessAbility(command: Configure) {
  */
 const FRONT_END_PACKAGE = { name: '@mezielabs/azu-react', isDevDependency: false }
 
+/**
+ * Whether the app's package.json already lists a package, e.g. one
+ * installed alongside core from a tarball or a monorepo workspace.
+ */
+async function isListed(command: Configure, name: string): Promise<boolean> {
+  try {
+    const manifest = JSON.parse(await readFile(command.app.makePath('package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+    }
+    return Boolean(manifest.dependencies?.[name] ?? manifest.devDependencies?.[name])
+  } catch {
+    return false
+  }
+}
+
 export async function configure(command: Configure) {
   let shouldInstallPackages: boolean | undefined = command.parsedFlags.install
+  // Already a dependency: nothing to install, ask about or list
+  const alreadyListed = await isListed(command, FRONT_END_PACKAGE.name)
 
   /**
    * Prompt when neither `--install` nor `--no-install` is used
    */
-  if (shouldInstallPackages === undefined) {
+  if (shouldInstallPackages === undefined && !alreadyListed) {
     shouldInstallPackages = await command.prompt.confirm(
       `Do you want to install "${FRONT_END_PACKAGE.name}"?`,
       { default: true }
@@ -110,6 +128,7 @@ export async function configure(command: Configure) {
    */
   await addAccessAbility(command)
 
+  if (alreadyListed) return
   if (shouldInstallPackages) {
     await codemods.installPackages([FRONT_END_PACKAGE])
   } else {

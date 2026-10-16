@@ -9,10 +9,14 @@ const PACKAGE_ENTRY = new URL('../index.ts', import.meta.url).href
  * A minimal app on disk with a booted container, so the real Configure
  * command runs the hook and its codemods.
  */
-async function createApp(fs: FileSystem, viteConfig: string) {
+async function createApp(
+  fs: FileSystem,
+  viteConfig: string,
+  dependencies: Record<string, string> = {}
+) {
   await fs.create('.env', '')
   await fs.createJson('tsconfig.json', {})
-  await fs.createJson('package.json', { name: 'app', type: 'module' })
+  await fs.createJson('package.json', { name: 'app', type: 'module', dependencies })
   await fs.create('adonisrc.ts', `export default defineConfig({})`)
   await fs.create('vite.config.ts', viteConfig)
 
@@ -157,5 +161,25 @@ test.group('configure / accessAdmin ability (FR-02)', (group) => {
     assert.isFalse(await fs.exists('app/abilities/main.ts'))
     const logs = ace.ui.logger.getLogs().map((log) => log.message)
     assert.isTrue(logs.some((message) => message.includes('node ace add @adonisjs/bouncer')))
+  })
+
+  test("doesn't ask to install @mezielabs/azu-react when the app already lists it", async ({
+    assert,
+    fs,
+  }) => {
+    const ace = await createApp(
+      fs,
+      `import { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [] })`,
+      { '@mezielabs/azu-react': 'file:../mezielabs-azu-react-0.1.0.tgz' }
+    )
+
+    // No --install or --no-install: an untrapped prompt would fail the test
+    const command = await ace.create(Configure, [PACKAGE_ENTRY])
+    await command.exec()
+
+    command.assertSucceeded()
+    const logs = command.logger.getLogs().map((log) => log.message)
+    assert.notInclude(logs.join('\n'), 'Please install')
+    await assert.fileExists('config/admin.ts')
   })
 })
