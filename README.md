@@ -287,6 +287,7 @@ Once every row on the page is selected, the bulk toolbar offers **Select all N m
 
 - **In chunks:** 500 records at a time, each chunk in its own transaction, with the same policy check per record. Your handler is called once per chunk, so it shouldn't assume it sees every record at once.
 - **Partial success:** if a chunk fails, it rolls back and the run stops, but the chunks before it stay done. The confirm dialog says so before a run of more than 500, and the toast reports how many were done, skipped and not changed. Azu writes that toast, so a handler's `{ message }` isn't shown, and `{ redirect }` applies only when the whole run succeeds.
+- **Running it again:** finished chunks stay done, so running the action again repeats it on those rows. Write handlers that are safe to run twice, or filter so done rows drop out (filter by status: draft before publishing, say).
 - **Which rows:** the ones that matched when the run started. Rows added meanwhile are left out, and a row that no longer matches when its chunk runs is skipped. If more rows match than the count the user confirmed, nothing runs.
 - **The limit:** with more than 10,000 matching rows, the action is refused before anything changes. Narrow the filters and run it on each part.
 
