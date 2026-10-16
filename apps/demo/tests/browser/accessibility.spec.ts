@@ -5,6 +5,7 @@ import type { Page } from 'playwright'
 import Category from '#models/category'
 import Coupon from '#models/coupon'
 import Product from '#models/product'
+import Tag from '#models/tag'
 import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
 
@@ -79,6 +80,15 @@ const scans: Scan[] = [
     popoverOpen: true,
   },
   {
+    name: "form with a manyToMany picker's options open",
+    url: () => '/admin/resources/products/create',
+    open: async (page) => {
+      await page.click('[data-azu-field="tags"] [aria-label="Show Tags options"]')
+      await page.waitForSelector('.azu-popover [role="option"]')
+    },
+    popoverOpen: true,
+  },
+  {
     name: "edit form with a date picker's calendar open",
     url: ({ coupon }) => `/admin/resources/coupons/${coupon.id}/edit`,
     open: async (page) => {
@@ -114,6 +124,10 @@ async function fixtures(): Promise<Fixtures> {
     status: 'published',
     isFeatured: false,
   })
+  await Tag.createMany([
+    { name: 'Clay', slug: 'clay-axe' },
+    { name: 'Gift', slug: 'gift-axe' },
+  ])
   const coupon = await Coupon.create({
     code: 'AXE10',
     kind: 'percent',

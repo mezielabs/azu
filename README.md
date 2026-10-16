@@ -108,6 +108,7 @@ export default defineResource(Product, {
     field.text('sku'),
     field.decimal('price').min(0),
     field.belongsTo('category').searchable('name'),
+    field.manyToMany('tags').searchable('name'),
     field.select('status').options({ draft: 'Draft', published: 'Published' }),
     field.richText('description'),
     field.image('thumbnail').disk('s3').maxSize('2mb'),
@@ -166,7 +167,7 @@ navigation: { groups: ['Sales', 'Catalog'] },
 | `file`, `image` | Drag-and-drop upload | Stored with Drive on `disk()` or `defaultDisk`. Size (`maxSize()`, default 5mb for images, 10mb for files) and type (`accept()`) are checked on the server from the file's contents. SVG and HTML are refused unless you `accept()` them. Your validator sees the stored file's key |
 | `belongsTo` | Searchable select | Loads options as you type |
 | `hasMany` | Table on the detail page | |
-| `manyToMany` | Searchable picker | |
+| `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on an edit form for a record with more than 200 attached |
 
 You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree.
 
@@ -216,6 +217,16 @@ Create and update forms submit through the validators named on the resource. Azu
 A resource with no validator for an operation can't save, by design: Azu never writes input that hasn't been through one of your validators.
 
 A `belongsTo` field submits its foreign key (`category` → `categoryId`), so your validator checks `categoryId`.
+
+A `manyToMany` field submits the related records' keys under the relation's singular name plus `Ids` (`tags` → `tagIds`), so your validator checks an array:
+
+```ts
+tagIds: vine.array(vine.number().exists({ table: 'tags', column: 'id' })).optional(),
+```
+
+Azu syncs the pivot rows with the validator's output, in the same transaction as the save, so a failure rolls back both. Leave `tagIds` out of a request and the attached records stay as they are; send an empty list to detach them all.
+
+The edit form loads up to 200 attached records. For a record with more, it shows the field read-only with a note ("350 tags attached; too many to edit here") and leaves `tagIds` out, so saving the form never detaches the ones it didn't load. The server applies the same rule, so `tagIds` sent anyway is ignored, and doesn't reach your validator either.
 
 Validation errors show up under the field that caused them, including nested and array fields like `tags.0`.
 

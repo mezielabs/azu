@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
-import { formFields } from '../src/forms/form_fields.ts'
+import { formFields, manyToManyInput } from '../src/forms/form_fields.ts'
 import { missingValidatorMessage, saveRecord } from '../src/forms/save_record.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
@@ -84,11 +84,11 @@ test.group('Form fields', () => {
     const edit = await formFields(request({}, ['editPrice']), resource, 'edit', {} as never)
     assert.deepEqual(
       create.map((item) => item.name),
-      ['name', 'sku', 'price']
+      ['name', 'sku', 'price', 'tags']
     )
     assert.deepEqual(
       edit.map((item) => item.name),
-      ['name', 'slug', 'price']
+      ['name', 'slug', 'price', 'tags']
     )
   })
 
@@ -100,12 +100,16 @@ test.group('Form fields', () => {
     )
   })
 
-  test('manyToMany, which arrives with FR-09, is left out', async ({ assert }) => {
+  test("a manyToMany field submits its related keys as '<singular>Ids' (FR-09)", async ({
+    assert,
+  }) => {
     const fields = await formFields(request({}, ['editPrice']), resource, 'create')
-    assert.notInclude(
-      fields.map((item) => item.name),
-      'tags'
+    assert.containsSubset(
+      fields.find((item) => item.name === 'tags'),
+      { kind: 'manyToMany', input: 'tagIds' }
     )
+    assert.equal(manyToManyInput('relatedProducts'), 'relatedProductIds')
+    assert.equal(manyToManyInput('categories'), 'categoryIds')
   })
 })
 

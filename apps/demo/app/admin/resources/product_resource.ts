@@ -44,6 +44,7 @@ export default defineResource(Product, {
     field.text('sku'),
     field.decimal('price').min(0),
     field.belongsTo('category').searchable('name'),
+    field.manyToMany('tags').searchable('name'),
     field.select('status').options({ draft: 'Draft', published: 'Published' }),
     field.richText('description'),
     field.image('thumbnail').maxSize('2mb'),

@@ -63,6 +63,7 @@ function plan(fields: FieldPlan[], overrides: Partial<ModelPlan> = {}): ModelPla
     uncovered: [],
     skipped: [],
     ...overrides,
+    manyToMany: overrides.manyToMany ?? [],
   }
 }
 
@@ -287,5 +288,52 @@ test.group('Generator / planning', () => {
       [['email', 'text']]
     )
     assert.deepEqual(planned.uncovered, ['password'])
+  })
+})
+
+test.group('Generator: manyToMany (FR-09)', () => {
+  const tags = {
+    name: 'tags',
+    input: 'tagIds',
+    relatedTable: 'tags',
+    relatedKeyColumn: 'id',
+    integerKey: true,
+    title: 'name',
+  }
+
+  test('emits a picker field and an array of existing keys', ({ assert }) => {
+    const withTags = plan([], { manyToMany: [tags] })
+    assert.include(
+      renderResource(withTags, names, { validators: true }),
+      "    field.manyToMany('tags').searchable('name'),"
+    )
+    const validator = renderValidator(withTags, names)
+    const rule =
+      "  tagIds: vine.array(vine.number().exists({ table: 'tags', column: 'id' })).optional(),"
+    // In both the create and the update validator
+    assert.equal(validator.split(rule).length - 1, 2)
+  })
+
+  test('string keys get a string rule, and no title means no searchable()', ({ assert }) => {
+    const withLabels = plan([], {
+      manyToMany: [
+        {
+          ...tags,
+          name: 'labels',
+          input: 'labelIds',
+          relatedTable: 'labels',
+          integerKey: false,
+          title: null,
+        },
+      ],
+    })
+    assert.include(
+      renderResource(withLabels, names, { validators: true }),
+      "    field.manyToMany('labels'),"
+    )
+    assert.include(
+      renderValidator(withLabels, names),
+      "  labelIds: vine.array(vine.string().exists({ table: 'labels', column: 'id' })).optional(),"
+    )
   })
 })

@@ -7,6 +7,7 @@ import type { FormErrors, FormFieldSchema } from '../schema.ts'
 import { processTimezone } from '../define_config.ts'
 import { sanitizeRichText } from '../files/sanitize_html.ts'
 import { FILE_KINDS, deleteFiles, diskFor, planUploads, storeUploads } from '../files/uploads.ts'
+import { MANY_TO_MANY_LIMIT, manyToManyCount, manyToManyIds } from '../records/relations.ts'
 import { toValidatorDateTime } from './datetime_input.ts'
 import { validatorFor, type FormMode } from './form_fields.ts'
 
@@ -110,8 +111,12 @@ export function missingValidatorMessage(resource: Resource<any, any>, mode: Form
  *    resource's validator, with `validators.meta` (default `{ record }`)
  *    as VineJS metadata.
  * 3. Only the validator's output is written, again limited to those
- *    fields, never the raw payload. Hooks and the save share a
- *    transaction.
+ *    fields, never the raw payload. Hooks, the save and `manyToMany`
+ *    pivot syncs share a transaction. A `manyToMany` key list the
+ *    validator outputs replaces the attached records; one it leaves out
+ *    changes nothing. A read-only `manyToMany` field is never synced,
+ *    including one with more records attached than the form loads; its
+ *    keys reach the validator only up to that limit.
  *
  * Returns the saved record, or the validation errors.
  */
@@ -175,7 +180,13 @@ export async function saveRecord(
   if (record) {
     for (const field of fields) {
       const failedUpload = Object.hasOwn(files.errors, field.input)
-      if (field.readOnly || kept.has(field.input) || failedUpload) {
+      if (field.kind === 'manyToMany' && field.readOnly) {
+        // Past what the form loads, the keys stay out of validation too,
+        // so a limit meant for the form (a maxLength) can't block the save
+        if ((await manyToManyCount(record, field.name)) <= MANY_TO_MANY_LIMIT) {
+          data[field.input] = await manyToManyIds(record, field.name)
+        }
+      } else if (field.readOnly || kept.has(field.input) || failedUpload) {
         data[field.input] = currentInput(record, field, timezones)
       }
     }
@@ -197,7 +208,14 @@ export async function saveRecord(
   }
   if (Object.keys(errors).length > 0) return { errors }
 
-  const names = writable.map((field) => field.input).filter((name) => !kept.has(name))
+  // manyToMany keys sync pivot rows after the save; they aren't attributes
+  const pivots = writable.filter(
+    (field) => field.kind === 'manyToMany' && Array.isArray(output[field.input])
+  )
+  const names = writable
+    .filter((field) => field.kind !== 'manyToMany')
+    .map((field) => field.input)
+    .filter((name) => !kept.has(name))
   const model: LucidModel = resource.model
   const target = record ?? new model()
   // Files this save replaces or removes, deleted once it commits
@@ -219,6 +237,19 @@ export async function saveRecord(
       target.merge(toAttributes(model, pick(output, names), target))
       await resource.options.beforeSave?.(target, ctx)
       await target.save()
+      // In the same transaction: a failure rolls the record back too
+      for (const field of pivots) {
+        const ids = [...new Set(output[field.input] as (string | number)[])]
+        await (
+          target as unknown as {
+            related(name: string): {
+              sync(ids: unknown[], detach: boolean, trx: unknown): Promise<void>
+            }
+          }
+        )
+          .related(field.name)
+          .sync(ids, true, trx)
+      }
       await resource.options.afterSave?.(target, ctx)
     })
   } catch (error) {

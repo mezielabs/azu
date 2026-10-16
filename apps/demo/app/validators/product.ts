@@ -23,7 +23,11 @@ const fields = {
   isFeatured: vine.boolean().optional(),
   categoryId: vine.number().exists({ table: 'categories', column: 'id' }),
   publishedAt: vine.date().nullable().optional(),
-  tags: vine.array(vine.number()).maxLength(10).optional(),
+  /** The product's tags, as their keys: Azu syncs the pivot rows (FR-09) */
+  tagIds: vine
+    .array(vine.number().exists({ table: 'tags', column: 'id' }))
+    .maxLength(10)
+    .optional(),
 }
 
 export const createProductValidator = vine.create({

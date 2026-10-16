@@ -13,6 +13,20 @@ export function FieldValueView(props: { field: FieldSchema; value: FieldValue; t
   if (value === null || value === '') return EMPTY
 
   switch (field.kind) {
+    case 'manyToMany': {
+      const related = value as RelationValue[]
+      if (related.length === 0) return EMPTY
+      return (
+        <ul className="azu-related-list">
+          {related.map((item) => {
+            const label = item.title ?? String(item.id)
+            return (
+              <li key={item.id}>{item.href ? <Link href={item.href}>{label}</Link> : label}</li>
+            )
+          })}
+        </ul>
+      )
+    }
     case 'belongsTo': {
       const related = value as RelationValue
       const label = related.title ?? String(related.id)

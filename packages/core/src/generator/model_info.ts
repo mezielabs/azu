@@ -3,6 +3,7 @@ import type { LucidModel } from '@adonisjs/lucid/types/model'
 import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 import { baseType, declaredTypes, literalUnion } from './declared_types.ts'
 import { introspectTable, type DbColumn } from './introspect_db.ts'
+import { manyToManyInput } from '../forms/form_fields.ts'
 
 export type FieldKind =
   | 'text'
@@ -26,6 +27,23 @@ export type RelationPlan = {
   title: string | null
 }
 
+/**
+ * A `manyToMany` relation (FR-09): a picker field, and an array of
+ * related keys in the validator.
+ */
+export type ManyToManyPlan = {
+  /** The relation, e.g. `tags` */
+  name: string
+  /** What the field submits and the validator checks: `tagIds` */
+  input: string
+  relatedTable: string
+  relatedKeyColumn: string
+  /** Whether the related key is an integer column */
+  integerKey: boolean
+  /** The related model's attribute that names a record */
+  title: string | null
+}
+
 export type FieldPlan = {
   /** The field's name: the attribute, or the relation for `belongsTo` */
   name: string
@@ -44,6 +62,8 @@ export type ModelPlan = {
   primaryKey: string
   primaryKeyColumn: string
   fields: FieldPlan[]
+  /** `manyToMany` relations, after the column fields */
+  manyToMany: ManyToManyPlan[]
   title: string | null
   search: string[]
   /** An auto-created datetime, shown as a hidden-by-default column */
@@ -68,6 +88,7 @@ type RelationDefinition = {
   relatedModel(): LucidModel
   foreignKey?: string
   localKey?: string
+  relatedKey?: string
 }
 
 /** Never admin fields (spec §7) */
@@ -222,6 +243,24 @@ export async function planModel(
     covered.add(definition.columnName)
   }
 
+  const manyToMany: ManyToManyPlan[] = []
+  for (const { name, relation } of relations) {
+    if (relation.type !== 'manyToMany') continue
+    const related = relation.relatedModel()
+    related.boot()
+    const key = relation.relatedKey ?? related.primaryKey
+    const keyColumn = related.$getColumn(key)?.columnName ?? key
+    const relatedColumns = await introspectTable(client, related.table)
+    manyToMany.push({
+      name,
+      input: manyToManyInput(name),
+      relatedTable: related.table,
+      relatedKeyColumn: keyColumn,
+      integerKey: relatedColumns.find((column) => column.name === keyColumn)?.type === 'integer',
+      title: pickTitle(await stringColumns(related, client, files)),
+    })
+  }
+
   // In the table's own column order, not the model's (schema classes are alphabetical)
   const position = (field: FieldPlan) =>
     columns.findIndex((column) => column.name === field.column.name)
@@ -238,6 +277,7 @@ export async function planModel(
     primaryKey: model.primaryKey,
     primaryKeyColumn,
     fields,
+    manyToMany,
     title: pickTitle(strings),
     search: strings.slice(0, 2),
     createdAt,

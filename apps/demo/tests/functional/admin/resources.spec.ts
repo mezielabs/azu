@@ -13,6 +13,7 @@ const CATALOG = {
       icon: 'folder',
       href: '/admin/resources/categories',
     },
+    { name: 'tags', label: 'Tags', icon: 'tag', href: '/admin/resources/tags' },
   ],
 }
 const COUPONS = {

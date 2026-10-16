@@ -229,7 +229,15 @@ export type FileValue = {
  * dates are `YYYY-MM-DD`; datetimes are ISO strings with an offset;
  * `belongsTo` is the related record; `file` and `image` the stored upload.
  */
-export type FieldValue = string | number | boolean | null | RelationValue | FileValue
+export type FieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | RelationValue
+  /** A `manyToMany` field's attached records */
+  | RelationValue[]
+  | FileValue
 
 /**
  * A field as a form renders it: the resource's field, with hints from
@@ -243,8 +251,13 @@ export type FormFieldSchema = FieldSchema & {
    * `categoryId`)
    */
   input: string
-  /** `belongsTo`: where the select searches for options */
+  /** `belongsTo` and `manyToMany`: where the picker searches for options */
   optionsUrl: string | null
+  /**
+   * Why the form shows the field read-only, shown under it: a
+   * `manyToMany` field with more records attached than the form loads
+   */
+  readOnlyReason: string | null
   /** Not optional and not nullable in the validator, with no conditional rule */
   required: boolean
   minLength: number | null

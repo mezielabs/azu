@@ -22,6 +22,14 @@ const FileControl = lazy(async () => ({
 }))
 
 /**
+ * The `manyToMany` picker (React Aria's TagGroup) is its own chunk too,
+ * so forms without one don't load it.
+ */
+const RelationsControl = lazy(async () => ({
+  default: (await import('./relations_control.tsx')).RelationsControl,
+}))
+
+/**
  * One form field, by kind, or the app's component when the field names
  * one (`field.text('sku').component('SkuInput')`). Custom components
  * get `FieldProps`.
@@ -56,6 +64,19 @@ export function FormField(props: ControlProps & { values: Record<string, FieldVa
       return <DateTimeControl {...props} />
     case 'belongsTo':
       return <RelationControl {...props} />
+    case 'manyToMany':
+      return (
+        <Suspense
+          fallback={
+            <div className="azu-field" data-azu-field={field.name} aria-busy="true">
+              <span className="azu-label">{field.label}</span>
+              <div className="azu-tag-list">Loading…</div>
+            </div>
+          }
+        >
+          <RelationsControl {...props} />
+        </Suspense>
+      )
     case 'richText':
       return <RichTextControl {...props} />
     case 'file':

@@ -63,6 +63,15 @@ async function valueFor(field: Field, client: any, admin: User) {
       response.assertStatus(200)
       return response.body().options[0]?.id ?? null
     }
+    // FR-09: attach the first option, so the pivot sync runs
+    case 'manyToMany': {
+      const response = await client.get(field.optionsUrl!).loginAs(admin)
+      response.assertStatus(200)
+      return response
+        .body()
+        .options.slice(0, 1)
+        .map((option: { id: unknown }) => option.id)
+    }
     default:
       return null
   }
@@ -131,7 +140,12 @@ test.group('Generated resources (FR-04)', (group) => {
       const payload: Record<string, unknown> = {}
       for (const field of fields) {
         const value = values[field.name]
-        payload[field.input] = field.kind === 'belongsTo' ? (value?.id ?? null) : value
+        payload[field.input] =
+          field.kind === 'belongsTo'
+            ? (value?.id ?? null)
+            : field.kind === 'manyToMany'
+              ? (value ?? []).map((item: { id: unknown }) => item.id)
+              : value
       }
       // Change the title so the save is visible
       const title = fields.find(
@@ -152,9 +166,17 @@ test.group('Generated resources (FR-04)', (group) => {
         JSON.stringify(updated.body()?.props?.errors ?? updated.text())
       )
 
+      const after = await client.get(`${base}/${id}`).loginAs(admin).withInertia()
       if (title) {
-        const after = await client.get(`${base}/${id}`).loginAs(admin).withInertia()
         assert.equal(after.body().props.record.values[title.name], payload[title.input])
+      }
+      // The attached records survive the round trip
+      for (const field of fields.filter((item) => item.kind === 'manyToMany')) {
+        assert.deepEqual(
+          after.body().props.record.values[field.name].map((item: { id: unknown }) => item.id),
+          payload[field.input],
+          `${resource.name}.${field.name}`
+        )
       }
     })
   }

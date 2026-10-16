@@ -4,7 +4,12 @@ import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import { Azu } from '../src/azu.ts'
 import { defineConfig } from '../src/define_config.ts'
 import { formFields } from '../src/forms/form_fields.ts'
-import { canListRelated, hasManyTables } from '../src/records/relations.ts'
+import {
+  MANY_TO_MANY_LIMIT,
+  canListRelated,
+  hasManyTables,
+  tooManyAttached,
+} from '../src/records/relations.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 
@@ -157,6 +162,22 @@ test.group('Relations', () => {
     assert.isTrue(await canListRelated(ctx, { azu: allowed, config }, parent, categoryField))
     assert.isFalse(
       await canListRelated(request([]).ctx, { azu: allowed, config }, parent, categoryField)
+    )
+  })
+})
+
+test.group('manyToMany limit (FR-09)', () => {
+  test('an edit form loads up to the limit; past it, the field says why it is read-only', ({
+    assert,
+  }) => {
+    const tags = field.manyToMany('tags').toJSON()
+
+    assert.equal(MANY_TO_MANY_LIMIT, 200)
+    assert.isNull(tooManyAttached(tags, 200))
+    assert.equal(tooManyAttached(tags, 201), '201 tags attached; too many to edit here')
+    assert.equal(
+      tooManyAttached(field.manyToMany('relatedProducts').toJSON(), 1350),
+      '1,350 related products attached; too many to edit here'
     )
   })
 })

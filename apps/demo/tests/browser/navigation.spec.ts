@@ -34,6 +34,7 @@ test.group('Navigation (FR-16)', (group) => {
       { text: 'Coupons', icon: 'ticket', svgHidden: 'true', lucide: true },
       { text: 'Products', icon: 'package', svgHidden: 'true', lucide: true },
       { text: 'Categories', icon: 'folder', svgHidden: 'true', lucide: true },
+      { text: 'Tags', icon: 'tag', svgHidden: 'true', lucide: true },
     ])
     assert.deepEqual(await page.locator('.azu-nav-heading').allInnerTexts(), ['SALES', 'CATALOG'])
   })

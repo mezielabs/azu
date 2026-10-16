@@ -18,8 +18,10 @@ import { findRecord } from '../records/find_record.ts'
 import {
   canListRelated,
   hasManyTables,
+  manyToManyCount,
   relationOptions,
   relationValues,
+  tooManyAttached,
 } from '../records/relations.ts'
 import { renderPage } from '../render.ts'
 import { allows } from '../resources/abilities.ts'
@@ -264,7 +266,8 @@ export class ResourcesController {
   }
 
   /**
-   * Options for a `belongsTo` field's select (FR-08), as JSON. Gated
+   * Options for a `belongsTo` field's select (FR-08) or a `manyToMany`
+   * field's picker (FR-09), as JSON. Gated
    * like the form it serves: `create`, or `update` on the record named
    * by `?record=`, and the field must be on that form for this user.
    * The user must also pass the related resource's `viewList` (fails
@@ -286,12 +289,13 @@ export class ResourcesController {
       return ctx.response.status(403).send({ error: 'Forbidden' })
     }
 
-    const fields = await formFields(ctx, resource, record ? 'edit' : 'create', record)
-    const field = fields.find((item) => item.name === ctx.params.field && item.kind === 'belongsTo')
+    const fields = await this.#formFields(ctx, resource, record ? 'edit' : 'create', record)
+    const field = fields.find(
+      (item) =>
+        item.name === ctx.params.field && (item.kind === 'belongsTo' || item.kind === 'manyToMany')
+    )
     if (!field) return ctx.response.status(404).send({ error: 'Not found' })
-    if (field.readOnly || !(await canListRelated(ctx, this.context, resource.model, field))) {
-      return ctx.response.status(403).send({ error: 'Forbidden' })
-    }
+    if (field.readOnly) return ctx.response.status(403).send({ error: 'Forbidden' })
 
     const term = typeof search === 'string' ? search.trim().slice(0, 100) : ''
     return { options: await relationOptions(this.context, resource.model, field, term) }
@@ -331,9 +335,12 @@ export class ResourcesController {
   }
 
   /**
-   * The form's fields, with each `belongsTo` field's options URL. A
-   * `belongsTo` field whose related resource the user can't list is
-   * read-only: it shows the current record, with no options.
+   * The form's fields, with each `belongsTo` and `manyToMany` field's
+   * options URL. One whose related resource the user can't list is
+   * read-only: it shows the current records, with no options. So is a
+   * `manyToMany` field on an edit form with more records attached than
+   * the form loads, which says why: submitting the ones it shows would
+   * detach the rest.
    */
   async #formFields(
     ctx: HttpContext,
@@ -345,13 +352,21 @@ export class ResourcesController {
     const query = record ? `?record=${encodeURIComponent(String(record.$primaryKeyValue))}` : ''
     const result: FormFieldSchema[] = []
     for (const field of fields) {
-      if (field.kind !== 'belongsTo') {
+      if (field.kind !== 'belongsTo' && field.kind !== 'manyToMany') {
         result.push(field)
       } else if (!(await canListRelated(ctx, this.context, resource.model, field))) {
         result.push({ ...field, readOnly: true, optionsUrl: null })
       } else {
+        const reason =
+          field.kind === 'manyToMany' && record
+            ? tooManyAttached(field, await manyToManyCount(record, field.name))
+            : null
         const url = resourcePath(this.context, resource, 'fields', field.name, 'options')
-        result.push({ ...field, optionsUrl: field.readOnly ? null : `${url}${query}` })
+        result.push(
+          reason
+            ? { ...field, readOnly: true, optionsUrl: null, readOnlyReason: reason }
+            : { ...field, optionsUrl: field.readOnly ? null : `${url}${query}` }
+        )
       }
     }
     return result

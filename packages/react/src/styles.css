@@ -735,6 +735,34 @@
  * Relations (FR-08): the belongsTo select and hasMany tables.
  */
 @layer components {
+  /* manyToMany picker (FR-09) */
+  .azu-relations {
+    @apply flex flex-col gap-1;
+  }
+
+  .azu-tag-list {
+    @apply flex min-h-8 flex-wrap items-center gap-1 text-sm;
+  }
+
+  .azu-tag {
+    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm outline-none;
+    border-color: var(--azu-border);
+    background: var(--azu-subtle);
+  }
+
+  .azu-tag-remove {
+    @apply rounded-full px-1 leading-none;
+    color: var(--azu-muted);
+  }
+
+  .azu-tag-remove:focus-visible {
+    outline: 2px solid var(--azu-brand);
+  }
+
+  .azu-related-list {
+    @apply flex flex-wrap gap-x-3 gap-y-1;
+  }
+
   .azu-combobox .azu-input {
     @apply rounded-r-none;
   }
