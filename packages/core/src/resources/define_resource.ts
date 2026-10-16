@@ -8,6 +8,7 @@ import type { ColumnFor } from './columns.ts'
 import type { FieldFor } from './fields.ts'
 import type { Filter, FilterFor } from './filters.ts'
 import { LIST_PARAMS } from '../shared/list_filters.ts'
+import { SLOT_NAMES, type SlotName } from '../shared/slots.ts'
 import type { PolicyClass, Row, StringAttribute, StringColumn } from './model_types.ts'
 
 /**
@@ -64,6 +65,18 @@ export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
   beforeSave?: Hook<M>
   afterSave?: Hook<M>
   beforeDelete?: Hook<M>
+  /**
+   * Components from `inertia/admin/components`, by registered name,
+   * rendered at named places on this resource's pages (FR-15):
+   *
+   * - `header`: under the page title, on every page
+   * - `toolbar`: beside the page's own buttons (New, Edit), on every page
+   * - `beforeTable`: above the list's table
+   * - `afterForm`: under the create and edit forms
+   *
+   * Each gets `SlotProps`.
+   */
+  slots?: Partial<Record<SlotName, string>>
 }
 
 /**
@@ -193,6 +206,9 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
       fields: (this.options.fields ?? []).map((item) => item.toJSON()),
       filters: this.filters().map((item) => item.toJSON()),
       actions: this.actions().map((item) => item.toJSON()),
+      slots: Object.fromEntries(
+        SLOT_NAMES.map((slot) => [slot, this.options.slots?.[slot] ?? null])
+      ) as Record<SlotName, string | null>,
     }
   }
 }

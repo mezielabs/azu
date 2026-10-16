@@ -4,6 +4,7 @@
  */
 import type {
   ActionKey,
+  ColumnSchema,
   FieldSchema,
   FieldValue,
   FormErrors,
@@ -20,6 +21,7 @@ import type {
 import type { ListState, PageSize } from './shared/list_state.ts'
 
 export type * from './schema.ts'
+export type { SlotName } from './shared/slots.ts'
 
 /**
  * Options accepted by `defineConfig` in `config/admin.ts`.
@@ -258,6 +260,31 @@ export interface AzuPages {
   'azu/resource/show': ResourceShowPageProps
   'azu/errors/forbidden': ForbiddenPageProps
   'azu/errors/not_found': NotFoundPageProps
+}
+
+/**
+ * Props a custom list cell receives: `column.custom('stock', 'StockBar')`,
+ * or `.component('Name')` on any column (FR-15).
+ */
+export type CellProps<Value = unknown> = {
+  /** The cell's value, as the column kind serialises it */
+  value: Value | null
+  /** The row: its id, title, every cell's value, and what the user may do with it */
+  record: ListRow
+  column: ColumnSchema
+}
+
+/**
+ * Props a slot component receives (FR-15): which resource and page it's
+ * on, and the record on the edit and detail pages.
+ */
+export type SlotProps = {
+  resource: ResourceSchema
+  page: 'index' | 'create' | 'edit' | 'show'
+  /** The record being edited or shown; `null` on the list and create pages */
+  record: { id: string | number; title: string | null } | null
+  /** The resource's list URL, e.g. `/admin/resources/products` */
+  path: string
 }
 
 /**

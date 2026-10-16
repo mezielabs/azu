@@ -3,6 +3,7 @@ import {
   Head,
   Link,
   ResourceForm,
+  Slot,
   type ResourceEditPageProps,
 } from '@mezielabs/azu-react'
 
@@ -20,6 +21,7 @@ export default function ResourceEdit({
   const path = `${azu.path}/resources/${resource.name}`
   const name = record.title ?? `${resource.singularLabel} ${record.id}`
   const detail = `${path}/${encodeURIComponent(String(record.id))}`
+  const slot = { resource, page: 'edit', record, path } as const
 
   return (
     <AdminLayout azu={azu} title={resource.label}>
@@ -29,13 +31,19 @@ export default function ResourceEdit({
         <span aria-hidden> / </span>
         <Link href={detail}>{name}</Link>
       </nav>
-      <h1
-        className="azu-page-title"
-        data-azu-page="resource/edit"
-        data-azu-resource={resource.name}
-      >
-        Edit {name}
-      </h1>
+      <div className="azu-page-header">
+        <h1
+          className="azu-page-title"
+          data-azu-page="resource/edit"
+          data-azu-resource={resource.name}
+        >
+          Edit {name}
+        </h1>
+        <div className="azu-toolbar">
+          <Slot name="toolbar" {...slot} />
+        </div>
+      </div>
+      <Slot name="header" {...slot} />
       <ResourceForm
         form={form}
         errors={errors}
@@ -46,6 +54,7 @@ export default function ResourceEdit({
         cancelHref={detail}
         successMessage={`${resource.singularLabel} saved`}
       />
+      <Slot name="afterForm" {...slot} />
     </AdminLayout>
   )
 }

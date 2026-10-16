@@ -6,6 +6,7 @@ import {
   Head,
   Link,
   RelationTableView,
+  Slot,
   useActions,
   type ResourceShowPageProps,
 } from '@mezielabs/azu-react'
@@ -26,6 +27,12 @@ export default function ResourceShow({
   const path = `${azu.path}/resources/${resource.name}`
   const name = record.title ?? `${resource.singularLabel} ${record.id}`
   const detail = `${path}/${encodeURIComponent(String(record.id))}`
+  const slot = {
+    resource,
+    page: 'show',
+    record: { id: record.id, title: record.title },
+    path,
+  } as const
 
   const actions = useActions({
     path: azu.path,
@@ -57,6 +64,7 @@ export default function ResourceShow({
           {name}
         </h1>
         <div className="azu-toolbar">
+          <Slot name="toolbar" {...slot} />
           {rowActions.map((action) => (
             <button
               key={action.name}
@@ -75,6 +83,7 @@ export default function ResourceShow({
           )}
         </div>
       </div>
+      <Slot name="header" {...slot} />
       {actions.dialog}
       <dl className="azu-details">
         {fields.map((field) => (

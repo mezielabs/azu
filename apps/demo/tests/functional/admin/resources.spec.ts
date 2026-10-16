@@ -88,8 +88,24 @@ test.group('Admin / resources (FR-03)', (group) => {
     assert.deepEqual(resource.search, ['name', 'sku'])
     assert.deepEqual(
       resource.columns.map((c: { kind: string; name: string }) => `${c.kind}:${c.name}`),
-      ['image:thumbnail', 'text:name', 'decimal:price', 'belongsTo:category', 'badge:status']
+      [
+        'image:thumbnail',
+        'text:name',
+        'decimal:price',
+        'belongsTo:category',
+        'badge:status',
+        'custom:stock',
+      ]
     )
+    // The README's "Customising" examples (FR-15)
+    assert.include(resource.columns[5], { component: 'StockBar', label: 'In stock' })
+    assert.include(resource.fields[1], { name: 'sku', component: 'SkuInput' })
+    assert.deepEqual(resource.slots, {
+      header: null,
+      toolbar: null,
+      beforeTable: 'LowStockNotice',
+      afterForm: null,
+    })
     assert.containsSubset(resource.columns[2], {
       sortable: true,
       format: { style: 'currency', currency: 'NGN' },

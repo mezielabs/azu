@@ -115,7 +115,9 @@
       "./services/main.ts",
       "./src/types.ts",
       "./commands/make_admin_resource.ts",
-      "./commands/make_admin_action.ts"
+      "./commands/make_admin_action.ts",
+      "./commands/admin_publish.ts",
+      "./commands/admin_doctor.ts"
     ],
     "outDir": "./build",
     "clean": true,

@@ -37,11 +37,14 @@ export default defineResource(Product, {
     column.decimal('price').format('currency', 'NGN').sortable(),
     column.belongsTo('category', 'name'),
     column.badge('status').colors({ draft: 'gray', published: 'green' }),
+    // From the README's "Customising" section: inertia/admin/components/stock_bar.tsx
+    column.custom('stock', 'StockBar').label('In stock'),
   ],
 
   fields: [
     field.text('name'),
-    field.text('sku'),
+    // From the README's "Customising" section: inertia/admin/components/sku_input.tsx
+    field.text('sku').component('SkuInput'),
     field.decimal('price').min(0),
     field.belongsTo('category').searchable('name'),
     field.manyToMany('tags').searchable('name'),
@@ -88,4 +91,6 @@ export default defineResource(Product, {
     // A reusable action from make:admin-action
     feature,
   ],
+  // From the README's "Customising" section: inertia/admin/components/low_stock_notice.tsx
+  slots: { beforeTable: 'LowStockNotice' },
 })
