@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
+import tagResource from '#admin/resources/tag_resource'
 import productResource from '#admin/resources/product_resource'
 import Category from '#models/category'
 import Product from '#models/product'
@@ -106,6 +107,92 @@ test.group('Admin / manyToMany (FR-09)', (group) => {
       .redirects(0)
 
     response.assertStatus(303)
+    assert.deepEqual(await tagIds(product), [clay.id])
+  })
+
+  test('scoped attachments stay read-only and survive omitted or forged selections', async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const { category, clay, gift } = await catalog()
+    const product = await Product.create({ ...payload(category), stock: 1, isFeatured: false })
+    await product.related('tags').attach([clay.id, gift.id])
+    const original = tagResource.options.query
+    cleanup(() => {
+      tagResource.options.query = original
+    })
+
+    for (const visibleIds of [[clay.id], []]) {
+      tagResource.options.query = (query) => {
+        query.whereIn('tags.id', visibleIds)
+      }
+      const edit = await client.get(`${PRODUCTS}/${product.id}/edit`).loginAs(admin).withInertia()
+      const field = edit.body().props.form.fields.find((item: any) => item.name === 'tags')
+      assert.containsSubset(field, { readOnly: true, optionsUrl: null })
+      assert.equal(
+        field.readOnlyReason,
+        "Some attached tags are hidden from you, so this field can't be edited here."
+      )
+      assert.deepEqual(
+        edit.body().props.form.values.tags.map((tag: any) => tag.id),
+        visibleIds
+      )
+      const options = await client
+        .get(`${PRODUCTS}/fields/tags/options?record=${product.id}`)
+        .loginAs(admin)
+      options.assertStatus(403)
+
+      for (const selection of [{}, { tagIds: visibleIds }, { tagIds: [] }, { tagIds: '[]' }]) {
+        const saved = await client
+          .put(`${PRODUCTS}/${product.id}/edit`)
+          .loginAs(admin)
+          .withInertia()
+          .withCsrfToken()
+          .json(payload(category, { sku: product.sku, name: 'Renamed scoped pot', ...selection }))
+          .redirects(0)
+        saved.assertStatus(303)
+        assert.deepEqual(
+          await tagIds(product),
+          [clay.id, gift.id].sort((a, b) => a - b)
+        )
+      }
+    }
+    await product.refresh()
+    assert.equal(product.name, 'Renamed scoped pot')
+
+    // A scope that includes the whole selection still permits editing.
+    tagResource.options.query = (query) => {
+      query.whereIn('tags.id', [clay.id, gift.id])
+    }
+    const edit = await client.get(`${PRODUCTS}/${product.id}/edit`).loginAs(admin).withInertia()
+    assert.isFalse(edit.body().props.form.fields.find((item: any) => item.name === 'tags').readOnly)
+    const saved = await client
+      .put(`${PRODUCTS}/${product.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(payload(category, { sku: product.sku, tagIds: [gift.id] }))
+      .redirects(0)
+    saved.assertStatus(303)
+    assert.deepEqual(await tagIds(product), [gift.id])
+  })
+
+  test('arbitrary strings are not decoded as relationship arrays', async ({ client, assert }) => {
+    const admin = await createUser('admin')
+    const { category, clay } = await catalog()
+    const product = await Product.create({ ...payload(category), stock: 1, isFeatured: false })
+    await product.related('tags').attach([clay.id])
+    const response = await client
+      .put(`${PRODUCTS}/${product.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(payload(category, { sku: product.sku, tagIds: `[${clay.id}]` }))
+      .redirects(0)
+    response.assertStatus(422)
+    assert.property(response.body().props.errors, 'tagIds')
     assert.deepEqual(await tagIds(product), [clay.id])
   })
 

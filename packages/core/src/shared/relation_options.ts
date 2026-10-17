@@ -1,5 +1,8 @@
 import type { RelationOption } from '../schema.ts'
 
+/** Explicit empty selection: FormData serialization otherwise drops empty arrays. */
+export const EMPTY_RELATION_IDS = '[]'
+
 /**
  * Fetches a `belongsTo` field's or filter's options from its
  * policy-checked endpoint, matching `search`. Browser-only. Pass the

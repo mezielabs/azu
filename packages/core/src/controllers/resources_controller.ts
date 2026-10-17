@@ -18,10 +18,9 @@ import { findRecord } from '../records/find_record.ts'
 import {
   canListRelated,
   hasManyTables,
-  manyToManyCount,
+  manyToManyReadOnlyReason,
   relationOptions,
   relationValues,
-  tooManyAttached,
 } from '../records/relations.ts'
 import { renderPage } from '../render.ts'
 import { allows } from '../resources/abilities.ts'
@@ -360,7 +359,7 @@ export class ResourcesController {
       } else {
         const reason =
           field.kind === 'manyToMany' && record
-            ? tooManyAttached(field, await manyToManyCount(record, field.name))
+            ? await manyToManyReadOnlyReason(this.context, resource.model, field, record)
             : null
         const url = resourcePath(this.context, resource, 'fields', field.name, 'options')
         result.push(
