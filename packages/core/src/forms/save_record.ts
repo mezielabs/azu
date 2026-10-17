@@ -8,6 +8,7 @@ import { processTimezone } from '../define_config.ts'
 import { sanitizeRichText } from '../files/sanitize_html.ts'
 import { FILE_KINDS, deleteFiles, diskFor, planUploads, storeUploads } from '../files/uploads.ts'
 import { MANY_TO_MANY_LIMIT, manyToManyCount, manyToManyIds } from '../records/relations.ts'
+import { EMPTY_RELATION_IDS } from '../shared/relation_options.ts'
 import { toValidatorDateTime } from './datetime_input.ts'
 import { validatorFor, type FormMode } from './form_fields.ts'
 
@@ -150,6 +151,7 @@ export async function saveRecord(
   for (const field of writable) {
     if (!Object.hasOwn(data, field.input)) continue
     const value = data[field.input]
+    if (field.kind === 'manyToMany' && value === EMPTY_RELATION_IDS) data[field.input] = []
     if (field.kind === 'datetime') data[field.input] = toValidatorDateTime(value, timezones)
     // The validator sees sanitised HTML, so its length rules apply to what's stored
     if (field.kind === 'richText' && typeof value === 'string') {
@@ -184,7 +186,7 @@ export async function saveRecord(
         // Past what the form loads, the keys stay out of validation too,
         // so a limit meant for the form (a maxLength) can't block the save
         if ((await manyToManyCount(record, field.name)) <= MANY_TO_MANY_LIMIT) {
-          data[field.input] = await manyToManyIds(record, field.name)
+          data[field.input] = await manyToManyIds(resource.model, record, field.name)
         }
       } else if (field.readOnly || kept.has(field.input) || failedUpload) {
         data[field.input] = currentInput(record, field, timezones)

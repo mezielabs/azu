@@ -10,19 +10,21 @@ import type { AzuConfig } from '../types.ts'
 export type RelationsContext = { config: AzuConfig; azu: Azu }
 
 /**
- * Keys of a `belongsTo` or `hasMany` relation, from Lucid's own
+ * Keys of a `belongsTo`, `hasMany`, or `manyToMany` relation, from Lucid's own
  * metadata:
  *
  * - `belongsTo`: `foreignKey` is on this model (`categoryId`),
  *   `localKey` on the related one (`id`).
  * - `hasMany`: `localKey` is on this model (`id`), `foreignKey` on the
  *   related one (`categoryId`).
+ * - `manyToMany`: `relatedKey` is on the related model; pivot rows store it.
  */
 export type RelationKeys = {
   type: string
   related: LucidModel
   foreignKey: string
   localKey: string
+  relatedKey: string
   foreignKeyColumnName: string
   localKeyColumnName: string
 }
@@ -34,6 +36,7 @@ type LucidRelation = {
   relatedModel(): LucidModel
   foreignKey: string
   localKey: string
+  relatedKey?: string
   foreignKeyColumnName: string
   localKeyColumnName: string
 }
@@ -50,9 +53,16 @@ export function relationKeys(model: LucidModel, name: string): RelationKeys | nu
     related: relation.relatedModel(),
     foreignKey: relation.foreignKey,
     localKey: relation.localKey,
+    relatedKey: relation.relatedKey ?? relation.relatedModel().primaryKey,
     foreignKeyColumnName: relation.foreignKeyColumnName,
     localKeyColumnName: relation.localKeyColumnName,
   }
+}
+
+/** The key Lucid expects when assigning or syncing a picker selection. */
+export function relationValueKey(keys: RelationKeys, record: LucidRow): string | number {
+  const key = keys.type === 'manyToMany' ? keys.relatedKey : keys.localKey
+  return read(record, key) as string | number
 }
 
 function read(record: LucidRow, attribute: string): unknown {
@@ -101,7 +111,7 @@ export async function belongsToValue(
   const resource = context.azu.resources.forModel(keys.related)
   const viewable = resource ? await allows(ctx, resource, 'view', related) : false
   return {
-    id: related.$primaryKeyValue as string | number,
+    id: relationValueKey(keys, related),
     title: titleOf(related, titleAttribute(field, resource)),
     href: viewable
       ? `${context.config.path}/resources/${resource!.name}/${related.$primaryKeyValue}`
@@ -132,6 +142,31 @@ export async function manyToManyValues(
   const resource = context.azu.resources.forModel(keys.related)
   const title = titleAttribute(field, resource)
 
+  const related = await scopedAttachments(context, keys, field, record)
+
+  return Promise.all(
+    related.map(async (item) => {
+      const viewable = resource ? await allows(ctx, resource, 'view', item) : false
+      return {
+        id: relationValueKey(keys, item),
+        title: titleOf(item, title),
+        href: viewable
+          ? `${context.config.path}/resources/${resource!.name}/${item.$primaryKeyValue}`
+          : null,
+      }
+    })
+  )
+}
+
+/** Use the same bounded, scoped selection for display and editability checks. */
+async function scopedAttachments(
+  context: RelationsContext,
+  keys: RelationKeys,
+  field: FieldSchema,
+  record: LucidRow
+): Promise<LucidRow[]> {
+  const resource = context.azu.resources.forModel(keys.related)
+  const title = titleAttribute(field, resource)
   // The relation's query builder is a model query on the related model
   const query = (
     record as unknown as { related(name: string): { query(): ReturnType<LucidModel['query']> } }
@@ -144,31 +179,45 @@ export async function manyToManyValues(
     .orderBy(columnName(keys.related, keys.related.primaryKey), 'asc')
     .limit(MANY_TO_MANY_LIMIT)) as LucidRow[]
 
-  return Promise.all(
-    related.map(async (item) => {
-      const viewable = resource ? await allows(ctx, resource, 'view', item) : false
-      return {
-        id: item.$primaryKeyValue as string | number,
-        title: titleOf(item, title),
-        href: viewable
-          ? `${context.config.path}/resources/${resource!.name}/${item.$primaryKeyValue}`
-          : null,
-      }
-    })
-  )
+  return related
+}
+
+/** Incomplete selections cannot safely replace the entire pivot set. */
+export async function manyToManyReadOnlyReason(
+  context: RelationsContext,
+  model: LucidModel,
+  field: FieldSchema,
+  record: LucidRow
+): Promise<string | null> {
+  const count = await manyToManyCount(record, field.name)
+  const reason = tooManyAttached(field, count)
+  if (reason || count === 0) return reason
+  const keys = relationKeys(model, field.name)
+  if (!keys || keys.type !== 'manyToMany') return null
+  const visible = await scopedAttachments(context, keys, field, record)
+  const shown = new Set(visible.map((item) => relationValueKey(keys, item)))
+  return shown.size === count
+    ? null
+    : `Some attached ${field.label.toLowerCase()} are outside this resource's scope; this field is read-only`
 }
 
 /**
  * The keys a `manyToMany` field has attached, unscoped: what a
  * read-only field hands the validator on edit.
  */
-export async function manyToManyIds(record: LucidRow, name: string): Promise<(string | number)[]> {
+export async function manyToManyIds(
+  model: LucidModel,
+  record: LucidRow,
+  name: string
+): Promise<(string | number)[]> {
+  const keys = relationKeys(model, name)
+  if (!keys || keys.type !== 'manyToMany') return []
   const related = (await (
     record as unknown as { related(name: string): { query(): Promise<LucidRow[]> } }
   )
     .related(name)
     .query()) as LucidRow[]
-  return related.map((item) => item.$primaryKeyValue as string | number)
+  return related.map((item) => relationValueKey(keys, item))
 }
 
 /**
@@ -268,7 +317,7 @@ export async function relationOptions(
 
   const records = await query
   return records.map((related) => ({
-    id: related.$primaryKeyValue as string | number,
+    id: relationValueKey(keys, related),
     title: titleOf(related, title),
   }))
 }

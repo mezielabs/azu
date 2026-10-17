@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
+import { EMPTY_RELATION_IDS, fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
 import type { FieldValue, FormErrors, RelationValue, ResourceFormData } from '@mezielabs/azu/types'
 import { showToast } from '../toast.tsx'
 import { FormField } from './form_field.tsx'
@@ -91,6 +91,7 @@ export function ResourceForm(props: {
     // Uploads send a chosen File, or null to remove the stored file; an
     // untouched upload isn't sent, so the server keeps it. With a File in
     // the data, Inertia sends multipart form data.
+    const multipart = Object.values(values).some((value) => value instanceof File)
     const data: Record<string, unknown> = {}
     for (const field of form.fields) {
       const value = values[field.name] ?? null
@@ -103,7 +104,8 @@ export function ResourceForm(props: {
       } else if (field.kind === 'manyToMany') {
         if (field.readOnly) continue
         // The related records' keys: `tagIds`
-        data[field.input] = ((value as RelationValue[] | null) ?? []).map((item) => item.id)
+        const ids = ((value as RelationValue[] | null) ?? []).map((item) => item.id)
+        data[field.input] = multipart && ids.length === 0 ? EMPTY_RELATION_IDS : ids
       } else {
         data[field.input] = value
       }

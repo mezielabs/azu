@@ -6,6 +6,7 @@ import { firstByKey } from '../records/find_record.ts'
 import {
   canListRelated,
   relationKeys,
+  relationValueKey,
   titleOf,
   type RelationsContext,
 } from '../records/relations.ts'
@@ -71,7 +72,7 @@ export async function selectedRelations(
       continue
     }
     selected[filter.name] = {
-      id: record.$primaryKeyValue as string | number,
+      id: relationValueKey(keys, record),
       title: titleOf(record, related.options.title ?? null),
     }
   }

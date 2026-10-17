@@ -190,7 +190,7 @@ navigation: { groups: ['Sales', 'Catalog'] },
 | `file`, `image` | Drag-and-drop upload | Stored with Drive on `disk()` or `defaultDisk`. Size (`maxSize()`, default 5mb for images, 10mb for files) and type (`accept()`) are checked on the server from the file's contents. SVG and HTML are refused unless you `accept()` them. Your validator sees the stored file's key |
 | `belongsTo` | Searchable select | Loads options as you type |
 | `hasMany` | Table on the detail page | |
-| `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on an edit form for a record with more than 200 attached |
+| `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on edit when attachments fall outside the related resource scope or exceed 200 |
 
 You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree.
 
@@ -247,7 +247,11 @@ A `manyToMany` field submits the related records' keys under the relation's sing
 tagIds: vine.array(vine.number().exists({ table: 'tags', column: 'id' })).optional(),
 ```
 
-Azu syncs the pivot rows with the validator's output, in the same transaction as the save, so a failure rolls back both. Leave `tagIds` out of a request and the attached records stay as they are; send an empty list to detach them all.
+Picker and filter values use Lucid's configured relation key: `localKey` for `belongsTo`, `relatedKey` for `manyToMany`. Detail links still use the related record's primary key.
+
+Azu syncs the pivot rows with the validator's output, in the same transaction as the save, so a failure rolls back both. Leave `tagIds` out of a request and the attached records stay as they are; send an empty list to detach them all. This also works when the form uploads a file: Azu transports an empty selection as the string `[]` and restores the array before validation.
+
+When a related resource's `query` scope hides attached records, the edit form makes that picker read-only and explains why. The server checks the scope again on submission and ignores changes to that field, preserving the entire attachment set. Its current keys still reach the validator.
 
 The edit form loads up to 200 attached records. For a record with more, it shows the field read-only with a note ("350 tags attached; too many to edit here") and leaves `tagIds` out, so saving the form never detaches the ones it didn't load. The server applies the same rule, so `tagIds` sent anyway is ignored, and doesn't reach your validator either.
 

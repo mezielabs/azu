@@ -219,6 +219,7 @@ export type ListMeta = {
  * title, and its detail page when the user may open it.
  */
 export type RelationValue = {
+  /** Lucid localKey (belongsTo) or relatedKey (manyToMany), not necessarily the primary key */
   id: string | number
   title: string | null
   /** `null` without a resource for the related model, or without `view` */
@@ -268,7 +269,7 @@ export type FormFieldSchema = FieldSchema & {
   optionsUrl: string | null
   /**
    * Why the form shows the field read-only, shown under it: a
-   * `manyToMany` field with more records attached than the form loads
+   * `manyToMany` field with attachments outside its scope or beyond its load limit
    */
   readOnlyReason: string | null
   /** Not optional and not nullable in the validator, with no conditional rule */
@@ -297,7 +298,11 @@ export type RecordData = {
 /**
  * One option in a `belongsTo` select.
  */
-export type RelationOption = { id: string | number; title: string | null }
+export type RelationOption = {
+  /** Lucid localKey (belongsTo) or relatedKey (manyToMany), not necessarily the primary key */
+  id: string | number
+  title: string | null
+}
 
 /**
  * A `hasMany` field on the detail page: one page of the related

@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import drive from '@adonisjs/drive/services/main'
 import testUtils from '@adonisjs/core/services/test_utils'
 import Category from '#models/category'
 import Product from '#models/product'
@@ -61,6 +62,46 @@ test.group('manyToMany picker (FR-09)', (group) => {
       product.tags.map((tag) => tag.id),
       [gift.id]
     )
+  })
+
+  test('clearing the last tag while uploading an image persists both changes', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    const disk = drive.fake('fs')
+    cleanup(() => drive.restore('fs'))
+    await browserContext.loginAs(await createUser('admin'))
+    const category = await Category.create({ name: 'Kitchen', slug: 'upload-m2m' })
+    const tag = await Tag.create({ name: 'Clay', slug: 'upload-m2m' })
+    const product = await Product.create({
+      categoryId: category.id,
+      name: 'Clay pot',
+      sku: 'M2M-UPLOAD',
+      price: '12.50',
+      stock: 3,
+      status: 'draft',
+      isFeatured: false,
+    })
+    await product.related('tags').attach([tag.id])
+    const page = await visit(`/admin/resources/products/${product.id}/edit`)
+    await page.getByRole('button', { name: 'Remove Clay', exact: true }).click()
+    await page.locator('[data-azu-field="thumbnail"] input[type="file"]').setInputFiles({
+      name: 'pot.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64'
+      ),
+    })
+    await page.click('form button[type="submit"]')
+    await page.waitForURL(`**/admin/resources/products/${product.id}`)
+    await product.refresh()
+    await product.load('tags')
+    assert.deepEqual(product.tags, [])
+    assert.isString(product.thumbnail)
+    disk.assertExists(product.thumbnail!)
   })
 
   test('past 200 attached, the picker is read-only, says why, and a save keeps them all', async ({
