@@ -189,7 +189,7 @@ export async function manyToManyReadOnlyReason(
   field: FieldSchema,
   record: LucidRow
 ): Promise<string | null> {
-  const count = await manyToManyCount(record, field.name)
+  const count = await manyToManyCount(model, record, field.name)
   const reason = tooManyAttached(field, count)
   if (reason || count === 0) return reason
   const keys = relationKeys(model, field.name)
@@ -198,7 +198,7 @@ export async function manyToManyReadOnlyReason(
   const shown = new Set(visible.map((item) => relationValueKey(keys, item)))
   return shown.size === count
     ? null
-    : `Some attached ${field.label.toLowerCase()} are outside this resource's scope; this field is read-only`
+    : `Some attached ${field.label.toLowerCase()} are hidden from you, so this field can't be edited here.`
 }
 
 /**
@@ -221,20 +221,29 @@ export async function manyToManyIds(
 }
 
 /**
- * How many records a `manyToMany` field has attached, unscoped: its
- * pivot rows for the record.
+ * How many distinct related keys a `manyToMany` field has attached,
+ * counted on the unscoped pivot so duplicate rows count only once.
  */
-export async function manyToManyCount(record: LucidRow, name: string): Promise<number> {
+export async function manyToManyCount(
+  model: LucidModel,
+  record: LucidRow,
+  name: string
+): Promise<number> {
+  const relation = model.$getRelation(name)
+  if (!relation || relation.type !== 'manyToMany') return 0
+  if (!relation.booted) relation.boot()
   const [row] = (await (
     record as unknown as {
       related(name: string): {
-        pivotQuery(): { count(column: string): { pojo(): Promise<{ total: unknown }[]> } }
+        pivotQuery(): {
+          countDistinct(column: string, alias: string): { pojo(): Promise<{ total: unknown }[]> }
+        }
       }
     }
   )
     .related(name)
     .pivotQuery()
-    .count('* as total')
+    .countDistinct(relation.pivotRelatedForeignKey, 'total')
     .pojo()) as { total: unknown }[]
   return Number(row?.total ?? 0)
 }

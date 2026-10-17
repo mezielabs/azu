@@ -185,7 +185,7 @@ export async function saveRecord(
       if (field.kind === 'manyToMany' && field.readOnly) {
         // Past what the form loads, the keys stay out of validation too,
         // so a limit meant for the form (a maxLength) can't block the save
-        if ((await manyToManyCount(record, field.name)) <= MANY_TO_MANY_LIMIT) {
+        if ((await manyToManyCount(resource.model, record, field.name)) <= MANY_TO_MANY_LIMIT) {
           data[field.input] = await manyToManyIds(resource.model, record, field.name)
         }
       } else if (field.readOnly || kept.has(field.input) || failedUpload) {

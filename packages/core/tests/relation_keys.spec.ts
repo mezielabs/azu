@@ -10,7 +10,13 @@ import { defineConfig } from '../src/define_config.ts'
 import { formFields } from '../src/forms/form_fields.ts'
 import { saveRecord } from '../src/forms/save_record.ts'
 import { selectedRelations } from '../src/list/filters.ts'
-import { manyToManyIds, relationOptions, relationValues } from '../src/records/relations.ts'
+import {
+  manyToManyCount,
+  manyToManyIds,
+  manyToManyReadOnlyReason,
+  relationOptions,
+  relationValues,
+} from '../src/records/relations.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 import { filter } from '../src/resources/filters.ts'
@@ -20,12 +26,10 @@ class Policy {
   view() {}
 }
 
-test.group('Custom Lucid relation keys', () => {
-  test('pickers, filters and saves use relation keys; detail links use primary keys', async ({
-    assert,
-    cleanup,
-  }) => {
-    const db = new Database(
+test.group('Custom Lucid relation keys', (group) => {
+  let db: Database
+  group.each.setup(() => {
+    db = new Database(
       {
         connection: 'sqlite',
         connections: {
@@ -39,7 +43,12 @@ test.group('Custom Lucid relation keys', () => {
       new Logger({ name: 'relation-key-test', enabled: false }),
       { emit() {}, hasListeners: () => false } as never
     )
-    cleanup(() => db.manager.closeAll())
+    return () => db.manager.closeAll()
+  })
+
+  test('pickers, filters and saves use relation keys; detail links use primary keys', async ({
+    assert,
+  }) => {
     class Model extends BaseModel {
       static $adapter = db.modelAdapter()
     }
@@ -173,5 +182,72 @@ test.group('Custom Lucid relation keys', () => {
     const preserved = await saveRecord(ctx, resource, 'edit', readOnly, { record: product })
     assert.isUndefined(preserved.errors)
     assert.deepEqual(await manyToManyIds(Product, product, 'tags'), [gift.code])
+  })
+
+  test('duplicate pivot rows count once for editability, including custom related keys', async ({
+    assert,
+  }) => {
+    class Tag extends BaseModel {
+      static $adapter = db.modelAdapter()
+      static table = 'tags'
+      @column({ isPrimary: true }) declare id: number
+      @column() declare code: string
+      @column() declare name: string
+    }
+    class Product extends BaseModel {
+      static $adapter = db.modelAdapter()
+      static table = 'products'
+      @column({ isPrimary: true }) declare id: number
+      @manyToMany(() => Tag, {
+        relatedKey: 'code',
+        pivotTable: 'product_tag',
+        pivotForeignKey: 'product_id',
+        pivotRelatedForeignKey: 'tag_code',
+      })
+      declare tags: ManyToMany<typeof Tag>
+    }
+    await db.connection().schema.createTable('tags', (table) => {
+      table.increments('id')
+      table.string('code').unique().notNullable()
+      table.string('name')
+    })
+    await db.connection().schema.createTable('products', (table) => {
+      table.increments('id')
+    })
+    // Apps may have pivot tables without a unique constraint.
+    await db.connection().schema.createTable('product_tag', (table) => {
+      table.integer('product_id')
+      table.string('tag_code')
+    })
+    const tag = await Tag.create({ code: 'clay', name: 'Clay' })
+    const product = await Product.create({})
+    const other = await Product.create({})
+    await product.related('tags').attach([tag.code])
+    await product.related('tags').attach([tag.code])
+    const related = defineResource(Tag, { title: 'name', policy: Policy })
+    const context = { config: defineConfig(), azu: new Azu().register(related) }
+    const tags = field.manyToMany('tags').label('Product tags').toJSON()
+    assert.equal(await manyToManyCount(Product, product, 'tags'), 1)
+    assert.isNull(await manyToManyReadOnlyReason(context, Product, tags, product))
+
+    // Even more than 200 duplicate rows are still one attached key.
+    await db.table('product_tag').multiInsert(
+      Array.from({ length: 200 }, () => ({
+        product_id: product.id,
+        tag_code: tag.code,
+      }))
+    )
+    const hidden = await Tag.create({ code: 'gift', name: 'Gift' })
+    await other.related('tags').attach([hidden.code])
+    assert.equal(await manyToManyCount(Product, product, 'tags'), 1)
+    assert.isNull(await manyToManyReadOnlyReason(context, Product, tags, product))
+    // Duplicates cannot disguise a genuinely hidden key.
+    related.options.query = (query) => {
+      query.where('tags.code', hidden.code)
+    }
+    assert.equal(
+      await manyToManyReadOnlyReason(context, Product, tags, product),
+      "Some attached product tags are hidden from you, so this field can't be edited here."
+    )
   })
 })

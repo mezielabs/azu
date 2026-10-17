@@ -131,7 +131,10 @@ test.group('Admin / manyToMany (FR-09)', (group) => {
       const edit = await client.get(`${PRODUCTS}/${product.id}/edit`).loginAs(admin).withInertia()
       const field = edit.body().props.form.fields.find((item: any) => item.name === 'tags')
       assert.containsSubset(field, { readOnly: true, optionsUrl: null })
-      assert.include(field.readOnlyReason, 'outside this resource')
+      assert.equal(
+        field.readOnlyReason,
+        "Some attached tags are hidden from you, so this field can't be edited here."
+      )
       assert.deepEqual(
         edit.body().props.form.values.tags.map((tag: any) => tag.id),
         visibleIds
