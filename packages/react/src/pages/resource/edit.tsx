@@ -1,11 +1,12 @@
 import {
   AdminLayout,
   Head,
-  Link,
+  PageHeader,
   ResourceForm,
   Slot,
   type ResourceEditPageProps,
 } from '@mezielabs/azu-react'
+import { resourceBreadcrumbs } from '@mezielabs/azu/shared'
 
 /**
  * The edit form (FR-06). The server checks the policy's `update` for
@@ -26,23 +27,15 @@ export default function ResourceEdit({
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={`Edit ${name}`} />
-      <nav className="azu-breadcrumbs" aria-label="Breadcrumbs">
-        <Link href={path}>{resource.label}</Link>
-        <span aria-hidden> / </span>
-        <Link href={detail}>{name}</Link>
-      </nav>
-      <div className="azu-page-header">
-        <h1
-          className="azu-page-title"
-          data-azu-page="resource/edit"
-          data-azu-resource={resource.name}
-        >
-          Edit {name}
-        </h1>
-        <div className="azu-toolbar">
-          <Slot name="toolbar" {...slot} />
-        </div>
-      </div>
+      <PageHeader
+        page="resource/edit"
+        resource={resource.name}
+        title={`Edit ${name}`}
+        breadcrumbs={resourceBreadcrumbs(resource, path, {
+          trail: [{ label: name, href: detail }],
+        })}
+        actions={<Slot name="toolbar" {...slot} />}
+      />
       <Slot name="header" {...slot} />
       <ResourceForm
         form={form}

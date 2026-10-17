@@ -16,9 +16,12 @@ test.group('Navigation (FR-16)', (group) => {
   }) => {
     await browserContext.loginAs(await createUser('admin'))
     const page = await visit('/admin')
-    await page.waitForSelector('.azu-nav-link svg')
+    await page.waitForSelector('.azu-sidebar .azu-nav-link svg')
+    const sidebar = page.locator('.azu-sidebar')
 
-    const links = await page.locator('.azu-nav-link').evaluateAll((elements) =>
+    // The dashboard comes first, with the shell's own icon
+    await sidebar.getByRole('link', { name: 'Dashboard' }).waitFor()
+    const links = await sidebar.locator('.azu-nav-group .azu-nav-link').evaluateAll((elements) =>
       elements.map((link: any) => {
         const svg = link.querySelector('svg')
         return {
@@ -36,6 +39,9 @@ test.group('Navigation (FR-16)', (group) => {
       { text: 'Categories', icon: 'folder', svgHidden: 'true', lucide: true },
       { text: 'Tags', icon: 'tag', svgHidden: 'true', lucide: true },
     ])
-    assert.deepEqual(await page.locator('.azu-nav-heading').allInnerTexts(), ['SALES', 'CATALOG'])
+    assert.deepEqual(await sidebar.locator('.azu-nav-heading').allInnerTexts(), [
+      'SALES',
+      'CATALOG',
+    ])
   })
 })

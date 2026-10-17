@@ -1,10 +1,11 @@
 import { router } from '@inertiajs/react'
-import { actionKey } from '@mezielabs/azu/shared'
+import { actionKey, resourceBreadcrumbs } from '@mezielabs/azu/shared'
 import {
   AdminLayout,
   FieldValueView,
   Head,
   Link,
+  PageHeader,
   RelationTableView,
   Slot,
   useActions,
@@ -52,37 +53,33 @@ export default function ResourceShow({
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={name} />
-      <nav className="azu-breadcrumbs" aria-label="Breadcrumbs">
-        <Link href={path}>{resource.label}</Link>
-      </nav>
-      <div className="azu-page-header">
-        <h1
-          className="azu-page-title"
-          data-azu-page="resource/show"
-          data-azu-resource={resource.name}
-        >
-          {name}
-        </h1>
-        <div className="azu-toolbar">
-          <Slot name="toolbar" {...slot} />
-          {rowActions.map((action) => (
-            <button
-              key={action.name}
-              type="button"
-              className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
-              disabled={actions.busy}
-              onClick={() => actions.run(action, { ids: [record.id] })}
-            >
-              {action.label}
-            </button>
-          ))}
-          {abilities.update && (
-            <Link href={`${detail}/edit`} className="azu-button azu-button-primary">
-              Edit
-            </Link>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        page="resource/show"
+        resource={resource.name}
+        title={name}
+        breadcrumbs={resourceBreadcrumbs(resource, path)}
+        actions={
+          <>
+            <Slot name="toolbar" {...slot} />
+            {rowActions.map((action) => (
+              <button
+                key={action.name}
+                type="button"
+                className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
+                disabled={actions.busy}
+                onClick={() => actions.run(action, { ids: [record.id] })}
+              >
+                {action.label}
+              </button>
+            ))}
+            {abilities.update && (
+              <Link href={`${detail}/edit`} className="azu-button azu-button-primary">
+                Edit
+              </Link>
+            )}
+          </>
+        }
+      />
       <Slot name="header" {...slot} />
       {actions.dialog}
       <dl className="azu-details">

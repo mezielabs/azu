@@ -26,6 +26,7 @@ export interface ApiDefinition {
       edit: typeof routes['azu.resources.edit']
       update: typeof routes['azu.resources.update']
     }
+    logout: typeof routes['azu.logout']
   }
   home: typeof routes['home']
   newAccount: {

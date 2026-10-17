@@ -9,6 +9,7 @@
 export { Head, Link } from '@inertiajs/react'
 export { createAzuApp, type CreateAzuAppOptions } from './app.tsx'
 export { AdminLayout, type AdminLayoutProps } from './components/admin_layout.tsx'
+export { PageHeader, type Breadcrumb } from './components/page_header.tsx'
 export { useComponent } from './components/registry.tsx'
 export { Slot } from './components/slot.tsx'
 export { DataTable, selectedIds } from './components/list/data_table.tsx'

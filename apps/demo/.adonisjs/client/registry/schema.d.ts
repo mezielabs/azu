@@ -139,6 +139,18 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.logout': {
+    methods: ["POST"]
+    pattern: '/admin/logout'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'home': {
     methods: ["GET","HEAD"]
     pattern: '/'

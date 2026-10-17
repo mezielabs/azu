@@ -6,6 +6,7 @@ import {
   listStateUrl,
   nextListState,
   offersAllMatching,
+  resourceBreadcrumbs,
   selectionSummary,
   type ListState,
 } from '@mezielabs/azu/shared'
@@ -16,6 +17,7 @@ import {
   Head,
   Link,
   ListToolbar,
+  PageHeader,
   Pagination,
   RowActionsMenu,
   Slot,
@@ -80,23 +82,22 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={resource.label} />
-      <div className="azu-page-header">
-        <h1
-          className="azu-page-title"
-          data-azu-page="resource/index"
-          data-azu-resource={resource.name}
-        >
-          {resource.label}
-        </h1>
-        <div className="azu-toolbar">
-          <Slot name="toolbar" {...slot} />
-          {abilities.create && (
-            <Link href={`${path}/create`} className="azu-button azu-button-primary">
-              New {resource.singularLabel.toLowerCase()}
-            </Link>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        page="resource/index"
+        resource={resource.name}
+        title={resource.label}
+        breadcrumbs={resourceBreadcrumbs(resource, path, { list: false })}
+        actions={
+          <>
+            <Slot name="toolbar" {...slot} />
+            {abilities.create && (
+              <Link href={`${path}/create`} className="azu-button azu-button-primary">
+                New {resource.singularLabel.toLowerCase()}
+              </Link>
+            )}
+          </>
+        }
+      />
       <Slot name="header" {...slot} />
       <ListToolbar
         state={current}

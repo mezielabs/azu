@@ -72,6 +72,12 @@ const routes = {
     tokens: [{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"admin","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"resources","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"resource","end":""},{"old":"/admin/resources/:resource/:id/edit","type":1,"val":"id","end":""},{"old":"/admin/resources/:resource/:id/edit","type":0,"val":"edit","end":""}],
     types: placeholder as Registry['azu.resources.update']['types'],
   },
+  'azu.logout': {
+    methods: ["POST"],
+    pattern: '/admin/logout',
+    tokens: [{"old":"/admin/logout","type":0,"val":"admin","end":""},{"old":"/admin/logout","type":0,"val":"logout","end":""}],
+    types: placeholder as Registry['azu.logout']['types'],
+  },
   'home': {
     methods: ["GET","HEAD"],
     pattern: '/',

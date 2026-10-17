@@ -30,7 +30,12 @@ function fakeContext(options: FakeOptions) {
         : {
             use(guard?: string) {
               calls.guard = guard
-              return { check: async () => options.authenticated! }
+              return {
+                check: async () => options.authenticated!,
+                user: options.authenticated
+                  ? { fullName: 'Ada Admin', email: 'ada@azu.test' }
+                  : undefined,
+              }
             },
           },
     bouncer: options.bouncer,
@@ -113,6 +118,8 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
           navigation: [],
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           brand: { name: 'Admin', logo: null },
+          // So the forbidden page can still offer sign out
+          user: { name: 'Ada Admin', email: 'ada@azu.test' },
         },
       },
     })

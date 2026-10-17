@@ -100,63 +100,100 @@
 }
 
 @layer components {
+  /*
+   * The shell: a sidebar beside the page, or below 768px a top bar whose
+   * menu button opens the sidebar as a drawer.
+   */
+  /* Derived from the theme tokens; on :root, so the drawer (portaled
+     outside the shell) has them too */
+  :root {
+    --azu-sidebar-bg: color-mix(in oklab, var(--azu-subtle) 60%, var(--azu-surface));
+    --azu-nav-active-bg: color-mix(in oklab, var(--azu-brand-solid) 12%, var(--azu-surface));
+    /* The brand, pulled toward the text colour, keeps AA on that tint */
+    --azu-nav-active-text: color-mix(in oklab, var(--azu-brand) 70%, var(--azu-text));
+  }
+
   .azu-shell {
-    @apply min-h-screen;
+    @apply flex min-h-screen;
     background: var(--azu-surface);
     color: var(--azu-text);
   }
 
-  .azu-header {
-    @apply flex items-center gap-4 border-b px-6 py-3;
-    border-color: var(--azu-border);
-  }
-
-  .azu-brand {
-    @apply font-semibold;
+  .azu-skip-link {
+    @apply absolute top-2 left-2 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium;
+    background: var(--azu-surface);
     color: var(--azu-brand);
+    outline: 2px solid var(--azu-brand);
   }
 
-  .azu-header-title {
-    @apply text-sm;
+  .azu-skip-link:focus {
+    @apply translate-y-0;
+  }
+
+  .azu-icon {
+    @apply shrink-0;
+  }
+
+  .azu-icon-button {
+    @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md;
     color: var(--azu-muted);
   }
 
-  .azu-brand {
-    @apply inline-flex items-center gap-2;
-  }
-
-  .azu-logo {
-    @apply h-6 w-auto;
-  }
-
-  .azu-theme-toggle {
-    @apply ml-auto;
-  }
-
-  .azu-theme-toggle[aria-pressed='true'] {
+  .azu-icon-button:hover {
     background: var(--azu-subtle);
+    color: var(--azu-text);
   }
 
-  .azu-body {
-    @apply flex;
+  /* Phone-sized targets */
+  .azu-icon-button.azu-touch {
+    @apply h-11 w-11;
+    color: var(--azu-text);
   }
 
-  .azu-main {
-    @apply min-w-0 flex-1 p-6;
-  }
-
-  .azu-nav {
-    @apply w-56 shrink-0 space-y-4 border-r p-4;
+  .azu-sidebar {
+    @apply sticky top-0 flex h-screen w-62 shrink-0 flex-col overflow-y-auto border-r px-3 py-4;
+    background: var(--azu-sidebar-bg);
     border-color: var(--azu-border);
   }
 
+  .azu-sidebar-brand {
+    @apply px-2 pt-1.5 pb-4;
+  }
+
+  .azu-brand {
+    @apply inline-flex min-w-0 items-center gap-2.5 font-semibold;
+    color: var(--azu-text);
+  }
+
+  .azu-brand-mark {
+    @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm font-bold;
+    background: var(--azu-brand-solid);
+    color: var(--azu-on-brand);
+  }
+
+  .azu-brand-name {
+    @apply truncate;
+  }
+
+  .azu-logo {
+    @apply h-7 w-auto;
+  }
+
+  .azu-nav {
+    @apply flex flex-1 flex-col gap-4.5;
+  }
+
+  .azu-nav-list {
+    @apply flex flex-col gap-0.5;
+  }
+
   .azu-nav-heading {
-    @apply mb-1 px-2 text-xs font-semibold tracking-wide uppercase;
+    @apply px-2.5 pb-1 text-xs font-semibold tracking-wide uppercase;
     color: var(--azu-muted);
   }
 
   .azu-nav-link {
-    @apply flex items-center gap-2 rounded px-2 py-1 text-sm;
+    @apply flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm;
   }
 
   .azu-nav-icon {
@@ -169,22 +206,162 @@
 
   .azu-nav-link[aria-current='page'] {
     @apply font-semibold;
-    background: var(--azu-subtle);
-    color: var(--azu-brand);
+    background: var(--azu-nav-active-bg);
+    color: var(--azu-nav-active-text);
   }
 
-  @media (max-width: 640px) {
-    .azu-body {
+  .azu-sidebar-footer {
+    @apply mt-4 flex flex-col gap-1 border-t pt-3;
+    border-color: var(--azu-border);
+  }
+
+  .azu-sidebar-row {
+    @apply flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm;
+  }
+
+  .azu-sidebar-row:hover {
+    background: var(--azu-subtle);
+  }
+
+  .azu-user-row {
+    @apply flex items-center gap-1 py-1 pl-2.5;
+  }
+
+  .azu-user {
+    @apply flex min-w-0 flex-1 items-center gap-2.5;
+  }
+
+  .azu-avatar {
+    @apply flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full text-xs font-semibold;
+    background: var(--azu-border);
+    color: var(--azu-text);
+  }
+
+  .azu-user-text {
+    @apply flex min-w-0 flex-col;
+  }
+
+  .azu-user-name {
+    @apply truncate text-sm font-semibold;
+  }
+
+  .azu-user-email {
+    @apply truncate text-xs;
+    color: var(--azu-muted);
+  }
+
+  .azu-nav-link:focus-visible,
+  .azu-sidebar-row:focus-visible,
+  .azu-icon-button:focus-visible,
+  .azu-brand:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-topbar {
+    @apply hidden;
+  }
+
+  .azu-main {
+    @apply min-w-0 flex-1 px-10 pt-7 pb-12;
+  }
+
+  .azu-main:focus {
+    outline: none;
+  }
+
+  .azu-page {
+    @apply mx-auto max-w-310;
+  }
+
+  /* The phone menu */
+  .azu-drawer-overlay {
+    @apply fixed inset-0 z-40;
+    background: rgb(9 9 11 / 0.45);
+  }
+
+  .azu-drawer {
+    @apply fixed top-0 bottom-0 left-0 w-75 max-w-[85vw] shadow-xl;
+    background: var(--azu-sidebar-bg);
+  }
+
+  .azu-drawer-dialog {
+    @apply flex h-full flex-col overflow-y-auto px-3 pt-2 pb-4 outline-none;
+  }
+
+  .azu-drawer-header {
+    @apply flex h-14 items-center justify-between gap-2 pl-2;
+  }
+
+  .azu-drawer .azu-nav-link,
+  .azu-drawer .azu-sidebar-row {
+    @apply min-h-11 text-[15px];
+  }
+
+  .azu-drawer .azu-user {
+    @apply px-2.5 pt-1.5 pb-2.5;
+  }
+
+  @media (max-width: 767px) {
+    .azu-shell {
       @apply flex-col;
     }
 
-    .azu-nav {
-      @apply w-full border-r-0 border-b;
+    .azu-sidebar {
+      @apply hidden;
+    }
+
+    .azu-topbar {
+      @apply sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b px-2;
+      background: var(--azu-surface);
+      border-color: var(--azu-border);
+    }
+
+    .azu-main {
+      @apply px-4 pt-4 pb-10;
     }
   }
 
+  /* Every page's header: breadcrumb, title, actions on the right */
+  .azu-page-header {
+    @apply mb-6 flex flex-wrap items-end justify-between gap-4;
+  }
+
+  .azu-page-heading {
+    @apply flex min-w-0 flex-col gap-1.5;
+  }
+
   .azu-page-title {
-    @apply mb-4 text-2xl font-semibold;
+    @apply m-0 text-[26px] leading-tight font-semibold tracking-tight;
+  }
+
+  .azu-page-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .azu-breadcrumbs ol {
+    @apply m-0 flex flex-wrap gap-1.5 p-0 text-[13px];
+    list-style: none;
+    color: var(--azu-muted);
+  }
+
+  .azu-breadcrumbs li + li::before {
+    content: '/';
+    @apply mr-1.5;
+  }
+
+  .azu-breadcrumbs a {
+    color: var(--azu-brand);
+  }
+
+  .azu-breadcrumbs a:hover {
+    @apply underline;
+  }
+
+  @media (max-width: 767px) {
+    .azu-page-title {
+      @apply text-[22px];
+    }
   }
 
   .azu-empty {
@@ -400,23 +577,6 @@
  * render props mapped to azu-is-* classes (non-negotiable 9).
  */
 @layer components {
-  .azu-page-header {
-    @apply mb-4 flex flex-wrap items-center justify-between gap-2;
-  }
-
-  .azu-page-header .azu-page-title {
-    @apply mb-0;
-  }
-
-  .azu-breadcrumbs {
-    @apply mb-1 text-sm;
-    color: var(--azu-muted);
-  }
-
-  .azu-breadcrumbs a:hover {
-    @apply underline;
-  }
-
   .azu-button {
     @apply inline-flex items-center justify-center;
   }

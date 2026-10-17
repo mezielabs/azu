@@ -1,11 +1,12 @@
 import {
   AdminLayout,
   Head,
-  Link,
+  PageHeader,
   ResourceForm,
   Slot,
   type ResourceCreatePageProps,
 } from '@mezielabs/azu-react'
+import { resourceBreadcrumbs } from '@mezielabs/azu/shared'
 
 /**
  * The create form (FR-06). The server checks the policy's `create` for
@@ -20,21 +21,13 @@ export default function ResourceCreate({ azu, resource, form, errors }: Resource
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={title} />
-      <nav className="azu-breadcrumbs" aria-label="Breadcrumbs">
-        <Link href={path}>{resource.label}</Link>
-      </nav>
-      <div className="azu-page-header">
-        <h1
-          className="azu-page-title"
-          data-azu-page="resource/create"
-          data-azu-resource={resource.name}
-        >
-          {title}
-        </h1>
-        <div className="azu-toolbar">
-          <Slot name="toolbar" {...slot} />
-        </div>
-      </div>
+      <PageHeader
+        page="resource/create"
+        resource={resource.name}
+        title={title}
+        breadcrumbs={resourceBreadcrumbs(resource, path)}
+        actions={<Slot name="toolbar" {...slot} />}
+      />
       <Slot name="header" {...slot} />
       <ResourceForm
         form={form}

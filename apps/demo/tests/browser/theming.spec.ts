@@ -61,8 +61,9 @@ test.group('Theming (FR-14)', (group) => {
     assert.isAtLeast(contrast(dark, await variable(page, '--azu-surface')), 4.5)
 
     assert.equal(await page.title(), 'Products · Azu Store')
-    assert.equal(await page.locator('.azu-brand').innerText(), 'Azu Store')
-    assert.equal(await page.locator('.azu-brand img').getAttribute('src'), '/images/logo.svg')
+    const brand = page.locator('.azu-sidebar .azu-brand')
+    assert.equal(await brand.innerText(), 'Azu Store')
+    assert.equal(await brand.locator('img').getAttribute('src'), '/images/logo.svg')
   })
 
   test('dark mode follows the OS until toggled, and the toggle is remembered', async ({
@@ -73,14 +74,14 @@ test.group('Theming (FR-14)', (group) => {
     await browserContext.loginAs(await createUser('admin'))
     const page = await visit('/admin')
     await page.emulateMedia({ colorScheme: 'light' })
-    const toggle = page.getByRole('button', { name: 'Dark theme' })
-    await toggle.waitFor()
-
-    assert.equal(await toggle.getAttribute('aria-pressed'), 'false')
+    // An icon button labelled by what it does
+    const sidebar = page.locator('.azu-sidebar')
+    const toDark = sidebar.getByRole('button', { name: 'Switch to dark theme' })
+    await toDark.waitFor()
     assert.equal(await variable(page, '--azu-surface'), '#ffffff')
 
-    await toggle.click()
-    assert.equal(await toggle.getAttribute('aria-pressed'), 'true')
+    await toDark.click()
+    await sidebar.getByRole('button', { name: 'Switch to light theme' }).waitFor()
     assert.equal(await themeAttribute(page), 'dark')
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
 
@@ -91,12 +92,12 @@ test.group('Theming (FR-14)', (group) => {
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
 
     // Toggling back to the OS's theme follows the OS again
-    await page.getByRole('button', { name: 'Dark theme' }).click()
+    await sidebar.getByRole('button', { name: 'Switch to light theme' }).click()
     assert.isNull(await themeAttribute(page))
     assert.isNull(await page.evaluate(() => (globalThis as any).localStorage.getItem('azu-theme')))
     await page.emulateMedia({ colorScheme: 'dark' })
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
-    // The toggle hears the OS change and shows dark as on
-    await page.locator('.azu-theme-toggle[aria-pressed="true"]').waitFor({ timeout: 5000 })
+    // The toggle hears the OS change, and now offers the light theme
+    await sidebar.getByRole('button', { name: 'Switch to light theme' }).waitFor({ timeout: 5000 })
   })
 })

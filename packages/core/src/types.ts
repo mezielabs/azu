@@ -143,6 +143,12 @@ export type AzuConfig = Required<
 }
 
 /**
+ * The signed-in user, as the sidebar shows them: `fullName`, else
+ * `name`, and `email`, whichever their model has.
+ */
+export type AzuUser = { name: string | null; email: string | null }
+
+/**
  * Props shared with every admin page.
  */
 export type AzuSharedProps = {
@@ -155,6 +161,8 @@ export type AzuSharedProps = {
     timezone: string
     /** The admin's name and logo (`brand` in config/admin.ts) */
     brand: { name: string; logo: string | null }
+    /** The signed-in user; `null` when there's none */
+    user: AzuUser | null
   }
 }
 
