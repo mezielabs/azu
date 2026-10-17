@@ -4,6 +4,7 @@ import type { AdminAccessMiddleware } from './middleware/admin_access_middleware
 import type { AzuConfig } from './types.ts'
 import type { Azu } from './azu.ts'
 import { renderPage } from './render.ts'
+import { logout } from './auth/admin_user.ts'
 import { ResourcesController } from './controllers/resources_controller.ts'
 
 /**
@@ -54,4 +55,14 @@ export function registerRoutes(
       (ctx, next) => middleware.adminInertia.handle(ctx, next),
       (ctx, next) => middleware.access.handle(ctx, next),
     ])
+
+  /**
+   * Sign out, from the sidebar. Outside the access gate: a user who has
+   * lost access can still sign out. Shield's CSRF check applies, as for
+   * any POST.
+   */
+  router
+    .post(`${config.path}/logout`, (ctx) => logout(ctx, config))
+    .as('azu.logout')
+    .use((ctx, next) => middleware.adminInertia.handle(ctx, next))
 }

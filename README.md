@@ -167,6 +167,8 @@ azu.register(productResource)
 
 ### Navigation
 
+The sidebar holds your brand, the dashboard and your resources, and at the bottom a "View site" link (to `/`), the signed-in user, the theme button and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer.
+
 Resources without a `group` come first. Groups follow in the order you list in `config/admin.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
 
 ```ts
@@ -428,9 +430,9 @@ export default defineConfig({
 })
 ```
 
-`brand.name` (default `Admin`) shows in the header and page titles, and `brand.logo` is an image shown before it. `brand.color` is a hex colour (default `#2563eb`). Azu uses it as is where it's readable. Where it isn't, it shifts only the colour's lightness, so the hue stays, until all text reaches WCAG AA (4.5:1) on each theme's backgrounds. A very light brand colour gets darkened on the light theme, for example. So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. Text on brand-coloured buttons is white or near-black, whichever reads.
+`brand.name` (default `Admin`) shows at the top of the sidebar and in page titles, and `brand.logo` is an image shown before it (without one, a tile with the name's first letter). `brand.color` is a hex colour (default `#2563eb`). Azu uses it as is where it's readable. Where it isn't, it shifts only the colour's lightness, so the hue stays, until all text reaches WCAG AA (4.5:1) on each theme's backgrounds. A very light brand colour gets darkened on the light theme, for example. So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. Text on brand-coloured buttons is white or near-black, whichever reads.
 
-Dark mode follows the user's system setting. The header's "Dark theme" toggle overrides it, and this browser remembers the choice. Toggle back to your system's theme and Azu follows the system again.
+Dark mode follows the user's system setting. The theme button at the bottom of the sidebar ("Switch to dark theme") overrides it, and this browser remembers the choice. Toggle back to your system's theme and Azu follows the system again.
 
 The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 

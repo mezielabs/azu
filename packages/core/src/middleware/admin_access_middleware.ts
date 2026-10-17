@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import type { AzuConfig } from '../types.ts'
+import { adminUser } from '../auth/admin_user.ts'
 
 /**
  * The Bouncer ability that decides who can open the admin panel.
@@ -80,6 +81,8 @@ export class AdminAccessMiddleware {
         navigation: [],
         timezone: this.config.timezone,
         brand: { name: this.config.brand.name, logo: this.config.brand.logo },
+        // Signed in but not allowed: they can still sign out
+        user: adminUser(ctx, this.config),
       },
     })
     ctx.response.status(403).send(page)
