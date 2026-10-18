@@ -156,7 +156,7 @@ Rules:
 | `richText` | Tiptap editor (optional peer, lazy; a plain HTML textarea without it). Sanitised on the server with `sanitize-html` to Tiptap StarterKit's markup, before validation and again before display | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
-| `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
+| `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns, less the `belongsTo` column back to the parent: the one whose `foreignKey` is the `hasMany`'s, from Lucid's relation metadata, so a custom key or column name works (a category's products table has no Category column; the products list keeps it). Needs a resource for the related model | Count | Lucid relation |
 | `manyToMany` | Searchable picker: the attached records as removable tags, plus a search that adds one at a time. Submits the related keys (`tags` → `tagIds`). Read-only without the related resource's `viewList`, and on edit when attachments fall outside the related resource scope or exceed 200 | Not a list column yet | Lucid relation (pivot rows) |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
@@ -352,7 +352,7 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Right:** a card per `image` or `file` field (the image at 4:3, "name · Open full size"), then a Record card with the ID and, when the model has the columns, Created and Updated (`timestamps`, ISO strings or `null`).
 - **Title:** the resource's first shown badge column is a pill beside it, and the field of the same name leaves the Details list (`detailLayout()` in shared).
 - **Actions:** row actions are header buttons, except destructive ones (Delete), which go in a "⋯" More actions menu. Edit is the primary button.
-- **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12").
+- **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12"), without the column that points back to this record (§5, `hasManyColumns()`).
 - **No fields:** when the user may see none of the resource's fields (Orders), the page gets `cells`, the record's column values as the list shows them (`belongsTo` columns loaded for it), and the Details card shows the columns, custom cell components included.
 
 **Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.

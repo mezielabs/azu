@@ -40,6 +40,39 @@ test.group('Admin / detail page props (layout 3/4)', (group) => {
     assert.isNull(props.cells)
   })
 
+  test('a hasMany table leaves out the column back to the parent; the list keeps it', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-parent-column' })
+    await Product.create({
+      categoryId: category.id,
+      name: 'Clay pot',
+      sku: 'DETAIL-PARENT',
+      price: '5.00',
+      stock: 2,
+      status: 'draft',
+      isFeatured: false,
+    })
+
+    const detail = await client
+      .get(`/admin/resources/categories/${category.id}`)
+      .loginAs(admin)
+      .withInertia()
+    const products = detail.body().props.relations.find((table: any) => table.name === 'products')
+    const names = products.columns.map((column: any) => column.name)
+    // products.categoryId is category.products' foreign key
+    assert.notInclude(names, 'category')
+    assert.includeMembers(names, ['name', 'price', 'status'])
+
+    const list = await client.get('/admin/resources/products').loginAs(admin).withInertia()
+    assert.include(
+      list.body().props.resource.columns.map((column: any) => column.name),
+      'category'
+    )
+  })
+
   test('with no fields (Orders), the page gets the columns instead', async ({ client, assert }) => {
     const admin = await createUser('admin')
     const customer = await createUser('customer')
