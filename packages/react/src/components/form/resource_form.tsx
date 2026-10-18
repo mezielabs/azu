@@ -1,6 +1,12 @@
 import { Link, router } from '@inertiajs/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { EMPTY_RELATION_IDS, fieldErrors, unmatchedErrors } from '@mezielabs/azu/shared'
+import {
+  EMPTY_RELATION_IDS,
+  fieldErrors,
+  fieldWidth,
+  formStatus,
+  unmatchedErrors,
+} from '@mezielabs/azu/shared'
 import type { FieldValue, FormErrors, RelationValue, ResourceFormData } from '@mezielabs/azu/types'
 import { showToast } from '../toast.tsx'
 import { FormField } from './form_field.tsx'
@@ -68,6 +74,12 @@ export function ResourceForm(props: {
     errors,
     form.fields.map((field) => field.input)
   )
+  const shownErrors = (name: string, input: string) =>
+    edited.has(name) ? [] : fieldErrors(errors, input)
+  const status = formStatus({
+    dirty,
+    invalid: form.fields.filter((field) => shownErrors(field.name, field.input).length > 0).length,
+  })
 
   /**
    * After a 422, focus the first invalid field, or the summary when
@@ -129,27 +141,43 @@ export function ResourceForm(props: {
           ))}
         </div>
       )}
-      {form.fields.map((field) => (
-        <FormField
-          key={field.name}
-          field={field}
-          value={values[field.name] ?? null}
-          onChange={(value) => {
-            setValues((current) => ({ ...current, [field.name]: value }))
-            setEdited((current) => new Set(current).add(field.name))
-          }}
-          errors={edited.has(field.name) ? [] : fieldErrors(errors, field.input)}
-          timezone={timezone}
-          values={values}
-        />
-      ))}
-      <div className="azu-form-actions">
-        <button type="submit" className="azu-button azu-button-primary" disabled={processing}>
-          {props.submitLabel}
-        </button>
-        <Link href={props.cancelHref} className="azu-button">
-          Cancel
-        </Link>
+      {/* Short fields pair up side by side on a wide form */}
+      <div className="azu-form-body">
+        {form.fields.map((field) => (
+          <div key={field.name} className="azu-form-cell" data-azu-width={fieldWidth(field)}>
+            <FormField
+              field={field}
+              value={values[field.name] ?? null}
+              onChange={(value) => {
+                setValues((current) => ({ ...current, [field.name]: value }))
+                setEdited((current) => new Set(current).add(field.name))
+              }}
+              errors={shownErrors(field.name, field.input)}
+              timezone={timezone}
+              values={values}
+            />
+          </div>
+        ))}
+      </div>
+      {/* Stays at the bottom of the window while the form scrolls */}
+      <div className="azu-save-bar">
+        <div className="azu-save-bar-inner">
+          <p
+            className="azu-save-status"
+            role="status"
+            data-azu-state={dirty ? 'dirty' : status ? 'invalid' : 'clean'}
+          >
+            {status}
+          </p>
+          <div className="azu-save-actions">
+            <Link href={props.cancelHref} className="azu-button">
+              Cancel
+            </Link>
+            <button type="submit" className="azu-button azu-button-primary" disabled={processing}>
+              {props.submitLabel}
+            </button>
+          </div>
+        </div>
       </div>
       <UnsavedChanges when={dirty && !processing} />
     </form>

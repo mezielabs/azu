@@ -1,8 +1,9 @@
 import { test } from '@japa/runner'
 import vine from '@vinejs/vine'
-import { withHints } from '../src/forms/form_fields.ts'
+import { withCurrency, withHints } from '../src/forms/form_fields.ts'
 import { introspectValidator } from '../src/forms/introspect.ts'
 import { toFormErrors } from '../src/forms/save_record.ts'
+import { column } from '../src/resources/columns.ts'
 import { field } from '../src/resources/fields.ts'
 import { fieldErrors, unmatchedErrors } from '../shared.ts'
 
@@ -94,6 +95,24 @@ test.group('Form field hints', () => {
       hints.get('status')
     )
     assert.deepEqual(labelled.options, { draft: 'Draft' })
+  })
+
+  test('a number or decimal field borrows its currency column as its prefix', ({ assert }) => {
+    const columns = [
+      column.decimal('price').format('currency', 'NGN').toJSON(),
+      column.decimal('rate').format('percent').toJSON(),
+      column.number('stock').toJSON(),
+    ]
+    const form = (built: { toJSON(): Parameters<typeof withHints>[0] }) =>
+      withCurrency(withHints(built.toJSON(), undefined), columns).prefix
+
+    assert.equal(form(field.decimal('price')), 'NGN')
+    assert.isNull(form(field.decimal('rate')))
+    assert.isNull(form(field.number('stock')))
+    assert.isNull(form(field.decimal('discount')))
+    // Only numbers: a text field of the same name keeps its own
+    assert.isNull(form(field.text('price')))
+    assert.equal(form(field.text('price').prefix('#')), '#')
   })
 
   test('a field the validator does not know is optional, with no hints', ({ assert }) => {

@@ -184,7 +184,7 @@ navigation: { groups: ['Sales', 'Catalog'] },
 | --- | --- | --- |
 | `text`, `textarea` | Input, auto-growing textarea | |
 | `number` | Numeric input | For numeric attributes (integers, floats). Supports `min`, `max`, `step` |
-| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step` |
+| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step`. When the list column of the same name has a currency format, the input shows its code as a prefix (`NGN`) |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
 | `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |

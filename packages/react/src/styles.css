@@ -528,8 +528,89 @@
     background: var(--azu-subtle);
   }
 
+  /*
+   * The create and edit pages (layout 4/4): the header and the form at
+   * a reading width, the save bar across the page
+   */
+  .azu-form-page > *,
+  .azu-form > * {
+    max-width: 47.5rem;
+    margin-inline: auto;
+  }
+
+  .azu-form-page > .azu-form {
+    max-width: none;
+  }
+
   .azu-form {
-    @apply max-w-2xl space-y-5;
+    @apply space-y-5;
+  }
+
+  .azu-form-body {
+    @apply grid grid-cols-2 gap-x-4 gap-y-5 rounded-xl border p-5;
+    border-color: var(--azu-border);
+    container-type: inline-size;
+  }
+
+  .azu-form-cell {
+    @apply col-span-2 min-w-0;
+  }
+
+  /* Short fields pair up once the form is wide enough */
+  @container (min-width: 32rem) {
+    .azu-form-cell[data-azu-width='half'] {
+      @apply col-span-1;
+    }
+  }
+
+  .azu-form > .azu-save-bar {
+    @apply sticky bottom-0 z-20 border-t px-10 py-3;
+    max-width: none;
+    margin-inline: -2.5rem;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+  }
+
+  .azu-save-bar-inner {
+    @apply mx-auto flex max-w-190 flex-wrap items-center justify-between gap-3;
+  }
+
+  .azu-save-status {
+    @apply flex min-h-5 items-center gap-2 text-sm;
+    color: var(--azu-muted);
+  }
+
+  .azu-save-status[data-azu-state='dirty'] {
+    color: var(--azu-badge-yellow-text);
+  }
+
+  .azu-save-status[data-azu-state='invalid'] {
+    color: var(--azu-danger);
+  }
+
+  .azu-save-status:not(:empty)::before {
+    @apply inline-block h-2 w-2 shrink-0 rounded-full;
+    content: '';
+    background: currentColor;
+  }
+
+  .azu-save-actions {
+    @apply ml-auto flex items-center gap-2;
+  }
+
+  .azu-save-actions .azu-button {
+    @apply min-h-9;
+  }
+
+  @media (max-width: 767px) {
+    .azu-form > .azu-save-bar {
+      @apply px-4;
+      margin-inline: -1rem;
+    }
+
+    .azu-save-actions .azu-button {
+      @apply min-h-11;
+    }
   }
 
   .azu-form-errors {
@@ -593,6 +674,14 @@
 
   .azu-affix:last-child {
     @apply rounded-r border-l-0;
+  }
+
+  .azu-affix:first-child + .azu-input {
+    @apply rounded-l-none;
+  }
+
+  .azu-input:has(+ .azu-affix) {
+    @apply rounded-r-none;
   }
 
   .azu-textarea {
@@ -735,10 +824,6 @@
 
   .azu-calendar-cell.azu-is-focused {
     outline: 2px solid var(--azu-brand);
-  }
-
-  .azu-form-actions {
-    @apply flex items-center gap-2 pt-2;
   }
 
   .azu-details {
@@ -963,17 +1048,53 @@
   }
 
   .azu-rich-text-toolbar {
-    @apply flex flex-wrap gap-1 border-b p-1;
+    @apply flex flex-wrap items-center gap-0.5 rounded-t border-b p-1;
     border-color: var(--azu-border);
+    background: var(--azu-subtle);
   }
 
+  /* Icon buttons, named by aria-label */
   .azu-rich-text-tool {
-    @apply px-2 py-0.5 text-xs;
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-md;
+    color: var(--azu-text);
+  }
+
+  .azu-rich-text-tool:hover {
+    background: var(--azu-surface);
+  }
+
+  .azu-rich-text-tool:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: -1px;
   }
 
   .azu-rich-text-tool[aria-pressed='true'] {
-    background: var(--azu-subtle);
+    background: var(--azu-surface);
     color: var(--azu-brand);
+    box-shadow: inset 0 0 0 1px var(--azu-border);
+  }
+
+  @media (pointer: coarse) {
+    .azu-rich-text-tool {
+      @apply h-11 w-11;
+    }
+  }
+
+  .azu-rich-text-glyph {
+    @apply text-[15px] leading-none font-semibold;
+  }
+
+  .azu-rich-text-glyph.azu-is-bold {
+    @apply font-bold;
+  }
+
+  .azu-rich-text-glyph.azu-is-italic {
+    @apply font-serif italic;
+  }
+
+  .azu-rich-text-divider {
+    @apply mx-1 h-5 w-px;
+    background: var(--azu-border);
   }
 
   .azu-rich-text .azu-rich-text-content {
