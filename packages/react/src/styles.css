@@ -1039,7 +1039,6 @@
   }
 
   .azu-rich-text.azu-is-loading {
-    @apply min-h-32 p-3 text-sm;
     color: var(--azu-muted);
   }
 

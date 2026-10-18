@@ -137,4 +137,27 @@ test.group('Form page', (group) => {
     await bold.click()
     assert.equal(await bold.getAttribute('aria-pressed'), 'true')
   })
+
+  test('the editor takes its loaded height while it loads', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    // Hold the editor's chunk back, so the placeholder shows
+    let release = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await browserContext.route(/rich_text_editor/, async (route) => {
+      await held
+      await route.continue()
+    })
+    const page = await visit('/admin/resources/products/create')
+    const editor = page.locator('[data-azu-field="description"] .azu-rich-text')
+    await page.locator('[data-azu-field="description"] [aria-busy="true"]').waitFor()
+    const loading = (await editor.boundingBox())!.height
+
+    release()
+    await page.locator('[data-azu-field="description"] [contenteditable="true"]').waitFor()
+    assert.equal(Math.round((await editor.boundingBox())!.height), Math.round(loading))
+  })
 })

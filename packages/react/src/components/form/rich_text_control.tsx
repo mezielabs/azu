@@ -27,8 +27,13 @@ export function RichTextControl(props: ControlProps) {
       </span>
       <Suspense
         fallback={
+          // The loaded editor's shape: a toolbar's height, then the content
+          // area, so nothing below moves when it arrives
           <div className="azu-rich-text azu-is-loading" aria-busy="true">
-            Loading editor…
+            <div className="azu-rich-text-toolbar" aria-hidden="true">
+              <span className="azu-rich-text-tool" />
+            </div>
+            <div className="azu-rich-text-content">Loading editor…</div>
           </div>
         }
       >
