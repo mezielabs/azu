@@ -94,6 +94,34 @@ function cellValue(record: LucidRow, column: ColumnSchema): CellValue {
 }
 
 /**
+ * A record's value for each of the resource's columns, as the list shows
+ * them: an image column's URL from Drive (its disk is the same-named
+ * field's `disk()`, else the default). `belongsTo` columns read the
+ * preloaded relation.
+ */
+export async function recordCells(
+  ctx: HttpContext,
+  resource: Resource<any, any>,
+  record: LucidRow,
+  defaultDisk: string | undefined
+): Promise<Record<string, CellValue>> {
+  const schema = resource.toSchema()
+  const diskOf = (name: string) => {
+    const field = schema.fields.find((item) => item.name === name)
+    return diskFor({ disk: field?.disk ?? null }, defaultDisk)
+  }
+  return Object.fromEntries(
+    await Promise.all(
+      schema.columns.map(async (column) => {
+        if (column.kind !== 'image') return [column.name, cellValue(record, column)]
+        const file = await fileValue(ctx, diskOf(column.name), read(record, column.name))
+        return [column.name, { url: file?.url ?? null }]
+      })
+    )
+  )
+}
+
+/**
  * The records a list's search and filters match, through the
  * resource's `query` hook: what a list page shows, and what a bulk run
  * on all matching rows (FR-17) acts on.
@@ -164,33 +192,13 @@ export async function listRecords(
   }
   const title = schema.title
 
-  // An image column's disk: the same-named field's `disk()`, else the default
-  const diskOf = (name: string) => {
-    const field = schema.fields.find((item) => item.name === name)
-    return diskFor({ disk: field?.disk ?? null }, options.defaultDisk)
-  }
-
-  const imageCell = async (record: LucidRow, name: string) => {
-    const file = await fileValue(ctx, diskOf(name), read(record, name))
-    return { url: file?.url ?? null }
-  }
-
   const rows = await Promise.all(
     page.all().map(async (record): Promise<ListRow> => {
       const titleValue = title ? (record as unknown as Record<string, unknown>)[title] : null
       return {
         id: record.$primaryKeyValue as string | number,
         title: titleValue === null || titleValue === undefined ? null : String(titleValue),
-        cells: Object.fromEntries(
-          await Promise.all(
-            schema.columns.map(async (column) => [
-              column.name,
-              column.kind === 'image'
-                ? await imageCell(record, column.name)
-                : cellValue(record, column),
-            ])
-          )
-        ),
+        cells: await recordCells(ctx, resource, record, options.defaultDisk),
         abilities: {
           view: await allows(ctx, resource, 'view', record),
           update: await allows(ctx, resource, 'update', record),

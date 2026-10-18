@@ -1,6 +1,6 @@
 import { test } from '@japa/runner'
 import vine from '@vinejs/vine'
-import { withHints } from '../src/forms/form_fields.ts'
+import { recordTimestamp, withHints } from '../src/forms/form_fields.ts'
 import { introspectValidator } from '../src/forms/introspect.ts'
 import { toFormErrors } from '../src/forms/save_record.ts'
 import { field } from '../src/resources/fields.ts'
@@ -134,5 +134,22 @@ test.group('Form errors', () => {
   test('errors no shown field covers are kept for the form summary', ({ assert }) => {
     const errors = { name: ['Name'], categoryId: ['Pick a category'] }
     assert.deepEqual(unmatchedErrors(errors, ['name']), ['Pick a category'])
+  })
+})
+
+test.group('Record timestamps (layout 3/4)', () => {
+  test('ISO strings, or null when the model has no such column or value', ({ assert }) => {
+    const model = { $getColumn: (name: string) => (name === 'createdAt' ? {} : undefined) }
+    const record = {
+      createdAt: { toISO: () => '2026-10-12T09:14:00.000+01:00' },
+      updatedAt: { toISO: () => '2026-10-16T20:41:00.000+01:00' },
+    }
+    assert.equal(
+      recordTimestamp(model as never, record as never, 'createdAt'),
+      '2026-10-12T09:14:00.000+01:00'
+    )
+    // The model has no updatedAt column, whatever the record holds
+    assert.isNull(recordTimestamp(model as never, record as never, 'updatedAt'))
+    assert.isNull(recordTimestamp(model as never, { createdAt: null } as never, 'createdAt'))
   })
 })
