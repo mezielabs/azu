@@ -4,6 +4,7 @@
  */
 import type {
   ActionKey,
+  CellValue,
   ColumnSchema,
   FieldSchema,
   FieldValue,
@@ -236,6 +237,18 @@ export type ResourceShowPageProps = AzuSharedProps & {
   /** The fields this user may see */
   fields: FieldSchema[]
   record: RecordData
+  /**
+   * The record's `createdAt` and `updatedAt`, as ISO strings, for the
+   * page's Record card; each `null` when the model has no such column or
+   * no value
+   */
+  timestamps: { createdAt: string | null; updatedAt: string | null }
+  /**
+   * The record's column values, as the list shows them, when the user
+   * may see none of its fields: the page shows the columns instead.
+   * `null` when there are fields
+   */
+  cells: Record<string, CellValue> | null
   /** `hasMany` fields whose related resource the user may list */
   relations: RelationTable[]
   /** What the user may do with this record, from the policy */

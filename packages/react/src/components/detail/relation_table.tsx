@@ -24,12 +24,17 @@ export function RelationTableView(props: { table: RelationTable; path: string; t
 
   return (
     <section
-      className="azu-relation"
+      className="azu-panel azu-relation"
       data-azu-relation={table.name}
       aria-labelledby={`azu-relation-${table.name}`}
     >
-      <h2 id={`azu-relation-${table.name}`} className="azu-section-title">
+      <h2 id={`azu-relation-${table.name}`} className="azu-panel-title">
         {table.label}
+        <span className="azu-panel-count">
+          {/* The dot is decoration: the heading reads "Products 3" */}
+          <span aria-hidden="true"> · </span>
+          {new Intl.NumberFormat('en').format(table.meta.total)}
+        </span>
       </h2>
       <DataTable
         label={table.label}

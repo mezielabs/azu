@@ -346,6 +346,15 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Footer:** "Showing 1–25 of 32", Rows per page, and the pages: Previous, the first and last pages, the current one and its neighbours (`pageWindow()`), Next.
 - **Below 768px:** rows are cards (`ListCards`): the first image column as the picture, the title, the next two columns as a line under it, the first badge column on the right; only one of the table or the cards renders. No selection there. The filters sheet's rows are 44px, toggles included, with a gap between the box and its label. New is a 44px icon button whose name stays "New product".
 
+**Detail page (layout 3/4):** two columns, stacking below 768px.
+
+- **Left, a Details card:** the fields, by label. A field with a list column of the same name is formatted as that column formats it, for number, decimal, badge and boolean columns without a component (the price in NGN, a status's label). `richText`, relations and dates keep the field's rendering.
+- **Right:** a card per `image` or `file` field (the image at 4:3, "name · Open full size"), then a Record card with the ID and, when the model has the columns, Created and Updated (`timestamps`, ISO strings or `null`).
+- **Title:** the resource's first shown badge column is a pill beside it, and the field of the same name leaves the Details list (`detailLayout()` in shared).
+- **Actions:** row actions are header buttons, except destructive ones (Delete), which go in a "⋯" More actions menu. Edit is the primary button.
+- **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12").
+- **No fields:** when the user may see none of the resource's fields (Orders), the page gets `cells`, the record's column values as the list shows them (`belongsTo` columns loaded for it), and the Details card shows the columns, custom cell components included.
+
 **Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
 
 - **Icons:** `icon` is a Lucide icon name in kebab case. `lucide-react` is an optional peer of `@mezielabs/azu-react`, and without it the navigation has no icons.
