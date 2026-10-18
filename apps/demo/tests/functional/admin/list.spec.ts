@@ -313,4 +313,23 @@ test.group('Admin / list screen (FR-05)', (group) => {
     assert.equal(searched.body().props.list.meta.total, 1)
     assert.equal(searched.body().props.list.meta.unfilteredTotal, 12)
   })
+
+  test("a badge column without a select field takes a select filter's labels (Orders)", async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+
+    const response = await client.get('/admin/resources/orders').loginAs(admin).withInertia()
+
+    const status = response
+      .body()
+      .props.resource.columns.find((column: { name: string }) => column.name === 'status')
+    assert.deepEqual(status.labels, {
+      pending: 'Pending',
+      paid: 'Paid',
+      shipped: 'Shipped',
+      cancelled: 'Cancelled',
+    })
+  })
 })

@@ -1,6 +1,10 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
+import { action } from '@mezielabs/azu'
+import { DateTime } from 'luxon'
+import productResource from '#admin/resources/product_resource'
 import Category from '#models/category'
+import Order from '#models/order'
 import Product from '#models/product'
 import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
@@ -141,6 +145,17 @@ test.group('List page', (group) => {
 
     await page.getByRole('button', { name: 'Filters' }).click()
     const sheet = page.getByRole('dialog', { name: 'Filter products' })
+    // A date range is two labelled inputs; toggles are 44px rows with a gap
+    await sheet.getByLabel('From', { exact: true }).waitFor()
+    await sheet.getByLabel('To', { exact: true }).waitFor()
+    const toggles = await sheet.locator('.azu-filter-toggle').evaluateAll((elements) =>
+      elements.map((element: any) => ({
+        height: Math.round(element.getBoundingClientRect().height),
+        gap: Number.parseFloat((globalThis as any).getComputedStyle(element).columnGap),
+      }))
+    )
+    assert.isAbove(toggles.length, 0)
+    assert.isTrue(toggles.every((toggle) => toggle.height >= 44 && toggle.gap >= 12))
     await sheet.getByLabel('Status').selectOption('draft')
     await page.waitForURL(/status=draft/)
     await page.getByRole('button', { name: 'Filters · 1' }).waitFor()
@@ -156,5 +171,98 @@ test.group('List page', (group) => {
       await page.emulateMedia({ colorScheme })
       assert.deepEqual(await axeViolations(page), [], `cards, ${colorScheme}`)
     }
+  })
+
+  test("the Orders list shows its status filter's labels", async ({ visit, browserContext }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const customer = await createUser('customer')
+    await Order.create({
+      userId: customer.id,
+      number: 'LIST-SHIPPED',
+      status: 'shipped',
+      total: '10.00',
+      placedAt: DateTime.now(),
+    })
+
+    const page = await visit('/admin/resources/orders')
+    await page
+      .getByRole('row', { name: /LIST-SHIPPED/ })
+      .getByText('Shipped', { exact: true })
+      .waitFor()
+  })
+
+  test('six bulk actions: the bar keeps one line and one height at 1440px and 900px', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    // Three more bulk actions for this test: publish, feature, archive, export, purge, delete
+    const declared = productResource.actions()
+    const extra = [
+      action.bulk('archive').handle(async () => {}),
+      action.bulk('export').handle(async () => {}),
+      action
+        .bulk('purge')
+        .destructive()
+        .handle(async () => {}),
+    ]
+    const last = declared.at(-1)!
+    const all = [...declared.slice(0, -1), ...extra, last]
+    productResource.actions = () => all as never
+    cleanup(() => {
+      delete (productResource as { actions?: unknown }).actions
+    })
+
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products')
+
+    const oneLine = async (width: number) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/admin/resources/products')
+      const controls = page.locator('.azu-list-controls')
+      await controls.waitFor()
+      const height = (await controls.boundingBox())!.height
+      const tableTop = (await page.locator('.azu-table-container').boundingBox())!.y
+
+      await page
+        .locator('.azu-checkbox', { has: page.getByRole('checkbox', { name: 'Select All' }) })
+        .click()
+      const bar = page.getByRole('toolbar', { name: 'Bulk actions' })
+      await bar.waitFor()
+      assert.equal(Math.round((await bar.boundingBox())!.height), Math.round(height), `${width}px`)
+      assert.equal((await page.locator('.azu-table-container').boundingBox())!.y, tableTop)
+      // Nothing wraps or spills: every item on one line, inside the bar
+      const layout = await bar.evaluate((element: any) => ({
+        tops: [...element.children].map((child: any) =>
+          Math.round(child.getBoundingClientRect().top + child.getBoundingClientRect().height / 2)
+        ),
+        overflows: element.scrollWidth > element.clientWidth,
+      }))
+      assert.equal(new Set(layout.tops.filter((top: number) => top > 0)).size, 1, `${width}px`)
+      assert.isFalse(layout.overflows, `${width}px`)
+      return bar
+    }
+
+    const wide = await oneLine(1440)
+    assert.deepEqual(await wide.locator('.azu-bulk-action:not(.azu-bulk-menu)').allInnerTexts(), [
+      'Publish',
+      'Feature',
+    ])
+    await wide.getByRole('button', { name: 'More' }).click()
+    assert.deepEqual(
+      await page.getByRole('menu', { name: 'More' }).getByRole('menuitem').allInnerTexts(),
+      ['Archive', 'Export', 'Purge', 'Delete']
+    )
+    await page.keyboard.press('Escape')
+
+    const narrow = await oneLine(900)
+    assert.equal(await narrow.locator('.azu-bulk-action:not(.azu-bulk-menu)').count(), 0)
+    await narrow.getByRole('button', { name: 'Actions' }).click()
+    assert.deepEqual(
+      await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
+      ['Publish', 'Feature', 'Archive', 'Export', 'Purge', 'Delete']
+    )
   })
 })

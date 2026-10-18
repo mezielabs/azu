@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react'
 import { useEffect, useRef, useState } from 'react'
 import {
   actionKey,
+  arrangeBulkActions,
   bulkActionsFor,
   listStateUrl,
   listSummary,
@@ -12,6 +13,7 @@ import {
   type ListState,
 } from '@mezielabs/azu/shared'
 import {
+  ActionsMenu,
   AdminLayout,
   DataTable,
   FilterBar,
@@ -23,12 +25,13 @@ import {
   Pagination,
   RowActionsMenu,
   Slot,
+  COMPACT_QUERY,
   PHONE_QUERY,
   useActions,
   useMediaQuery,
   type ResourceIndexPageProps,
 } from '@mezielabs/azu-react'
-import type { ListRow } from '@mezielabs/azu/types'
+import type { ActionSchema, ListRow } from '@mezielabs/azu/types'
 
 /**
  * The resource list (FR-05). Every change (page, size, sort, search,
@@ -96,6 +99,23 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const hasBulkActions = resource.actions.some((action) => action.kind === 'bulk')
   // Below 768px, rows are cards, without selection
   const phone = useMediaQuery(PHONE_QUERY)
+  // The bar keeps one line: some actions in a menu, all of them below 1024px
+  const compact = useMediaQuery(COMPACT_QUERY)
+  const arranged = arrangeBulkActions(bulkActions, compact)
+  function runBulk(action: ActionSchema) {
+    actions.run(
+      action,
+      allMatching
+        ? {
+            matching: {
+              search: list.state.search,
+              filters: list.state.filters,
+              count: list.meta.total,
+            },
+          }
+        : { ids: selected }
+    )
+  }
 
   return (
     <AdminLayout azu={azu} title={resource.label}>
@@ -159,31 +179,27 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               Clear selection
             </button>
             <span className="azu-bulk-spacer" />
-            {bulkActions.map((action) => (
+            {arranged.buttons.map((action) => (
               <button
                 key={action.name}
                 type="button"
                 className="azu-bulk-action"
                 data-azu-destructive={action.destructive || undefined}
                 disabled={actions.busy}
-                onClick={() =>
-                  actions.run(
-                    action,
-                    allMatching
-                      ? {
-                          matching: {
-                            search: list.state.search,
-                            filters: list.state.filters,
-                            count: list.meta.total,
-                          },
-                        }
-                      : { ids: selected }
-                  )
-                }
+                onClick={() => runBulk(action)}
               >
                 {action.label}
               </button>
             ))}
+            {arranged.menuLabel && (
+              <ActionsMenu
+                actions={arranged.menu}
+                label={arranged.menuLabel}
+                className="azu-bulk-action azu-bulk-menu"
+                isDisabled={actions.busy}
+                onAction={runBulk}
+              />
+            )}
           </div>
         ) : (
           <div className="azu-list-bar azu-list-controls">

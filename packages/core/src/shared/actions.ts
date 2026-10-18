@@ -51,6 +51,30 @@ export function offersAllMatching(selected: number, onPage: number, total: numbe
 }
 
 /**
+ * How the bulk bar shows its actions (layout 2/4), so it never wraps:
+ * up to three as buttons, destructive last; with more, the first two
+ * that aren't destructive as buttons, in declared order, and the rest in
+ * a "More" menu, destructive ones last. On a compact screen (below
+ * 1024px), all of them in one "Actions" menu.
+ */
+export function arrangeBulkActions<Action extends Pick<ActionSchema, 'destructive'>>(
+  actions: Action[],
+  compact: boolean
+): { buttons: Action[]; menu: Action[]; menuLabel: 'More' | 'Actions' | null } {
+  const plain = actions.filter((action) => !action.destructive)
+  const destructive = actions.filter((action) => action.destructive)
+  const ordered = [...plain, ...destructive]
+  if (ordered.length === 0) return { buttons: [], menu: [], menuLabel: null }
+  if (compact) return { buttons: [], menu: ordered, menuLabel: 'Actions' }
+  if (ordered.length <= 3) return { buttons: ordered, menu: [], menuLabel: null }
+  return {
+    buttons: plain.slice(0, 2),
+    menu: [...plain.slice(2), ...destructive],
+    menuLabel: 'More',
+  }
+}
+
+/**
  * The confirm dialog's warning for a run that takes more than one
  * chunk, which can partly succeed.
  */

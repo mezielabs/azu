@@ -16,7 +16,7 @@ export { DataTable, selectedIds } from './components/list/data_table.tsx'
 export { ListCell } from './components/list/cell.tsx'
 export { ListToolbar } from './components/list/list_toolbar.tsx'
 export { ListCards } from './components/list/list_cards.tsx'
-export { useMediaQuery, PHONE_QUERY } from './components/use_media_query.ts'
+export { useMediaQuery, PHONE_QUERY, COMPACT_QUERY } from './components/use_media_query.ts'
 export { FilterBar } from './components/list/filter_bar.tsx'
 export { ThemeToggle } from './components/theme_toggle.tsx'
 export { Pagination } from './components/list/pagination.tsx'
@@ -30,7 +30,7 @@ export { RichTextControl } from './components/form/rich_text_control.tsx'
 export { showToast, ToastRegion } from './components/toast.tsx'
 export { ActionDialog } from './components/actions/action_dialog.tsx'
 export { useActions, type ActionTarget } from './components/actions/use_actions.tsx'
-export { RowActionsMenu } from './components/actions/row_actions.tsx'
+export { RowActionsMenu, ActionsMenu } from './components/actions/row_actions.tsx'
 
 /**
  * Contracts are defined in `@mezielabs/azu`, so a future Vue package

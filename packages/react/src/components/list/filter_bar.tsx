@@ -76,8 +76,9 @@ function SelectFilter({ filter, value, onChange }: FilterControlProps) {
 }
 
 /**
- * Two native date inputs: they read and write the `YYYY-MM-DD` the URL
- * holds, the browser supplies a picker, and the list page stays light.
+ * Two native date inputs, each with a visible label ("From", "To"):
+ * they read and write the `YYYY-MM-DD` the URL holds, the browser
+ * supplies a picker, and the list page stays light.
  */
 function DateRangeFilter({ filter, value, onChange }: FilterControlProps) {
   const id = useId()
@@ -87,29 +88,32 @@ function DateRangeFilter({ filter, value, onChange }: FilterControlProps) {
   return (
     <fieldset className="azu-filter azu-filter-range" data-azu-filter={filter.name}>
       <legend className="azu-filter-label">{filter.label}</legend>
-      <label className="azu-visually-hidden" htmlFor={`${id}-from`}>
-        {filter.label} from
-      </label>
-      <input
-        id={`${id}-from`}
-        className="azu-input"
-        type="date"
-        value={range.from ?? ''}
-        max={range.to ?? undefined}
-        onChange={(event) => set('from', event.target.value)}
-      />
-      <span aria-hidden>–</span>
-      <label className="azu-visually-hidden" htmlFor={`${id}-to`}>
-        {filter.label} to
-      </label>
-      <input
-        id={`${id}-to`}
-        className="azu-input"
-        type="date"
-        value={range.to ?? ''}
-        min={range.from ?? undefined}
-        onChange={(event) => set('to', event.target.value)}
-      />
+      <div className="azu-range-field">
+        <label className="azu-range-label" htmlFor={`${id}-from`}>
+          From
+        </label>
+        <input
+          id={`${id}-from`}
+          className="azu-input"
+          type="date"
+          value={range.from ?? ''}
+          max={range.to ?? undefined}
+          onChange={(event) => set('from', event.target.value)}
+        />
+      </div>
+      <div className="azu-range-field">
+        <label className="azu-range-label" htmlFor={`${id}-to`}>
+          To
+        </label>
+        <input
+          id={`${id}-to`}
+          className="azu-input"
+          type="date"
+          value={range.to ?? ''}
+          min={range.from ?? undefined}
+          onChange={(event) => set('to', event.target.value)}
+        />
+      </div>
     </fieldset>
   )
 }
