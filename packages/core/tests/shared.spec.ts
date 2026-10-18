@@ -13,7 +13,7 @@ import {
   withFilter,
   actionUrl,
   bulkActionsFor,
-  bulkMenuActions,
+  splitActions,
   chunkedRunNote,
   detailLayout,
   filterValueLabel,
@@ -468,15 +468,68 @@ test.group('List summary (layout 2/4)', () => {
   })
 })
 
-test.group('Bulk bar actions (layout 2/4)', () => {
-  test('one dropdown: as declared, destructive last', ({ assert }) => {
-    const named = (names: string) =>
-      names.split(' ').map((name) => ({ name, destructive: name.startsWith('!') }))
-    assert.deepEqual(
-      bulkMenuActions(named('publish !purge feature archive !delete')).map((action) => action.name),
-      ['publish', 'feature', 'archive', '!purge', '!delete']
-    )
-    assert.deepEqual(bulkMenuActions([]), [])
+test.group('Splitting actions (the bulk bar and the detail header)', () => {
+  const named = (names: string) =>
+    names
+      .split(' ')
+      .filter(Boolean)
+      .map((name) => ({ name, destructive: name.startsWith('!') }))
+  const split = (names: string, narrow = false) => {
+    const result = splitActions(named(names), { narrow })
+    const join = (actions: { name: string }[]) => actions.map((action) => action.name).join(' ')
+    return { buttons: join(result.buttons), menu: join(result.menu), label: result.menuLabel }
+  }
+
+  test('none: no buttons and no menu, at any width', ({ assert }) => {
+    assert.deepEqual(split(''), { buttons: '', menu: '', label: null })
+    assert.deepEqual(split('', true), { buttons: '', menu: '', label: null })
+  })
+
+  test('one, or three: all buttons, destructive last', ({ assert }) => {
+    assert.deepEqual(split('publish'), { buttons: 'publish', menu: '', label: null })
+    assert.deepEqual(split('!delete publish feature'), {
+      buttons: 'publish feature !delete',
+      menu: '',
+      label: null,
+    })
+  })
+
+  test('four: the first two non-destructive as buttons, the rest under More', ({ assert }) => {
+    assert.deepEqual(split('publish feature archive !delete'), {
+      buttons: 'publish feature',
+      menu: 'archive !delete',
+      label: 'More',
+    })
+  })
+
+  test('six: two buttons in declared order; More ends with the destructive ones', ({ assert }) => {
+    assert.deepEqual(split('!purge publish feature archive !delete export'), {
+      buttons: 'publish feature',
+      menu: 'archive export !purge !delete',
+      label: 'More',
+    })
+  })
+
+  test('destructive actions are never buttons past three', ({ assert }) => {
+    // Only one action isn't destructive: one button, the rest in the menu
+    assert.deepEqual(split('!purge !archive publish !delete'), {
+      buttons: 'publish',
+      menu: '!purge !archive !delete',
+      label: 'More',
+    })
+  })
+
+  test('narrow: every action in one Actions menu, destructive last', ({ assert }) => {
+    assert.deepEqual(split('!delete publish', true), {
+      buttons: '',
+      menu: 'publish !delete',
+      label: 'Actions',
+    })
+    assert.deepEqual(split('!purge publish feature archive !delete export', true), {
+      buttons: '',
+      menu: 'publish feature archive export !purge !delete',
+      label: 'Actions',
+    })
   })
 })
 

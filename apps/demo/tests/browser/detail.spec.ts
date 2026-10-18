@@ -5,6 +5,8 @@ import { DateTime } from 'luxon'
 import Category from '#models/category'
 import Order from '#models/order'
 import Product from '#models/product'
+import productResource from '#admin/resources/product_resource'
+import { action } from '@mezielabs/azu'
 import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
 
@@ -66,19 +68,133 @@ test.group('Detail page', (group) => {
     const side = (await page.locator('.azu-detail-side').boundingBox())!
     assert.isAbove(side.x, main.x + main.width - 1)
 
-    // Restock stays a button; Delete moves into the "⋯" menu
-    await page.getByRole('button', { name: 'Restock' }).waitFor()
-    assert.equal(await page.getByRole('button', { name: 'Delete', exact: true }).count(), 0)
+    // Two row actions: both buttons, Delete last, then Edit, the primary
+    assert.deepEqual(await page.locator('.azu-page-actions > *').allInnerTexts(), [
+      'Restock',
+      'Delete',
+      'Edit',
+    ])
+    assert.equal(
+      await page
+        .getByRole('button', { name: 'Delete', exact: true })
+        .getAttribute('data-azu-destructive'),
+      'true'
+    )
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme })
       assert.deepEqual(await axeViolations(page), [], `detail, ${colorScheme}`)
     }
-    await page.getByRole('button', { name: 'More actions' }).click()
-    await page.getByRole('menu').getByRole('menuitem', { name: 'Delete' }).waitFor()
-    for (const colorScheme of ['light', 'dark'] as const) {
-      await page.emulateMedia({ colorScheme })
-      assert.deepEqual(await axeViolations(page, { popoverOpen: true }), [], `menu, ${colorScheme}`)
+  })
+
+  test('six row actions: the header keeps one line at 1440px and 900px, and a long title truncates', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const { record } = await product()
+    record.name = `Lagos Noir: ${'twelve stories set between Yaba and the Island, '.repeat(3).trim()}`
+    await record.save()
+    const page = await visit(`/admin/resources/products/${record.id}`)
+
+    // Where the panels start with the usual two row actions
+    const panelsTop = async (width: number) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto(`/admin/resources/products/${record.id}`)
+      await page.locator('.azu-detail-main').waitFor()
+      return (await page.locator('.azu-detail-main').boundingBox())!.y
     }
+    const before = { 1440: await panelsTop(1440), 900: await panelsTop(900) }
+
+    // Restock, archive, export, duplicate, purge and Delete
+    const declared = productResource.actions()
+    const extra = [
+      action.row('archive').handle(async () => {}),
+      action.row('export').handle(async () => {}),
+      action.row('duplicate').handle(async () => {}),
+      action
+        .row('purge')
+        .destructive()
+        .handle(async () => {}),
+    ]
+    // Before the built-in Deletes (row and bulk), so Delete is declared last
+    const deletes = declared.filter((item) => item.name === 'delete')
+    const others = declared.filter((item) => item.name !== 'delete')
+    productResource.actions = () => [...others, ...extra, ...deletes] as never
+    cleanup(() => {
+      delete (productResource as { actions?: unknown }).actions
+    })
+
+    const header = page.locator('.azu-page-header')
+    const actions = page.locator('.azu-page-actions')
+    const oneLine = async (width: 1440 | 900) => {
+      assert.equal(await panelsTop(width), before[width], `${width}px: the panels don't move`)
+      const layout = await header.evaluate((element: any) => {
+        const title = element.querySelector('.azu-page-title-text')
+        const heading = element.querySelector('.azu-page-title')
+        const bar = element.querySelector('.azu-page-actions')
+        const middle = (child: any) => {
+          const box = child.getBoundingClientRect()
+          return Math.round(box.top + box.height / 2)
+        }
+        return {
+          actionRows: new Set([...bar.children].map(middle)).size,
+          // The title and the actions share the header's line
+          sideBySide: bar.getBoundingClientRect().left >= heading.getBoundingClientRect().right,
+          truncated: title.scrollWidth > title.clientWidth,
+          tooltip: heading.getAttribute('title'),
+          overflows: element.scrollWidth > element.clientWidth,
+        }
+      })
+      assert.equal(layout.actionRows, 1, `${width}px`)
+      assert.isTrue(layout.sideBySide, `${width}px`)
+      assert.isTrue(layout.truncated, `${width}px`)
+      assert.equal(layout.tooltip, record.name)
+      assert.isFalse(layout.overflows, `${width}px`)
+      assert.include(await page.title(), record.name)
+    }
+    const menuAxe = async (width: number) => {
+      for (const colorScheme of ['light', 'dark'] as const) {
+        await page.emulateMedia({ colorScheme })
+        assert.deepEqual(
+          await axeViolations(page, { popoverOpen: true }),
+          [],
+          `${width}px menu, ${colorScheme}`
+        )
+      }
+    }
+
+    // 1440px: two buttons, More with the rest (destructive last), then Edit
+    await oneLine(1440)
+    assert.deepEqual(await actions.locator(':scope > *').allInnerTexts(), [
+      'Restock',
+      'Archive',
+      'More',
+      'Edit',
+    ])
+    await actions.getByRole('button', { name: 'More' }).click()
+    const more = page.getByRole('menu', { name: 'More' })
+    assert.deepEqual(await more.getByRole('menuitem').allInnerTexts(), [
+      'Export',
+      'Duplicate',
+      'Purge',
+      'Delete',
+    ])
+    assert.deepEqual(await more.locator('.azu-is-destructive').allInnerTexts(), ['Purge', 'Delete'])
+    await menuAxe(1440)
+    await page.keyboard.press('Escape')
+    await more.waitFor({ state: 'detached' })
+
+    // 900px: every row action in one Actions menu; Edit stays a button
+    await oneLine(900)
+    assert.deepEqual(await actions.locator(':scope > *').allInnerTexts(), ['Actions', 'Edit'])
+    await actions.getByRole('button', { name: 'Actions' }).click()
+    assert.deepEqual(
+      await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
+      ['Restock', 'Archive', 'Export', 'Duplicate', 'Purge', 'Delete']
+    )
+    await menuAxe(900)
   })
 
   test('hasMany tables are cards below, with their count', async ({

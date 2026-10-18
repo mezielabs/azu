@@ -51,17 +51,37 @@ export function offersAllMatching(selected: number, onPage: number, total: numbe
 }
 
 /**
- * The bulk bar's actions (layout 2/4), in the order its "Actions"
- * dropdown lists them: as declared, destructive ones last. One dropdown,
- * so the bar never wraps however many actions a resource has.
+ * Up to this many actions are all buttons; past it, two buttons and a
+ * "More" menu.
  */
-export function bulkMenuActions<Action extends Pick<ActionSchema, 'destructive'>>(
-  actions: Action[]
-): Action[] {
-  return [
-    ...actions.filter((action) => !action.destructive),
-    ...actions.filter((action) => action.destructive),
-  ]
+export const ACTION_BUTTONS_LIMIT = 3
+
+/**
+ * How a bar of actions shows them so it never wraps: the bulk bar, and
+ * the row actions in a detail page's header (layout 2/4 and 3/4).
+ *
+ * - Three or fewer: all buttons, as declared, destructive ones last.
+ * - More than three: the first two that aren't destructive as buttons,
+ *   in declared order; the rest in a "More" menu, destructive ones last.
+ * - `narrow` (below 1024px): all of them in one "Actions" menu.
+ *
+ * `menuLabel` is `null` when there's no menu.
+ */
+export function splitActions<Action extends Pick<ActionSchema, 'destructive'>>(
+  actions: Action[],
+  options: { narrow: boolean }
+): { buttons: Action[]; menu: Action[]; menuLabel: 'More' | 'Actions' | null } {
+  const plain = actions.filter((action) => !action.destructive)
+  const destructive = actions.filter((action) => action.destructive)
+  const ordered = [...plain, ...destructive]
+  if (ordered.length === 0) return { buttons: [], menu: [], menuLabel: null }
+  if (options.narrow) return { buttons: [], menu: ordered, menuLabel: 'Actions' }
+  if (ordered.length <= ACTION_BUTTONS_LIMIT) return { buttons: ordered, menu: [], menuLabel: null }
+  return {
+    buttons: plain.slice(0, 2),
+    menu: [...plain.slice(2), ...destructive],
+    menuLabel: 'More',
+  }
 }
 
 /**
