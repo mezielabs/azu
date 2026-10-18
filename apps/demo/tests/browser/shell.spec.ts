@@ -95,4 +95,55 @@ test.group('Shell', (group) => {
     await page.waitForURL('**/admin/resources/categories')
     await menu.waitFor({ state: 'detached' })
   })
+
+  test('on a page taller than the window, the sidebar stays put, full height', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const { insertProducts } = await import('../functional/admin/helpers.ts')
+    const { default: Category } = await import('#models/category')
+    await insertProducts(await Category.create({ name: 'Tall', slug: 'tall-shell' }), 100)
+    const page = await visit('/admin/resources/products?perPage=100')
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.locator('.azu-list-table').waitFor()
+
+    const measure = () =>
+      page.evaluate(() => {
+        const browser = globalThis as any
+        const sidebar = browser.document.querySelector('.azu-sidebar')
+        const box = sidebar.getBoundingClientRect()
+        const style = browser.getComputedStyle(sidebar)
+        // What's painted at the sidebar's bottom-left corner of the window
+        const corner = browser.document.elementFromPoint(8, browser.innerHeight - 4)
+        return {
+          scrolled: browser.scrollY,
+          pageHeight: browser.document.documentElement.scrollHeight,
+          windowHeight: browser.innerHeight,
+          top: Math.round(box.top),
+          bottom: Math.round(box.bottom),
+          border: style.borderRightWidth,
+          background: style.backgroundColor,
+          cornerInSidebar: Boolean(corner?.closest('.azu-sidebar')),
+        }
+      })
+
+    const before = await measure()
+    assert.isAbove(before.pageHeight, before.windowHeight * 2)
+    await page.evaluate(() =>
+      (globalThis as any).scrollTo(0, (globalThis as any).document.documentElement.scrollHeight)
+    )
+    const after = await measure()
+
+    assert.isAbove(after.scrolled, 0)
+    for (const state of [before, after]) {
+      // Pinned to the window, top to bottom, with its border and background
+      assert.equal(state.top, 0)
+      assert.equal(state.bottom, state.windowHeight)
+      assert.equal(state.border, '1px')
+      assert.notEqual(state.background, 'rgba(0, 0, 0, 0)')
+      assert.isTrue(state.cornerInSidebar)
+    }
+  })
 })
