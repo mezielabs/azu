@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react'
+import type { ReactNode } from 'react'
 import type { ColumnSchema, ListRow } from '@mezielabs/azu/types'
 import { ListCell } from './cell.tsx'
 import { ImageIcon } from '../shell_icons.tsx'
@@ -7,7 +8,8 @@ import { ImageIcon } from '../shell_icons.tsx'
  * The list below 768px: a card per row. The first image column is the
  * card's picture, the title column its heading, the next two columns a
  * line under it, and the first badge column sits on the right. A row the
- * user may view is a link to its detail page.
+ * user may view is a link to its detail page; its menu (View, Edit, row
+ * actions) is a 44px button beside it, outside the link.
  */
 export function ListCards(props: {
   label: string
@@ -16,6 +18,8 @@ export function ListCards(props: {
   rows: ListRow[]
   timezone: string
   rowHref?: (row: ListRow) => string | undefined
+  /** The row's menu, a 44px button beside the badge, outside the card's link */
+  rowMenu?: (row: ListRow) => ReactNode
 }) {
   const visible = props.columns.filter((column) => !column.hiddenByDefault)
   const image = visible.find((column) => column.kind === 'image')
@@ -69,14 +73,15 @@ export function ListCards(props: {
         )
         const href = props.rowHref?.(row)
         return (
-          <li key={String(row.id)}>
+          <li key={String(row.id)} className="azu-card">
             {href ? (
-              <Link href={href} className="azu-card">
+              <Link href={href} className="azu-card-link">
                 {body}
               </Link>
             ) : (
-              <div className="azu-card">{body}</div>
+              <div className="azu-card-link">{body}</div>
             )}
+            {props.rowMenu?.(row)}
           </li>
         )
       })}

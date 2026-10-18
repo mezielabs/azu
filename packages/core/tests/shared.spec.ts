@@ -198,7 +198,7 @@ test.group('Actions (FR-12)', () => {
     id,
     title: null,
     cells: {},
-    abilities: { view: true, actions },
+    abilities: { view: true, update: true, actions },
   })
 
   test('posts to the action route', ({ assert }) => {

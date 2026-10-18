@@ -193,6 +193,7 @@ export async function listRecords(
         ),
         abilities: {
           view: await allows(ctx, resource, 'view', record),
+          update: await allows(ctx, resource, 'update', record),
           actions: await actionAbilities(ctx, resource, record),
         },
       }
