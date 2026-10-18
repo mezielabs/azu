@@ -13,7 +13,7 @@ import {
   withFilter,
   actionUrl,
   bulkActionsFor,
-  arrangeBulkActions,
+  bulkMenuActions,
   chunkedRunNote,
   filterValueLabel,
   listSummary,
@@ -468,31 +468,13 @@ test.group('List summary (layout 2/4)', () => {
 })
 
 test.group('Bulk bar actions (layout 2/4)', () => {
-  const named = (names: string) =>
-    names.split(' ').map((name) => ({ name, destructive: name.startsWith('!') }))
-  const names = (actions: { name: string }[]) => actions.map((action) => action.name).join(' ')
-
-  test('up to three are buttons, destructive last', ({ assert }) => {
-    const result = arrangeBulkActions(named('!delete publish feature'), false)
-    assert.equal(names(result.buttons), 'publish feature !delete')
-    assert.deepEqual(result.menu, [])
-    assert.isNull(result.menuLabel)
-  })
-
-  test('with more, two buttons in declared order and the rest under More, destructive last', ({
-    assert,
-  }) => {
-    const result = arrangeBulkActions(named('publish !purge feature archive export !delete'), false)
-    assert.equal(names(result.buttons), 'publish feature')
-    assert.equal(names(result.menu), 'archive export !purge !delete')
-    assert.equal(result.menuLabel, 'More')
-  })
-
-  test('below 1024px, all of them in one Actions menu', ({ assert }) => {
-    const result = arrangeBulkActions(named('publish !delete'), true)
-    assert.deepEqual(result.buttons, [])
-    assert.equal(names(result.menu), 'publish !delete')
-    assert.equal(result.menuLabel, 'Actions')
-    assert.isNull(arrangeBulkActions([], true).menuLabel)
+  test('one dropdown: as declared, destructive last', ({ assert }) => {
+    const named = (names: string) =>
+      names.split(' ').map((name) => ({ name, destructive: name.startsWith('!') }))
+    assert.deepEqual(
+      bulkMenuActions(named('publish !purge feature archive !delete')).map((action) => action.name),
+      ['publish', 'feature', 'archive', '!purge', '!delete']
+    )
+    assert.deepEqual(bulkMenuActions([]), [])
   })
 })

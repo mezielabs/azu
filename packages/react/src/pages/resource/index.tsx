@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react'
 import { useEffect, useRef, useState } from 'react'
 import {
   actionKey,
-  arrangeBulkActions,
+  bulkMenuActions,
   bulkActionsFor,
   listStateUrl,
   listSummary,
@@ -25,7 +25,6 @@ import {
   Pagination,
   RowActionsMenu,
   Slot,
-  COMPACT_QUERY,
   PHONE_QUERY,
   useActions,
   useMediaQuery,
@@ -99,9 +98,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const hasBulkActions = resource.actions.some((action) => action.kind === 'bulk')
   // Below 768px, rows are cards, without selection
   const phone = useMediaQuery(PHONE_QUERY)
-  // The bar keeps one line: some actions in a menu, all of them below 1024px
-  const compact = useMediaQuery(COMPACT_QUERY)
-  const arranged = arrangeBulkActions(bulkActions, compact)
+  // One "Actions" dropdown, so the bar keeps one line
   function runBulk(action: ActionSchema) {
     actions.run(
       action,
@@ -179,27 +176,13 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               Clear selection
             </button>
             <span className="azu-bulk-spacer" />
-            {arranged.buttons.map((action) => (
-              <button
-                key={action.name}
-                type="button"
-                className="azu-bulk-action"
-                data-azu-destructive={action.destructive || undefined}
-                disabled={actions.busy}
-                onClick={() => runBulk(action)}
-              >
-                {action.label}
-              </button>
-            ))}
-            {arranged.menuLabel && (
-              <ActionsMenu
-                actions={arranged.menu}
-                label={arranged.menuLabel}
-                className="azu-bulk-action azu-bulk-menu"
-                isDisabled={actions.busy}
-                onAction={runBulk}
-              />
-            )}
+            <ActionsMenu
+              actions={bulkMenuActions(bulkActions)}
+              label="Actions"
+              className="azu-bulk-action azu-bulk-menu"
+              isDisabled={actions.busy}
+              onAction={runBulk}
+            />
           </div>
         ) : (
           <div className="azu-list-bar azu-list-controls">

@@ -102,6 +102,16 @@ test.group('List page', (group) => {
       assert.deepEqual(await axeViolations(page), [], `bulk bar, ${colorScheme}`)
     }
 
+    // Every bulk action is in one Actions dropdown, destructive last
+    assert.equal(await bar.locator('.azu-bulk-action:not(.azu-bulk-menu)').count(), 0)
+    await bar.getByRole('button', { name: 'Actions', exact: true }).click()
+    assert.deepEqual(
+      await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
+      ['Publish', 'Feature', 'Delete']
+    )
+    await page.keyboard.press('Escape')
+    await page.getByRole('menu', { name: 'Actions' }).waitFor({ state: 'detached' })
+
     await bar.getByRole('button', { name: 'Clear selection' }).click()
     await page.locator('.azu-list-controls').waitFor()
   })
@@ -191,7 +201,7 @@ test.group('List page', (group) => {
       .waitFor()
   })
 
-  test('six bulk actions: the bar keeps one line and one height at 1440px and 900px', async ({
+  test('six bulk actions: one Actions dropdown; the bar keeps one line and one height at 1440px and 900px', async ({
     visit,
     browserContext,
     assert,
@@ -245,24 +255,17 @@ test.group('List page', (group) => {
       return bar
     }
 
-    const wide = await oneLine(1440)
-    assert.deepEqual(await wide.locator('.azu-bulk-action:not(.azu-bulk-menu)').allInnerTexts(), [
-      'Publish',
-      'Feature',
-    ])
-    await wide.getByRole('button', { name: 'More' }).click()
-    assert.deepEqual(
-      await page.getByRole('menu', { name: 'More' }).getByRole('menuitem').allInnerTexts(),
-      ['Archive', 'Export', 'Purge', 'Delete']
-    )
-    await page.keyboard.press('Escape')
-
-    const narrow = await oneLine(900)
-    assert.equal(await narrow.locator('.azu-bulk-action:not(.azu-bulk-menu)').count(), 0)
-    await narrow.getByRole('button', { name: 'Actions' }).click()
-    assert.deepEqual(
-      await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
-      ['Publish', 'Feature', 'Archive', 'Export', 'Purge', 'Delete']
-    )
+    for (const width of [1440, 900]) {
+      const bar = await oneLine(width)
+      assert.equal(await bar.locator('.azu-bulk-action:not(.azu-bulk-menu)').count(), 0)
+      await bar.getByRole('button', { name: 'Actions', exact: true }).click()
+      assert.deepEqual(
+        await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
+        ['Publish', 'Feature', 'Archive', 'Export', 'Purge', 'Delete'],
+        `${width}px`
+      )
+      await page.keyboard.press('Escape')
+      await page.getByRole('menu', { name: 'Actions' }).waitFor({ state: 'detached' })
+    }
   })
 })
