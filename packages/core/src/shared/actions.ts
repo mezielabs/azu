@@ -51,6 +51,20 @@ export function offersAllMatching(selected: number, onPage: number, total: numbe
 }
 
 /**
+ * The bulk bar's actions (layout 2/4), in the order its "Actions"
+ * dropdown lists them: as declared, destructive ones last. One dropdown,
+ * so the bar never wraps however many actions a resource has.
+ */
+export function bulkMenuActions<Action extends Pick<ActionSchema, 'destructive'>>(
+  actions: Action[]
+): Action[] {
+  return [
+    ...actions.filter((action) => !action.destructive),
+    ...actions.filter((action) => action.destructive),
+  ]
+}
+
+/**
  * The confirm dialog's warning for a run that takes more than one
  * chunk, which can partly succeed.
  */

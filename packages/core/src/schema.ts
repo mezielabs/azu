@@ -33,6 +33,11 @@ export type ColumnSchema = {
   colors: Record<string, string> | null
   /** `belongsTo`: the related model's attribute to show */
   relationTitle: string | null
+  /**
+   * Value → label, from the resource's `select` field of the same name
+   * (`published` → "Published"), so a status badge reads like the form
+   */
+  labels: Record<string, string> | null
 }
 
 export type FieldKind =
@@ -208,7 +213,10 @@ export type ListFilter = FilterSchema & {
 }
 
 export type ListMeta = {
+  /** Rows the search and filters match */
   total: number
+  /** Rows without the search and filters; `null` when neither is on */
+  unfilteredTotal: number | null
   perPage: number
   currentPage: number
   lastPage: number

@@ -2,8 +2,10 @@ import { router } from '@inertiajs/react'
 import { useEffect, useRef, useState } from 'react'
 import {
   actionKey,
+  bulkMenuActions,
   bulkActionsFor,
   listStateUrl,
+  listSummary,
   nextListState,
   offersAllMatching,
   resourceBreadcrumbs,
@@ -11,19 +13,24 @@ import {
   type ListState,
 } from '@mezielabs/azu/shared'
 import {
+  ActionsMenu,
   AdminLayout,
   DataTable,
   FilterBar,
   Head,
   Link,
+  ListCards,
   ListToolbar,
   PageHeader,
   Pagination,
   RowActionsMenu,
   Slot,
+  PHONE_QUERY,
   useActions,
+  useMediaQuery,
   type ResourceIndexPageProps,
 } from '@mezielabs/azu-react'
+import type { ActionSchema, ListRow } from '@mezielabs/azu/types'
 
 /**
  * The resource list (FR-05). Every change (page, size, sort, search,
@@ -79,128 +86,185 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     router.get(url, {}, { only: ['list'], preserveState: true, preserveScroll: true, replace })
   }
 
+  const count = new Intl.NumberFormat('en')
+  const noun = { one: resource.singularLabel.toLowerCase(), many: resource.label.toLowerCase() }
+  const rowHref = (row: ListRow) =>
+    row.abilities.view ? `${path}/${encodeURIComponent(String(row.id))}` : undefined
+  const selecting = selected.length > 0
+  const offerAll =
+    !allMatching &&
+    bulkActions.length > 0 &&
+    offersAllMatching(selected.length, list.rows.length, list.meta.total)
+  const hasBulkActions = resource.actions.some((action) => action.kind === 'bulk')
+  // Below 768px, rows are cards, without selection
+  const phone = useMediaQuery(PHONE_QUERY)
+  // One "Actions" dropdown, so the bar keeps one line
+  function runBulk(action: ActionSchema) {
+    actions.run(
+      action,
+      allMatching
+        ? {
+            matching: {
+              search: list.state.search,
+              filters: list.state.filters,
+              count: list.meta.total,
+            },
+          }
+        : { ids: selected }
+    )
+  }
+
   return (
     <AdminLayout azu={azu} title={resource.label}>
       <Head title={resource.label} />
       <PageHeader
         page="resource/index"
         resource={resource.name}
-        title={resource.label}
+        title={
+          <>
+            {resource.label}
+            <span className="azu-title-count">
+              <span className="azu-visually-hidden">, </span>
+              {count.format(list.meta.unfilteredTotal ?? list.meta.total)}
+            </span>
+          </>
+        }
         breadcrumbs={resourceBreadcrumbs(resource, path, { list: false })}
         actions={
           <>
             <Slot name="toolbar" {...slot} />
             {abilities.create && (
-              <Link href={`${path}/create`} className="azu-button azu-button-primary">
-                New {resource.singularLabel.toLowerCase()}
+              <Link
+                href={`${path}/create`}
+                className="azu-button azu-button-primary azu-new-button"
+              >
+                <span className="azu-new-icon" aria-hidden="true">
+                  +
+                </span>
+                <span className="azu-new-label">New {resource.singularLabel.toLowerCase()}</span>
               </Link>
             )}
           </>
         }
       />
       <Slot name="header" {...slot} />
-      <ListToolbar
-        state={current}
-        label={resource.label}
-        searchable={resource.search.length > 0}
-        onSearch={(search) => go({ search }, true)}
-        onPerPage={(perPage) => go({ perPage })}
-      />
-      <FilterBar
-        filters={list.filters}
-        values={current.filters}
-        label={resource.label}
-        onChange={(filters) => go({ filters })}
-      />
       <Slot name="beforeTable" {...slot} />
-      {/*
-        Always rendered, so the table doesn't move when the first row is
-        selected and the next click lands where the user aimed
-      */}
-      <div className="azu-toolbar azu-bulk-toolbar" role="toolbar" aria-label="Bulk actions">
-        <p className="azu-selection-summary" role="status">
+      <section className="azu-list" aria-label={resource.label}>
+        {/* Always rendered, so a change in the selection is announced */}
+        <p className="azu-visually-hidden" role="status" data-azu-selection-status>
           {selectionSummary(selected.length, allMatching ? list.meta.total : null)}
         </p>
-        {!allMatching &&
-          bulkActions.length > 0 &&
-          offersAllMatching(selected.length, list.rows.length, list.meta.total) && (
+        {/*
+          The selection's bar takes the controls' place at the same
+          height, so the table doesn't move
+        */}
+        {selecting ? (
+          <div className="azu-list-bar azu-bulk-bar" role="toolbar" aria-label="Bulk actions">
+            <span className="azu-bulk-count">
+              {selectionSummary(selected.length, allMatching ? list.meta.total : null)}
+            </span>
+            {offerAll && (
+              <button type="button" className="azu-bulk-link" onClick={() => setAllMatching(true)}>
+                Select all {count.format(list.meta.total)} matching
+              </button>
+            )}
             <button
               type="button"
-              className="azu-selection-scope"
-              onClick={() => setAllMatching(true)}
+              className="azu-bulk-link azu-bulk-clear"
+              onClick={() => setCleared((cleared) => cleared + 1)}
             >
-              Select all {new Intl.NumberFormat('en').format(list.meta.total)} matching
+              Clear selection
             </button>
-          )}
-        {allMatching && (
-          <button
-            type="button"
-            className="azu-selection-scope"
-            onClick={() => setCleared((count) => count + 1)}
-          >
-            Clear selection
-          </button>
+            <span className="azu-bulk-spacer" />
+            <ActionsMenu
+              actions={bulkMenuActions(bulkActions)}
+              label="Actions"
+              className="azu-bulk-action azu-bulk-menu"
+              isDisabled={actions.busy}
+              onAction={runBulk}
+            />
+          </div>
+        ) : (
+          <div className="azu-list-bar azu-list-controls">
+            <ListToolbar
+              state={current}
+              label={resource.label}
+              searchable={resource.search.length > 0}
+              onSearch={(search) => go({ search }, true)}
+            />
+            <FilterBar
+              filters={list.filters}
+              values={current.filters}
+              label={resource.label}
+              onChange={(filters) => go({ filters })}
+            />
+          </div>
         )}
-        {selected.length > 0 &&
-          bulkActions.map((action) => (
-            <button
-              key={action.name}
-              type="button"
-              className={`azu-button ${action.destructive ? 'azu-button-danger' : ''}`}
-              disabled={actions.busy}
-              onClick={() =>
-                actions.run(
-                  action,
-                  allMatching
-                    ? {
-                        matching: {
-                          search: list.state.search,
-                          filters: list.state.filters,
-                          count: list.meta.total,
-                        },
-                      }
-                    : { ids: selected }
-                )
+        <div className="azu-list-summary">
+          <span>
+            {offerAll
+              ? `Every row on this page is selected. ${count.format(list.meta.total - list.rows.length)} more match the search and filters.`
+              : listSummary({
+                  meta: list.meta,
+                  noun,
+                  filters: list.filters,
+                  values: list.state.filters,
+                  search: list.state.search,
+                })}
+          </span>
+          {!selecting && hasBulkActions && list.rows.length > 0 && (
+            <span className="azu-list-hint">Select rows for bulk actions</span>
+          )}
+        </div>
+        {/* One or the other, so each row is in the page once */}
+        {phone ? (
+          <ListCards
+            label={resource.label}
+            columns={resource.columns}
+            titleColumn={resource.title}
+            rows={list.rows}
+            timezone={azu.timezone}
+            rowHref={rowHref}
+          />
+        ) : (
+          <div ref={table} className="azu-list-table">
+            <DataTable
+              label={resource.label}
+              columns={resource.columns}
+              titleColumn={resource.title}
+              rows={list.rows}
+              state={list.state}
+              timezone={azu.timezone}
+              onSort={(sort, direction) => go({ sort, direction })}
+              onSelectionChange={(ids) => {
+                setSelected(ids)
+                if (ids.length < list.rows.length) setAllMatching(false)
+              }}
+              rowHref={rowHref}
+              clearSelection={cleared}
+              rowActions={
+                rowActions.length > 0
+                  ? (row) => (
+                      <RowActionsMenu
+                        actions={rowActions.filter((action) =>
+                          row.abilities.actions.includes(actionKey(action))
+                        )}
+                        title={row.title ?? String(row.id)}
+                        onAction={(action) => actions.run(action, { ids: [row.id] })}
+                      />
+                    )
+                  : undefined
               }
-            >
-              {action.label}
-            </button>
-          ))}
-      </div>
-      <div ref={table}>
-        <DataTable
-          label={resource.label}
-          columns={resource.columns}
-          titleColumn={resource.title}
-          rows={list.rows}
-          state={list.state}
-          timezone={azu.timezone}
-          onSort={(sort, direction) => go({ sort, direction })}
-          onSelectionChange={(ids) => {
-            setSelected(ids)
-            if (ids.length < list.rows.length) setAllMatching(false)
-          }}
-          rowHref={(row) =>
-            row.abilities.view ? `${path}/${encodeURIComponent(String(row.id))}` : undefined
-          }
-          clearSelection={cleared}
-          rowActions={
-            rowActions.length > 0
-              ? (row) => (
-                  <RowActionsMenu
-                    actions={rowActions.filter((action) =>
-                      row.abilities.actions.includes(actionKey(action))
-                    )}
-                    title={row.title ?? String(row.id)}
-                    onAction={(action) => actions.run(action, { ids: [row.id] })}
-                  />
-                )
-              : undefined
-          }
+            />
+          </div>
+        )}
+        <Pagination
+          meta={list.meta}
+          onPage={(page) => go({ page })}
+          onPerPage={(perPage) => go({ perPage })}
         />
-      </div>
+      </section>
       {actions.dialog}
-      <Pagination meta={list.meta} onPage={(page) => go({ page })} />
     </AdminLayout>
   )
 }

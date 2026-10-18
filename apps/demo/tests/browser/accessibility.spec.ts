@@ -29,13 +29,24 @@ const scans: Scan[] = [
     url: ({ category }) =>
       `/admin/resources/products?status=published&category=${category.id}&low-stock=1`,
     open: async (page) => {
-      await page.waitForSelector('[data-azu-filter="category"] [role="combobox"]')
+      // The active filter buttons are tinted
+      await page.waitForSelector('[data-azu-filter-button="category"][data-azu-active]')
     },
+  },
+  {
+    name: "list with a filter's popover open",
+    url: () => '/admin/resources/products',
+    open: async (page) => {
+      await page.click('[data-azu-filter-button="status"]')
+      await page.waitForSelector('.azu-filter-dialog select')
+    },
+    popoverOpen: true,
   },
   {
     name: "list with a belongsTo filter's options open",
     url: () => '/admin/resources/products',
     open: async (page) => {
+      await page.click('[data-azu-filter-button="category"]')
       await page.click('[aria-label="Show Category options"]')
       await page.waitForSelector('.azu-popover [role="option"]')
     },

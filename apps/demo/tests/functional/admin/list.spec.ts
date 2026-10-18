@@ -65,7 +65,14 @@ test.group('Admin / list screen (FR-05)', (group) => {
     response.assertStatus(200)
     const { list } = response.body().props
     assert.lengthOf(list.rows, 25)
-    assert.deepEqual(list.meta, { total: 30, perPage: 25, currentPage: 1, lastPage: 2 })
+    assert.deepEqual(list.meta, {
+      total: 30,
+      // With a search on, the count without it ("30 of 30 products")
+      unfilteredTotal: 30,
+      perPage: 25,
+      currentPage: 1,
+      lastPage: 2,
+    })
     assert.equal(list.defaultPerPage, 25)
   })
 
@@ -287,5 +294,42 @@ test.group('Admin / list screen (FR-05)', (group) => {
     // number of queries, so related rows aren't loaded one at a time
     assert.equal(manyQueries, fewQueries)
     assert.isAtMost(fewQueries, 6)
+  })
+
+  test('counts the rows without the search and filters, only when one is on (layout 2/4)', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const prefix = await createCatalog(12)
+
+    const plain = await client.get('/admin/resources/products').loginAs(admin).withInertia()
+    assert.isNull(plain.body().props.list.meta.unfilteredTotal)
+
+    const searched = await client
+      .get(`/admin/resources/products?search=${prefix}%20item%2001`)
+      .loginAs(admin)
+      .withInertia()
+    assert.equal(searched.body().props.list.meta.total, 1)
+    assert.equal(searched.body().props.list.meta.unfilteredTotal, 12)
+  })
+
+  test("a badge column without a select field takes a select filter's labels (Orders)", async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+
+    const response = await client.get('/admin/resources/orders').loginAs(admin).withInertia()
+
+    const status = response
+      .body()
+      .props.resource.columns.find((column: { name: string }) => column.name === 'status')
+    assert.deepEqual(status.labels, {
+      pending: 'Pending',
+      paid: 'Paid',
+      shipped: 'Shipped',
+      cancelled: 'Cancelled',
+    })
   })
 })

@@ -8,6 +8,7 @@ import {
 } from '@mezielabs/azu/shared'
 import type { CellValue, ColumnSchema, ListRow } from '@mezielabs/azu/types'
 import { useComponent } from '../registry.tsx'
+import { ImageIcon } from '../shell_icons.tsx'
 
 const EMPTY = <span className="azu-cell-empty">—</span>
 
@@ -39,7 +40,14 @@ export function ListCell(props: {
     }
     case 'image': {
       const url = (value as { url: string | null } | null)?.url
-      return url ? <img className="azu-thumbnail" src={url} alt="" loading="lazy" /> : EMPTY
+      return url ? (
+        <img className="azu-thumbnail" src={url} alt="" loading="lazy" />
+      ) : (
+        // No image: a placeholder the thumbnail's size, so rows line up
+        <span className="azu-thumbnail azu-thumbnail-empty" aria-hidden="true">
+          <ImageIcon />
+        </span>
+      )
     }
     case 'number':
       return value === null ? EMPTY : <>{formatNumber(value as number, column.format)}</>
@@ -57,7 +65,8 @@ export function ListCell(props: {
         EMPTY
       ) : (
         <span className="azu-badge" data-azu-color={column.colors?.[String(value)] ?? 'gray'}>
-          {String(value)}
+          {/* The select field's label, so it reads like the form */}
+          {column.labels?.[String(value)] ?? String(value)}
         </span>
       )
     case 'date':

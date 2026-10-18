@@ -148,6 +148,20 @@ export async function listRecords(
   query.orderBy(columnName(model, model.primaryKey), state.sort ? 'asc' : 'desc')
 
   const page = await query.paginate(state.page, state.perPage)
+
+  // "32 of 40": the count without search and filters, only when one is on
+  let unfilteredTotal: number | null = null
+  if (state.search || Object.keys(state.filters).length > 0) {
+    const all = model.query()
+    resource.options.query?.(all)
+    options.scope?.(all)
+    const [row] = await all
+      .clearSelect()
+      .clearOrder()
+      .count('* as total')
+      .pojo<{ total: number | string }>()
+    unfilteredTotal = Number(row?.total ?? 0)
+  }
   const title = schema.title
 
   // An image column's disk: the same-named field's `disk()`, else the default
@@ -189,6 +203,7 @@ export async function listRecords(
     rows,
     meta: {
       total: page.total,
+      unfilteredTotal,
       perPage: page.perPage,
       currentPage: page.currentPage,
       lastPage: page.lastPage,

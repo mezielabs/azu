@@ -13,9 +13,24 @@ import {
 } from 'react-aria-components'
 import type { ColumnSchema, ListRow } from '@mezielabs/azu/types'
 import type { ListState } from '@mezielabs/azu/shared'
+import { Link } from '@inertiajs/react'
 import { ListCell } from './cell.tsx'
+import { SortIcon } from '../shell_icons.tsx'
 
 const cx = (...classes: (string | false | undefined)[]) => classes.filter(Boolean).join(' ')
+
+/**
+ * The title cell is a real link to the record's detail page, when the
+ * user may open it; the rest of the row isn't.
+ */
+function TitleLink(props: { href: string | undefined; children: ReactNode }) {
+  if (!props.href) return <>{props.children}</>
+  return (
+    <Link href={props.href} className="azu-title-link">
+      {props.children}
+    </Link>
+  )
+}
 
 function SelectionCheckbox() {
   return (
@@ -48,9 +63,9 @@ export function selectedIds(selection: Selection, rows: ListRow[]): (string | nu
  * whenever the rows change (a new page, sort or search), so it never
  * holds rows that aren't on screen.
  *
- * A row the user may view links to its detail page: clicking it (or
- * Enter) opens the record, and selection stays on the checkboxes (or
- * Space), React Aria's "toggle" behaviour with row actions.
+ * A row the user may view has its title cell as a real link to the
+ * detail page, so it can be opened in a new tab and announced as a
+ * link; selection stays on the checkboxes (or Space).
  */
 export function DataTable(props: {
   label: string
@@ -62,7 +77,7 @@ export function DataTable(props: {
   timezone: string
   onSort: (column: string, direction: 'asc' | 'desc') => void
   onSelectionChange?: (ids: (string | number)[]) => void
-  /** The detail page URL for a row, or `undefined` when it has none */
+  /** The detail page URL for a row's title link, or `undefined` when it has none */
   rowHref?: (row: ListRow) => string | undefined
   /** Checkbox selection, for bulk actions. Defaults to on */
   selectable?: boolean
@@ -119,10 +134,19 @@ export function DataTable(props: {
             >
               {({ sortDirection }) => (
                 <span className="azu-th-inner">
-                  {column.label}
-                  {sortDirection && (
-                    <span aria-hidden className="azu-sort-indicator">
-                      {sortDirection === 'ascending' ? '▲' : '▼'}
+                  {/* An image column's pictures speak for themselves; screen readers get the label */}
+                  {column.kind === 'image' ? (
+                    <span className="azu-visually-hidden">{column.label}</span>
+                  ) : (
+                    column.label
+                  )}
+                  {/* Sortable columns show a hint; the sorted one its direction */}
+                  {column.sortable && (
+                    <span
+                      className="azu-sort-indicator"
+                      data-azu-sorted={sortDirection ?? undefined}
+                    >
+                      <SortIcon direction={sortDirection ?? null} />
                     </span>
                   )}
                 </span>
@@ -143,14 +167,8 @@ export function DataTable(props: {
             <Row
               id={row.id as Key}
               textValue={row.title ?? String(row.id)}
-              href={props.rowHref?.(row)}
               className={({ isSelected, isFocusVisible }) =>
-                cx(
-                  'azu-row',
-                  props.rowHref?.(row) && 'azu-is-link',
-                  isSelected && 'azu-is-selected',
-                  isFocusVisible && 'azu-is-focused'
-                )
+                cx('azu-row', isSelected && 'azu-is-selected', isFocusVisible && 'azu-is-focused')
               }
             >
               {selectable && (
@@ -169,12 +187,14 @@ export function DataTable(props: {
                     )
                   }
                 >
-                  <ListCell
-                    column={column}
-                    value={row.cells[column.name] ?? null}
-                    row={row}
-                    timezone={props.timezone}
-                  />
+                  <TitleLink href={column.name === rowHeader ? props.rowHref?.(row) : undefined}>
+                    <ListCell
+                      column={column}
+                      value={row.cells[column.name] ?? null}
+                      row={row}
+                      timezone={props.timezone}
+                    />
+                  </TitleLink>
                 </Cell>
               ))}
               {props.rowActions && (

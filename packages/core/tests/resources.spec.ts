@@ -37,6 +37,7 @@ test.group('Builders', () => {
       format: { style: 'currency', currency: 'NGN' },
       colors: null,
       relationTitle: null,
+      labels: null,
     })
     assert.include(column.belongsTo('category', 'name').toJSON(), {
       kind: 'belongsTo',
