@@ -1063,6 +1063,17 @@
     background: var(--azu-subtle);
   }
 
+  /* View and Edit are links in the menu */
+  a.azu-menu-item {
+    @apply block;
+    color: var(--azu-text);
+  }
+
+  .azu-menu-separator {
+    @apply mx-1 my-1 h-px border-0;
+    background: var(--azu-border);
+  }
+
   .azu-menu-item.azu-is-destructive {
     color: var(--azu-danger);
   }
@@ -1170,7 +1181,7 @@
   .azu-link-button:focus-visible,
   .azu-page-button:focus-visible,
   .azu-title-link:focus-visible,
-  .azu-card:focus-visible,
+  .azu-card-link:focus-visible,
   .azu-bulk-link:focus-visible,
   .azu-bulk-action:focus-visible {
     outline: 2px solid var(--azu-brand);
@@ -1427,9 +1438,19 @@
   /* Rows as cards: the list below 768px */
 
   .azu-card {
-    @apply flex items-center gap-3 rounded-xl border p-3;
+    @apply flex items-center gap-1 rounded-xl border pr-1;
     border-color: var(--azu-border);
     color: var(--azu-text);
+  }
+
+  /* The link covers all but the menu button, which sits outside it */
+  .azu-card-link {
+    @apply flex min-w-0 flex-1 items-center gap-3 rounded-xl p-3;
+    color: var(--azu-text);
+  }
+
+  .azu-card-menu {
+    @apply shrink-0;
   }
 
   .azu-card-picture,

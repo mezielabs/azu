@@ -90,6 +90,20 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const noun = { one: resource.singularLabel.toLowerCase(), many: resource.label.toLowerCase() }
   const rowHref = (row: ListRow) =>
     row.abilities.view ? `${path}/${encodeURIComponent(String(row.id))}` : undefined
+  // Each row's menu: View and Edit when the server allows them for that
+  // row, then its row actions. No menu when none of those is allowed
+  const rowMenu = (row: ListRow, className?: string) => (
+    <RowActionsMenu
+      actions={rowActions.filter((action) => row.abilities.actions.includes(actionKey(action)))}
+      title={row.title ?? String(row.id)}
+      viewHref={rowHref(row)}
+      editHref={
+        row.abilities.update ? `${path}/${encodeURIComponent(String(row.id))}/edit` : undefined
+      }
+      className={className}
+      onAction={(action) => actions.run(action, { ids: [row.id] })}
+    />
+  )
   const selecting = selected.length > 0
   const offerAll =
     !allMatching &&
@@ -225,6 +239,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
             rows={list.rows}
             timezone={azu.timezone}
             rowHref={rowHref}
+            rowMenu={(row) => rowMenu(row, 'azu-icon-button azu-touch azu-card-menu')}
           />
         ) : (
           <div ref={table} className="azu-list-table">
@@ -242,19 +257,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               }}
               rowHref={rowHref}
               clearSelection={cleared}
-              rowActions={
-                rowActions.length > 0
-                  ? (row) => (
-                      <RowActionsMenu
-                        actions={rowActions.filter((action) =>
-                          row.abilities.actions.includes(actionKey(action))
-                        )}
-                        title={row.title ?? String(row.id)}
-                        onAction={(action) => actions.run(action, { ids: [row.id] })}
-                      />
-                    )
-                  : undefined
-              }
+              rowActions={(row) => rowMenu(row)}
             />
           </div>
         )}

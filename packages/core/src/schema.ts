@@ -192,7 +192,10 @@ export type ListRow = {
   cells: Record<string, CellValue>
   /** What the user may do with this record, from the policy */
   abilities: {
+    /** The policy's `view` for this record: its detail page */
     view: boolean
+    /** The policy's `update` for this record: its edit form */
+    update: boolean
     /** Actions the user may run on this record (`row.publish`, `bulk.delete`) */
     actions: ActionKey[]
   }
