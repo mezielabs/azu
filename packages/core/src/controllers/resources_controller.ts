@@ -7,13 +7,14 @@ import {
   formFields,
   formValues,
   recordData,
+  recordTimestamp,
   type FormMode,
 } from '../forms/form_fields.ts'
 import { saveRecord } from '../forms/save_record.ts'
 import { fileValues } from '../files/uploads.ts'
 import { actionAbilities, runAction } from '../actions/run_action.ts'
 import { listFilters, selectedRelations, usableFilters } from '../list/filters.ts'
-import { listRecords } from '../list/list_records.ts'
+import { listRecords, recordCells } from '../list/list_records.ts'
 import { findRecord } from '../records/find_record.ts'
 import {
   canListRelated,
@@ -27,7 +28,7 @@ import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import { canList } from '../resources/navigation.ts'
 import { listStateUrl, parseListState } from '../shared/list_state.ts'
-import type { FormErrors, FormFieldSchema } from '../schema.ts'
+import type { CellValue, FormErrors, FormFieldSchema } from '../schema.ts'
 import type { AzuConfig, RelationOptionsResponse } from '../types.ts'
 
 type Context = { config: AzuConfig; azu: Azu }
@@ -194,10 +195,28 @@ export class ResourcesController {
         tables.push(field)
       }
     }
+    const schema = resource.toSchema()
+    // No fields this user may see: the page shows the columns instead
+    let cells: Record<string, CellValue> | null = null
+    if (fields.length === 0 && schema.columns.length > 0) {
+      for (const column of schema.columns) {
+        if (column.kind !== 'belongsTo') continue
+        const loaded = (record as unknown as { $preloaded: Record<string, unknown> }).$preloaded
+        if (!(column.name in loaded)) {
+          await (record as unknown as { load(name: string): Promise<void> }).load(column.name)
+        }
+      }
+      cells = await recordCells(ctx, resource, record!, this.context.config.defaultDisk)
+    }
     return renderPage(ctx, this.context, 'azu/resource/show', {
-      resource: resource.toSchema(),
+      resource: schema,
       fields,
       record: recordData(resource, record!, fields, resolved),
+      timestamps: {
+        createdAt: recordTimestamp(resource.model, record!, 'createdAt'),
+        updatedAt: recordTimestamp(resource.model, record!, 'updatedAt'),
+      },
+      cells,
       relations: await hasManyTables(ctx, this.context, resource, tables, record!),
       abilities: {
         update: await allows(ctx, resource, 'update', record),

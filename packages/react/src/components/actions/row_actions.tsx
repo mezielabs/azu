@@ -18,6 +18,8 @@ export function RowActionsMenu(props: {
   viewHref?: string
   /** The edit form, when the user may update the record */
   editHref?: string
+  /** The button's accessible name; defaults to "Actions for <title>" */
+  label?: string
   /** The button's class: borderless in the list, 44px on a phone card */
   className?: string
   onAction: (action: ActionSchema) => void
@@ -38,7 +40,7 @@ export function RowActionsMenu(props: {
     <MenuTrigger>
       <Button
         className={props.className ?? 'azu-icon-button azu-row-actions-button'}
-        aria-label={`Actions for ${props.title}`}
+        aria-label={props.label ?? `Actions for ${props.title}`}
       >
         <MoreIcon />
       </Button>

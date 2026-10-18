@@ -15,6 +15,7 @@ import {
   bulkActionsFor,
   bulkMenuActions,
   chunkedRunNote,
+  detailLayout,
   filterValueLabel,
   listSummary,
   pageWindow,
@@ -478,6 +479,35 @@ test.group('Bulk bar actions (layout 2/4)', () => {
       ['publish', 'feature', 'archive', '!purge', '!delete']
     )
     assert.deepEqual(bulkMenuActions([]), [])
+  })
+})
+
+test.group('Detail layout (layout 3/4)', () => {
+  test('media to the right; the first badge column beside the title, out of the list', ({
+    assert,
+  }) => {
+    const fields = [
+      { name: 'name', kind: 'text' },
+      { name: 'status', kind: 'select' },
+      { name: 'thumbnail', kind: 'image' },
+      { name: 'manual', kind: 'file' },
+    ] as never[]
+    const columns = [
+      { name: 'name', kind: 'text', hiddenByDefault: false },
+      { name: 'status', kind: 'badge', hiddenByDefault: false },
+    ] as never[]
+
+    const layout = detailLayout(fields, columns)
+    assert.deepEqual(
+      layout.main.map((field: { name: string }) => field.name),
+      ['name']
+    )
+    assert.deepEqual(
+      layout.media.map((field: { name: string }) => field.name),
+      ['thumbnail', 'manual']
+    )
+    assert.equal((layout.badge as { name: string } | null)?.name, 'status')
+    assert.isNull(detailLayout(fields, []).badge)
   })
 })
 

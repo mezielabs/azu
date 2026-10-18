@@ -1,6 +1,6 @@
 import string from '@adonisjs/core/helpers/string'
 import type { HttpContext } from '@adonisjs/core/http'
-import type { LucidRow } from '@adonisjs/lucid/types/model'
+import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 import { allows } from '../resources/abilities.ts'
 import type { Resource, ValidatorLike } from '../resources/define_resource.ts'
 import { DEFAULT_FILE_TYPES, DEFAULT_IMAGE_TYPES, DEFAULT_MAX_SIZE } from '../files/file_types.ts'
@@ -206,6 +206,22 @@ export function fieldValue(record: LucidRow, field: FieldSchema): FieldValue {
     default:
       return String(value)
   }
+}
+
+/**
+ * A timestamp column's value as an ISO string, for the detail page's
+ * Record card (layout 3/4). `null` when the model has no such column,
+ * or no value.
+ */
+export function recordTimestamp(
+  model: Pick<LucidModel, '$getColumn'>,
+  record: LucidRow,
+  attribute: 'createdAt' | 'updatedAt'
+): string | null {
+  if (!model.$getColumn(attribute)) return null
+  const value = (record as unknown as Record<string, unknown>)[attribute] as
+    { toISO?: () => string | null } | null | undefined
+  return typeof value?.toISO === 'function' ? value.toISO() : null
 }
 
 /**

@@ -827,22 +827,21 @@
   }
 
   .azu-details {
-    @apply max-w-2xl divide-y rounded-lg border;
-    border-color: var(--azu-border);
+    @apply m-0;
   }
 
   .azu-detail {
-    @apply grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4;
-    border-color: var(--azu-border);
+    @apply grid gap-1 border-t px-5 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-4;
+    border-color: color-mix(in oklab, var(--azu-border) 60%, var(--azu-surface));
   }
 
   .azu-detail-label {
-    @apply text-sm font-medium;
+    @apply text-sm;
     color: var(--azu-muted);
   }
 
   .azu-detail-value {
-    @apply text-sm sm:col-span-2;
+    @apply m-0 min-w-0 text-sm tabular-nums;
   }
 
   .azu-multiline {
@@ -956,14 +955,6 @@
 
   .azu-option-empty {
     color: var(--azu-muted);
-  }
-
-  .azu-relation {
-    @apply mt-8 space-y-3;
-  }
-
-  .azu-section-title {
-    @apply text-lg font-semibold;
   }
 
   .azu-detail-value a {
@@ -1696,6 +1687,119 @@
 
     .azu-page-button {
       @apply h-10 px-3.5;
+    }
+  }
+}
+
+/*
+ * The detail page (layout 3/4): the Details panel beside a column of
+ * media and Record panels, then hasMany tables, all panels. (Not
+ * `.azu-card`: that's a list row on a phone.)
+ */
+@layer components {
+  .azu-panel {
+    @apply overflow-hidden rounded-xl border;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+  }
+
+  .azu-panel-title {
+    @apply m-0 border-b px-5 py-3.5 text-sm font-semibold;
+    border-color: var(--azu-border);
+    background: color-mix(in oklab, var(--azu-subtle) 50%, var(--azu-surface));
+  }
+
+  .azu-panel-count {
+    @apply font-medium;
+    color: var(--azu-muted);
+  }
+
+  .azu-panel .azu-details .azu-detail:first-child {
+    @apply border-t-0;
+  }
+
+  .azu-detail-grid {
+    @apply flex flex-wrap items-start gap-6;
+  }
+
+  .azu-detail-main {
+    @apply min-w-0 flex-[999_1_480px];
+  }
+
+  .azu-detail-side {
+    @apply flex max-w-85 min-w-0 flex-[1_1_300px] flex-col gap-4;
+  }
+
+  .azu-media-card,
+  .azu-record-card {
+    @apply flex flex-col;
+  }
+
+  .azu-media-card > :not(.azu-panel-title) {
+    @apply mx-4;
+  }
+
+  .azu-media-card > .azu-panel-title + * {
+    @apply mt-4;
+  }
+
+  .azu-media-card > :last-child {
+    @apply mb-4;
+  }
+
+  .azu-media-image {
+    @apply block aspect-[4/3] w-full max-w-full rounded-lg object-contain;
+    background: var(--azu-subtle);
+  }
+
+  .azu-media-link {
+    @apply mt-3 text-[13px];
+    color: var(--azu-brand);
+  }
+
+  .azu-media-link:hover {
+    @apply underline;
+  }
+
+  .azu-record-facts {
+    @apply m-0 flex flex-col gap-2.5 p-4 text-[13px];
+  }
+
+  .azu-record-facts > div {
+    @apply flex justify-between gap-3;
+  }
+
+  .azu-record-facts dt {
+    color: var(--azu-muted);
+  }
+
+  .azu-record-facts dd {
+    @apply m-0 text-right;
+  }
+
+  .azu-mono {
+    font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  .azu-title-badge {
+    @apply ml-3 inline-flex align-middle text-sm font-normal tracking-normal;
+  }
+
+  .azu-more-button {
+    @apply inline-flex h-9 w-9 items-center justify-center p-0;
+  }
+
+  .azu-relation {
+    @apply mt-6;
+  }
+
+  .azu-relation .azu-table-container {
+    @apply rounded-none border-0;
+  }
+
+  @media (max-width: 767px) {
+    .azu-detail-side {
+      @apply max-w-none;
     }
   }
 }

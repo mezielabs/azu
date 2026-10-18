@@ -1,16 +1,49 @@
 import { formatDateTime, formatDecimal, formatNumber } from '@mezielabs/azu/shared'
 import { Link } from '@inertiajs/react'
-import type { FieldSchema, FieldValue, FileValue, RelationValue } from '@mezielabs/azu/types'
+import type {
+  ColumnSchema,
+  FieldSchema,
+  FieldValue,
+  FileValue,
+  RelationValue,
+} from '@mezielabs/azu/types'
+import { ListCell } from '../list/cell.tsx'
 
 const EMPTY = <span className="azu-cell-empty">—</span>
+
+/** Column kinds whose formatting a detail value borrows */
+const FORMATTED = new Set(['number', 'decimal', 'badge', 'boolean'])
+/** Field kinds whose value is the plain attribute a column formats */
+const PLAIN = new Set(['text', 'number', 'decimal', 'select', 'boolean'])
 
 /**
  * A field's value on the detail page, read-only. Formatting lives in
  * `@mezielabs/azu/shared` (non-negotiable 11); this only renders.
+ *
+ * Given the list column of the same name (layout 3/4), a number,
+ * decimal, badge or boolean value is shown as the list shows it: the
+ * column's currency format, its badge colour and label.
  */
-export function FieldValueView(props: { field: FieldSchema; value: FieldValue; timezone: string }) {
-  const { field, value, timezone } = props
+export function FieldValueView(props: {
+  field: FieldSchema
+  value: FieldValue
+  timezone: string
+  column?: ColumnSchema
+}) {
+  const { field, value, timezone, column } = props
   if (value === null || value === '') return EMPTY
+
+  if (column && !column.component && FORMATTED.has(column.kind) && PLAIN.has(field.kind)) {
+    const row = { id: '', title: null, cells: {}, abilities: { view: false, update: false, actions: [] } }
+    return (
+      <ListCell
+        column={column}
+        value={value as string | number | boolean}
+        row={row}
+        timezone={timezone}
+      />
+    )
+  }
 
   switch (field.kind) {
     case 'manyToMany': {
