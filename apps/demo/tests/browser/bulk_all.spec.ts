@@ -25,7 +25,8 @@ test.group('Bulk actions on all matching rows (FR-17)', (group) => {
 
     const page = await visit(`/admin/resources/products?category=${kitchen.id}&perPage=10`)
     const toolbar = page.getByRole('toolbar', { name: 'Bulk actions' })
-    const summary = toolbar.getByRole('status')
+    // A live region outside the bar, which comes and goes with the selection
+    const summary = page.locator('[data-azu-selection-status]')
     // React Aria's checkbox input is visually hidden: press its label
     const selectPage = () =>
       page
@@ -66,8 +67,8 @@ test.group('Bulk actions on all matching rows (FR-17)', (group) => {
     // The list reloads and the selection clears
     await page.waitForFunction(
       () =>
-        (globalThis as any).document.querySelector('.azu-bulk-toolbar [role="status"]')
-          ?.textContent === ''
+        (globalThis as any).document.querySelector('[data-azu-selection-status]')?.textContent ===
+        ''
     )
 
     const kitchenRows = await Product.query().where('categoryId', kitchen.id)

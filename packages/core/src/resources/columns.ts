@@ -112,6 +112,7 @@ export class Column<
       format: this.#format,
       colors: this.#colors,
       relationTitle: this.relationTitle,
+      labels: null,
     }
   }
 }

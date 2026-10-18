@@ -202,7 +202,14 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
       icon: this.options.icon ?? null,
       title: this.options.title ?? null,
       search: [...(this.options.search ?? [])],
-      columns: (this.options.columns ?? []).map((column) => column.toJSON()),
+      columns: (this.options.columns ?? []).map((column) => {
+        const schema = column.toJSON()
+        // A select field's labels name the column's values too
+        const options = (this.options.fields ?? [])
+          .map((item) => item.toJSON())
+          .find((item) => item.name === schema.name && item.kind === 'select')?.options
+        return options ? { ...schema, labels: options } : schema
+      }),
       fields: (this.options.fields ?? []).map((item) => item.toJSON()),
       filters: this.filters().map((item) => item.toJSON()),
       actions: this.actions().map((item) => item.toJSON()),

@@ -1,0 +1,160 @@
+import { test } from '@japa/runner'
+import testUtils from '@adonisjs/core/services/test_utils'
+import Category from '#models/category'
+import Product from '#models/product'
+import { createUser } from '../functional/admin/helpers.ts'
+import { axeViolations } from './axe.ts'
+
+async function catalog() {
+  const kitchen = await Category.create({ name: 'Kitchen', slug: 'kitchen-list-ui' })
+  const rows = Array.from({ length: 30 }, (_, index) => ({
+    categoryId: kitchen.id,
+    name: `Pot ${String(index + 1).padStart(2, '0')}`,
+    sku: `LIST-${index + 1}`,
+    price: '5.00',
+    stock: 20,
+    status: (index % 3 === 0 ? 'draft' : 'published') as 'draft' | 'published',
+    isFeatured: false,
+  }))
+  await Product.createMany(rows)
+  return kitchen
+}
+
+/**
+ * The list page (layout 2/4): one card with the controls or the bulk
+ * bar, a summary strip, the table and a footer; cards and a filters
+ * sheet below 768px.
+ */
+test.group('List page', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
+  test('filters are buttons, the summary says what is shown, and titles link', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products')
+    const list = page.getByRole('region', { name: 'Products' })
+    const summary = list.locator('.azu-list-summary')
+
+    await summary.getByText('30 products').waitFor()
+    // The title shows the count too
+    assert.include(await page.getByRole('heading', { level: 1 }).innerText(), '30')
+
+    // Status: a popover with its select; the button is then tinted and says the value
+    await list.getByRole('button', { name: 'Status' }).click()
+    await page
+      .getByRole('dialog', { name: 'Filter by Status' })
+      .getByLabel('Status')
+      .selectOption('published')
+    await page.waitForURL(/status=published/)
+    const status = list.getByRole('button', { name: 'Status Published' })
+    await status.waitFor()
+    assert.equal(await status.getAttribute('data-azu-active'), 'true')
+    await summary.getByText('20 of 30 products · filtered by Status: Published').waitFor()
+
+    // An on/off filter is a toggle
+    const lowStock = list.getByRole('button', { name: 'Low stock' })
+    assert.equal(await lowStock.getAttribute('aria-pressed'), 'false')
+
+    await list.getByRole('button', { name: 'Clear filters' }).click()
+    await summary.getByText('30 products').waitFor()
+
+    // Cells: a status label, an image placeholder, a sort hint, a real title link
+    const row = page.getByRole('row', { name: /Pot 30/ })
+    await row.getByText('Published', { exact: true }).waitFor()
+    assert.equal(await row.locator('.azu-thumbnail-empty').count(), 1)
+    assert.isAbove(await page.locator('.azu-th .azu-sort-indicator').count(), 0)
+    assert.equal(await row.locator('.azu-row-actions-button.azu-button').count(), 0)
+    await row.getByRole('link', { name: 'Pot 30' }).click()
+    await page.waitForURL(/\/admin\/resources\/products\/\d+$/)
+  })
+
+  test('selecting rows swaps the controls for the bulk bar, at the same height', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products')
+    const controls = page.locator('.azu-list-controls')
+    const before = (await controls.boundingBox())!.height
+    const tableTop = (await page.locator('.azu-table-container').boundingBox())!.y
+
+    await page
+      .locator('.azu-checkbox', { has: page.getByRole('checkbox', { name: /Pot 30/ }) })
+      .click()
+    const bar = page.getByRole('toolbar', { name: 'Bulk actions' })
+    await bar.getByText('1 selected').waitFor()
+    assert.equal(await controls.count(), 0)
+    assert.equal(Math.round((await bar.boundingBox())!.height), Math.round(before))
+    assert.equal((await page.locator('.azu-table-container').boundingBox())!.y, tableTop)
+
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(await axeViolations(page), [], `bulk bar, ${colorScheme}`)
+    }
+
+    await bar.getByRole('button', { name: 'Clear selection' }).click()
+    await page.locator('.azu-list-controls').waitFor()
+  })
+
+  test('the footer has rows per page and page numbers', async ({ visit, browserContext }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products?perPage=10')
+    const footer = page.locator('.azu-list-footer')
+
+    await footer.getByText('Showing').waitFor()
+    await footer.getByRole('button', { name: 'Page 2' }).click()
+    await page.waitForURL(/page=2/)
+    await footer
+      .getByRole('button', { name: 'Page 2' })
+      .and(page.locator('[aria-current="page"]'))
+      .waitFor()
+
+    await footer.getByLabel('Rows per page').selectOption('25')
+    await page.waitForURL((url) => !url.search.includes('perPage=10'))
+  })
+
+  test('below 768px, rows are cards and filters open in a sheet', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products')
+    await page.setViewportSize({ width: 390, height: 844 })
+
+    const cards = page.locator('.azu-list-cards')
+    await cards.waitFor()
+    assert.equal(await page.locator('.azu-table-container').count(), 0)
+    await cards.getByRole('link', { name: /Pot 30/ }).waitFor()
+
+    // The New button is a 44px icon button with its name for screen readers
+    const create = page.getByRole('link', { name: 'New product' })
+    assert.isAtLeast(Math.round((await create.boundingBox())!.height), 44)
+
+    await page.getByRole('button', { name: 'Filters' }).click()
+    const sheet = page.getByRole('dialog', { name: 'Filter products' })
+    await sheet.getByLabel('Status').selectOption('draft')
+    await page.waitForURL(/status=draft/)
+    await page.getByRole('button', { name: 'Filters · 1' }).waitFor()
+
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(await axeViolations(page), [], `filters sheet, ${colorScheme}`)
+    }
+
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(await axeViolations(page), [], `cards, ${colorScheme}`)
+    }
+  })
+})

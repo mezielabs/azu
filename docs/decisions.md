@@ -211,3 +211,10 @@ Newest at the bottom. Each entry: date, decision, why.
   - **The user shown** is `fullName`, else `name`, and `email`, read from the guard's user without config, as the starter kits and most apps name them. The avatar is initials; no images.
   - **The theme button is labelled by what it does** ("Switch to dark theme"), not a pressed "Dark theme" toggle: an icon-only button needs a name that says what happens.
   - **Contrast:** the current nav item's text is the brand pulled 30% toward the text colour, because brand text on the brand tint missed AA in the axe scan.
+- **2026-10-18 · The list page is one card, after the "Azu panel layout" canvas (layout 2/4).**
+  - **Filters as buttons:** each filter is a button with its value, opening its existing control in a popover, so the bar stays one row however many filters a resource has. Kept the native selects and date inputs inside: they're already labelled, accessible and light. An on/off filter is a toggle, with no popover to open.
+  - **The bulk bar replaces the controls** at the same height, so the table doesn't move when the first row is selected (the reason the old bar was always rendered). The live region that announces the selection moved out of the bar, since the bar now comes and goes. In dark mode the bar inverts to a light bar; it's built from `--azu-text` and the brand, so it contrasts with the page in both themes.
+  - **"32 of 40"** costs a second count query, only when a search or filter is on, through the resource's `query` hook and with selects and ordering cleared, so a hook's `select()` can't break it.
+  - **Status labels** come from the resource's `select` field of the same name, so a badge reads "Published" like the form, with no new column option.
+  - **Title links instead of row links:** the title cell is a real `<a>`, which opens in a new tab and is announced as a link; the whole-row link React Aria made is gone.
+  - **Cards below 768px**, chosen with a media-query hook rather than CSS, so each row exists once in the page (duplicated rows confused tests and screen readers' find). Cards have no selection; bulk actions need a wider screen for now.

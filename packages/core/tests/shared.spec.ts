@@ -14,6 +14,9 @@ import {
   actionUrl,
   bulkActionsFor,
   chunkedRunNote,
+  filterValueLabel,
+  listSummary,
+  pageWindow,
   usedComponentNames,
   offersAllMatching,
   selectionSummary,
@@ -403,5 +406,62 @@ test.group('App components a page renders (lazy registry)', () => {
       ['OrderTotal', 'NoteInput']
     )
     assert.equal(usedComponentNames('azu/dashboard', undefined).size, 0)
+  })
+})
+
+test.group('List summary (layout 2/4)', () => {
+  const filters = [
+    { kind: 'select', name: 'status', label: 'Status', options: { published: 'Published' } },
+    { kind: 'belongsTo', name: 'category', label: 'Category', options: null },
+    { kind: 'dateRange', name: 'createdAt', label: 'Created at', options: null },
+    { kind: 'custom', name: 'low-stock', label: 'Low stock', options: null },
+    { kind: 'boolean', name: 'isFeatured', label: 'Featured', options: null },
+  ].map((filter) => ({
+    ...filter,
+    value: null,
+    selected: filter.name === 'category' ? { id: 3, title: 'Books' } : null,
+    optionsUrl: null,
+  })) as never[]
+
+  test('filter values read as labels', ({ assert }) => {
+    const [status, category, created, lowStock, featured] = filters as any[]
+    assert.equal(filterValueLabel(status, 'published'), 'Published')
+    assert.equal(filterValueLabel(category, '3'), 'Books')
+    assert.equal(filterValueLabel(created, '2026-10-01..2026-10-31'), '1 Oct 2026 – 31 Oct 2026')
+    assert.equal(filterValueLabel(created, '2026-10-01..'), 'from 1 Oct 2026')
+    assert.equal(filterValueLabel(lowStock, '1'), '')
+    assert.equal(filterValueLabel(featured, 'false'), 'No')
+    assert.isNull(filterValueLabel(status, null))
+  })
+
+  test('says how many rows, of how many, and why', ({ assert }) => {
+    const noun = { one: 'product', many: 'products' }
+    assert.equal(
+      listSummary({
+        meta: { total: 40, unfilteredTotal: null },
+        noun,
+        filters,
+        values: {},
+        search: '',
+      }),
+      '40 products'
+    )
+    assert.equal(
+      listSummary({
+        meta: { total: 32, unfilteredTotal: 1040 },
+        noun,
+        filters,
+        values: { 'status': 'published', 'low-stock': '1', 'category': '3' },
+        search: 'clay',
+      }),
+      '32 of 1,040 products · filtered by Status: Published, Category: Books and Low stock · matching “clay”'
+    )
+  })
+
+  test('page numbers: the ends, the current page and its neighbours', ({ assert }) => {
+    assert.deepEqual(pageWindow(1, 1), [1])
+    assert.deepEqual(pageWindow(1, 3), [1, 2, 3])
+    assert.deepEqual(pageWindow(6, 20), [1, null, 5, 6, 7, null, 20])
+    assert.deepEqual(pageWindow(3, 20), [1, 2, 3, 4, null, 20])
   })
 })

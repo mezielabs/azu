@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { PAGE_SIZES, type ListState, type PageSize } from '@mezielabs/azu/shared'
+import type { ListState } from '@mezielabs/azu/shared'
+import { SearchIcon } from '../shell_icons.tsx'
 
 /**
- * Search and page size. Search waits for a pause in typing, or Enter.
+ * The list's search. It waits for a pause in typing, or Enter. Rows per
+ * page live in the list's footer (`Pagination`).
  */
 export function ListToolbar(props: {
   state: ListState
   searchable: boolean
   label: string
   onSearch: (term: string) => void
-  onPerPage: (size: PageSize) => void
 }) {
   const [term, setTerm] = useState(props.state.search)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -25,47 +26,31 @@ export function ListToolbar(props: {
     }, delay)
   }
 
+  if (!props.searchable) return null
   return (
-    <div className="azu-toolbar azu-list-toolbar">
-      {props.searchable && (
-        <form
-          role="search"
-          className="azu-search"
-          onSubmit={(event) => {
-            event.preventDefault()
-            search(term, 0)
+    <form
+      role="search"
+      className="azu-search"
+      onSubmit={(event) => {
+        event.preventDefault()
+        search(term, 0)
+      }}
+    >
+      <label className="azu-search-field">
+        <SearchIcon />
+        <span className="azu-visually-hidden">Search {props.label.toLowerCase()}</span>
+        <input
+          id="azu-list-search"
+          className="azu-search-input"
+          type="search"
+          placeholder="Search"
+          value={term}
+          onChange={(event) => {
+            setTerm(event.target.value)
+            search(event.target.value, 300)
           }}
-        >
-          <label className="azu-visually-hidden" htmlFor="azu-list-search">
-            Search {props.label.toLowerCase()}
-          </label>
-          <input
-            id="azu-list-search"
-            className="azu-input"
-            type="search"
-            placeholder="Search"
-            value={term}
-            onChange={(event) => {
-              setTerm(event.target.value)
-              search(event.target.value, 300)
-            }}
-          />
-        </form>
-      )}
-      <label className="azu-per-page">
-        <span>Rows per page</span>
-        <select
-          className="azu-input"
-          value={props.state.perPage}
-          onChange={(event) => props.onPerPage(Number(event.target.value) as PageSize)}
-        >
-          {PAGE_SIZES.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        />
       </label>
-    </div>
+    </form>
   )
 }

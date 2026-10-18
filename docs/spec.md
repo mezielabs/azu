@@ -335,6 +335,15 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 
 - **Sign out:** `POST <path>/logout` (route `azu.logout`), outside the access gate so a user who has lost access can still sign out, with Shield's CSRF check. It calls the guard's `logout()`, then redirects to `loginUrl` (a 409 location response for Inertia visits). A guard without `logout()` is left alone, and logged. There's no `logoutUrl` setting: the app's own logout route doesn't run.
 
+**List page (layout 2/4):** the page header's title carries the row count (without search and filters). The rows sit in one card:
+
+- **Controls:** the search, then a button per filter showing its label and, when it's on, its value ("Status Published"), tinted. It opens the filter's control in a popover; an on/off filter (`filter.custom`) is a toggle button (`aria-pressed`). Then Clear filters.
+- **Selection:** with rows selected, the bulk bar takes the controls' place at the same height (61px), inverted from the page: the count, "Select all N matching" (FR-17), Clear selection, then the bulk actions. A visually hidden live region outside the bar announces the selection.
+- **Summary strip:** `listSummary()`: "40 products", or "32 of 40 products · filtered by Status: Published and Low stock · matching “clay”". "of 40" is `meta.unfilteredTotal`, a count through the `query` hook without search and filters, run only when one is on (`null` otherwise). With every row on the page selected, it says how many more match.
+- **Table:** the title column's cell is a real link to the detail page (the rest of the row isn't). Sortable headers show a sort hint; the sorted one its direction. A badge shows the value's label from the resource's `select` field of the same name (`ColumnSchema.labels`), with a dot. An image column with no image shows a placeholder the thumbnail's size, and its header text is for screen readers only. The row actions button is borderless.
+- **Footer:** "Showing 1–25 of 32", Rows per page, and the pages: Previous, the first and last pages, the current one and its neighbours (`pageWindow()`), Next.
+- **Below 768px:** rows are cards (`ListCards`): the first image column as the picture, the title, the next two columns as a line under it, the first badge column on the right; only one of the table or the cards renders. No selection there. The filters open from a "Filters · n" button in a sheet, with Clear filters and Done. New is a 44px icon button whose name stays "New product".
+
 **Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
 
 - **Icons:** `icon` is a Lucide icon name in kebab case. `lucide-react` is an optional peer of `@mezielabs/azu-react`, and without it the navigation has no icons.

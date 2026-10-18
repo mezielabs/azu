@@ -67,3 +67,52 @@ export const SunIcon = () => (
     <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
   </Icon>
 )
+
+export const SearchIcon = () => (
+  <Icon>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </Icon>
+)
+
+export const ChevronDownIcon = () => (
+  <Icon width="14" height="14" strokeWidth="2">
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+)
+
+export const FiltersIcon = () => (
+  <Icon strokeWidth="2">
+    <path d="M4 6h16M7 12h10M10 18h4" />
+  </Icon>
+)
+
+export const PlusIcon = () => (
+  <Icon strokeWidth="2.2">
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+)
+
+export const ImageIcon = () => (
+  <Icon>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+  </Icon>
+)
+
+export const MoreIcon = () => (
+  <Icon fill="currentColor" stroke="none">
+    <circle cx="5" cy="12" r="1.6" />
+    <circle cx="12" cy="12" r="1.6" />
+    <circle cx="19" cy="12" r="1.6" />
+  </Icon>
+)
+
+/** A sortable column's hint, or its current direction */
+export const SortIcon = ({ direction }: { direction: 'ascending' | 'descending' | null }) => (
+  <Icon width="14" height="14" strokeWidth="2">
+    {direction !== 'descending' && <path d="m8 9 4-4 4 4" opacity={direction ? 1 : 0.55} />}
+    {direction !== 'ascending' && <path d="m16 15-4 4-4-4" opacity={direction ? 1 : 0.55} />}
+  </Icon>
+)

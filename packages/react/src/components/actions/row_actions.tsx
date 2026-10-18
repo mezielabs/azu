@@ -1,5 +1,6 @@
 import { Button, Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components'
 import type { ActionSchema } from '@mezielabs/azu/types'
+import { MoreIcon } from '../shell_icons.tsx'
 
 const cx = (...classes: (string | false | undefined)[]) => classes.filter(Boolean).join(' ')
 
@@ -17,10 +18,10 @@ export function RowActionsMenu(props: {
   return (
     <MenuTrigger>
       <Button
-        className="azu-button azu-row-actions-button"
+        className="azu-icon-button azu-row-actions-button"
         aria-label={`Actions for ${props.title}`}
       >
-        <span aria-hidden>⋯</span>
+        <MoreIcon />
       </Button>
       <Popover className="azu-popover" placement="bottom end">
         <Menu
