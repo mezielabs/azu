@@ -81,6 +81,7 @@ AdonisJS 7, Inertia, React 19, VineJS, and Bouncer APIs change. Before relying o
 - AdonisJS naming: snake_case file names, PascalCase classes, `#` subpath imports in the demo app.
 - Use the official AdonisJS ESLint and Prettier configs.
 - Conventional Commits (`feat(core): …`, `fix(react): …`). Reference FR IDs where relevant.
+- Naming: what the package owns is named `azu` (the `azu:` commands, `config/azu.ts`, `start/azu.ts`); what the app owns or its users see is named `admin` (the `/admin` path, `app/admin/resources`, `inertia/admin`, the `accessAdmin` ability).
 - Small, reviewable changes: one FR or one concern per branch or PR.
 - Public APIs get TSDoc comments; they'll generate the reference docs.
 

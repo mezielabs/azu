@@ -61,34 +61,34 @@ test.group('configure', (group) => {
     await command.exec()
     command.assertSucceeded()
 
-    await assert.fileContains('config/admin.ts', `import { defineConfig } from '@mezielabs/azu'`)
-    await assert.fileContains('config/admin.ts', `path: '/admin'`)
+    await assert.fileContains('config/azu.ts', `import { defineConfig } from '@mezielabs/azu'`)
+    await assert.fileContains('config/azu.ts', `path: '/admin'`)
     await assert.fileContains('inertia/admin/app.tsx', `createAzuApp({`)
     await assert.fileContains('adonisrc.ts', `@mezielabs/azu/azu_provider`)
     await assert.fileContains('adonisrc.ts', `@mezielabs/azu/commands`)
     await assert.fileContains('vite.config.ts', `import { azu } from '@mezielabs/azu/vite'`)
     await assert.fileContains('vite.config.ts', `azu()`)
-    await assert.fileContains('config/admin.ts', `resources: { autoload: 'app/admin/resources' }`)
-    await assert.fileContains('start/admin.ts', `azu.register(productResource)`)
-    await assert.fileContains('adonisrc.ts', `#start/admin`)
+    await assert.fileContains('config/azu.ts', `resources: { autoload: 'app/admin/resources' }`)
+    await assert.fileContains('start/azu.ts', `azu.register(productResource)`)
+    await assert.fileContains('adonisrc.ts', `#start/azu`)
     const pkg = await fs.contentsJson('package.json')
     assert.equal(pkg.imports['#admin/*'], './app/admin/*.js')
 
     // Generated files end with a newline, as Prettier expects
-    const adminConfig = await fs.contents('config/admin.ts')
+    const azuConfig = await fs.contents('config/azu.ts')
     const adminEntry = await fs.contents('inertia/admin/app.tsx')
-    assert.isTrue(adminConfig.endsWith('adminConfig\n'))
+    assert.isTrue(azuConfig.endsWith('azuConfig\n'))
     assert.isTrue(adminEntry.endsWith('})\n'))
   })
 
   test('keeps an existing config file', async ({ assert, fs }) => {
-    await fs.create('config/admin.ts', `// mine`)
+    await fs.create('config/azu.ts', `// mine`)
     const ace = await createApp(fs, `export default { plugins: [] }`)
 
     const command = await ace.create(Configure, [PACKAGE_ENTRY, '--no-install'])
     await command.exec()
 
-    assert.equal(await fs.contents('config/admin.ts'), `// mine`)
+    assert.equal(await fs.contents('config/azu.ts'), `// mine`)
   })
 })
 
@@ -180,6 +180,6 @@ test.group('configure / accessAdmin ability (FR-02)', (group) => {
     command.assertSucceeded()
     const logs = command.logger.getLogs().map((log) => log.message)
     assert.notInclude(logs.join('\n'), 'Please install')
-    await assert.fileExists('config/admin.ts')
+    await assert.fileExists('config/azu.ts')
   })
 })

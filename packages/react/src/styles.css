@@ -7,7 +7,7 @@
  * share it.
  *
  * Colours are --azu-* variables (FR-14). The admin's root view sets them
- * from brand.color in config/admin.ts: light, dark when the OS prefers it
+ * from brand.color in config/azu.ts: light, dark when the OS prefers it
  * or the user chose it (data-azu-theme on <html>). These are the default
  * brand's palettes, palette('#2563eb') in @mezielabs/azu, as a fallback.
  * :where() keeps them at zero specificity, so the generated palettes win

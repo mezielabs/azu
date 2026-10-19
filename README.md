@@ -51,7 +51,7 @@ Then install and configure Azu with one command:
 node ace add @mezielabs/azu
 ```
 
-This registers the provider, creates `config/admin.ts`, mounts the panel at `/admin`, and adds a separate Vite entry so your public pages don't load any admin code.
+This registers the provider, creates `config/azu.ts`, mounts the panel at `/admin`, and adds a separate Vite entry so your public pages don't load any admin code.
 
 It also adds an `accessAdmin` ability to `app/abilities/main.ts`. It returns `false` by default, so nothing is exposed until you decide who gets in:
 
@@ -150,15 +150,15 @@ The fields become the create and edit forms, checked by your validators:
 
 The list screen pages, sorts, searches and filters on the server, and keeps it all in the URL, so a reload, a bookmark or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
 
-Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/admin.ts` and register resources in `start/admin.ts`:
+Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/azu.ts` and register resources in `start/azu.ts`:
 
 ```ts
-// config/admin.ts
+// config/azu.ts
 resources: { autoload: false },
 ```
 
 ```ts
-// start/admin.ts
+// start/azu.ts
 import azu from '@mezielabs/azu/services/main'
 import productResource from '#admin/resources/product_resource'
 
@@ -167,12 +167,12 @@ azu.register(productResource)
 
 ### Navigation
 
-The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
+The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
 
-Resources without a `group` come first. Groups follow in the order you list in `config/admin.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
+Resources without a `group` come first. Groups follow in the order you list in `config/azu.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
 
 ```ts
-// config/admin.ts
+// config/azu.ts
 navigation: { groups: ['Sales', 'Catalog'] },
 ```
 
@@ -189,7 +189,7 @@ Labels come from names: `isFeatured` reads "Is featured", and common acronyms ar
 | `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step`. When the list column of the same name has a currency format, the input shows its code as a prefix (`NGN`) |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
-| `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |
+| `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/azu.ts`, or your server's timezone if you don't set it |
 | `richText` | Rich text editor | Sanitised on the server before your validator sees it, and again before it's shown. The editor is Tiptap, loaded only when a form needs it; install `@tiptap/react`, `@tiptap/pm` and `@tiptap/starter-kit`, or you get a plain HTML textarea |
 | `file`, `image` | Drag-and-drop upload | Stored with Drive on `disk()` or `defaultDisk`. Size (`maxSize()`, default 5mb for images, 10mb for files) and type (`accept()`) are checked on the server from the file's contents. SVG and HTML are refused unless you `accept()` them. Your validator sees the stored file's key |
 | `belongsTo` | Searchable select | Loads options as you type |
@@ -299,7 +299,7 @@ validators: {
 Each filter is a URL query parameter named after it, so a filtered view can be bookmarked: `?status=published&category=3&createdAt=2026-10-01..2026-10-31&low-stock=1`. Filters combine with each other, with search and with sort, and changing one goes back to page 1.
 
 - `filter.select(column, options)` and `filter.boolean(column)` match a column.
-- `filter.dateRange(column)` takes whole days in the admin's timezone (`timezone` in `config/admin.ts`). Either end can be left open.
+- `filter.dateRange(column)` takes whole days in the admin's timezone (`timezone` in `config/azu.ts`). Either end can be left open.
 - `filter.belongsTo(relation)` picks a related record from a searchable list. It shows only to users who pass the related resource's `viewList`, like a `belongsTo` field.
 - `filter.custom(label, query)` is an on/off filter with your own query, typed against the model. Its parameter is the label in kebab case (`low-stock`).
 
@@ -355,7 +355,7 @@ When the policy has a `delete` method, every resource gets a Delete row and bulk
 
 Azu gives you three levels of control. Start with the smallest one that works.
 
-**1. Config.** Labels, icons, groups, page size, and branding live in the resource or in `config/admin.ts`. No React needed.
+**1. Config.** Labels, icons, groups, page size, and branding live in the resource or in `config/azu.ts`. No React needed.
 
 **2. Swap a component.** Point any field or column at your own React component:
 
@@ -443,7 +443,7 @@ Azu renders your copy from then on. It's the most flexible option, but you now o
 Set your brand once and Azu generates light and dark palettes from it:
 
 ```ts
-// config/admin.ts
+// config/azu.ts
 import { defineConfig } from '@mezielabs/azu'
 
 export default defineConfig({

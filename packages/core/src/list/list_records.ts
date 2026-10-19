@@ -155,7 +155,7 @@ export async function listRecords(
   options: {
     /** Narrows the list further, e.g. to one parent's `hasMany` records */
     scope?: (query: ModelQueryBuilderContract<LucidModel>) => void
-    /** `defaultDisk` from config/admin.ts, for image columns */
+    /** `defaultDisk` from config/azu.ts, for image columns */
     defaultDisk?: string
     /** The admin's timezone, for `dateRange` filters */
     timezone?: string

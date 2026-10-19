@@ -76,6 +76,6 @@ test.group('defineConfig', () => {
     assert.equal(defineConfig().siteUrl, '/')
     assert.equal(defineConfig({ siteUrl: 'https://acme.test' }).siteUrl, 'https://acme.test')
     assert.isFalse(defineConfig({ siteUrl: false }).siteUrl)
-    assert.throws(() => defineConfig({ siteUrl: ' ' }), /"siteUrl" in config\/admin.ts/)
+    assert.throws(() => defineConfig({ siteUrl: ' ' }), /"siteUrl" in config\/azu.ts/)
   })
 })

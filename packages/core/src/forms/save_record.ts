@@ -131,7 +131,7 @@ export async function saveRecord(
     record?: LucidRow
     /** The admin's timezone, which wall-clock datetimes are read in */
     timezone?: string
-    /** `defaultDisk` from config/admin.ts */
+    /** `defaultDisk` from config/azu.ts */
     defaultDisk?: string
   } = {}
 ): Promise<{ record: LucidRow; errors?: never } | { errors: FormErrors; record?: never }> {

@@ -58,7 +58,7 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
   return createInertiaApp({
     // The theme's brand colour, so the bar reads in light and dark
     progress: { color: 'var(--azu-brand)' },
-    // The app's name (`brand.name` in config/admin.ts), from the root view
+    // The app's name (`brand.name` in config/azu.ts), from the root view
     title: (title) => {
       const name =
         document.querySelector<HTMLMetaElement>('meta[name="azu-app-name"]')?.content || 'Admin'

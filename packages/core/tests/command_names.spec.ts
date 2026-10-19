@@ -6,15 +6,23 @@ import { test } from '@japa/runner'
 const ROOT = join(import.meta.dirname, '../../..')
 
 /**
- * The commands before the `azu:` namespace, built from parts so this
- * file doesn't match itself
+ * Names from before the `azu` ones, built from parts so this file
+ * doesn't match itself: the commands, and the config and preload files
+ * the package writes into the app
  */
 const OLD_NAMES = [
-  ['make', 'admin-resource'],
-  ['make', 'admin-action'],
-  ['admin', 'publish'],
-  ['admin', 'doctor'],
-].map((parts) => parts.join(':'))
+  ...[
+    ['make', 'admin-resource'],
+    ['make', 'admin-action'],
+    ['admin', 'publish'],
+    ['admin', 'doctor'],
+  ].map((parts) => parts.join(':')),
+  ...[
+    ['config', 'admin.ts'],
+    ['start', 'admin.ts'],
+    ['#start', 'admin'],
+  ].map((parts) => parts.join('/')),
+]
 
 /** History may name them: decisions record what was true then */
 const HISTORY = new Set(['docs/decisions.md'])
@@ -22,7 +30,7 @@ const HISTORY = new Set(['docs/decisions.md'])
 const BINARY = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|sqlite3?|lock)$/
 
 test.group('Command names', () => {
-  test('nothing in the repo uses the old command names', ({ assert }) => {
+  test('nothing in the repo uses the old command or file names', ({ assert }) => {
     const files = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
       .split('\n')
       .filter((file) => file && !HISTORY.has(file) && !BINARY.test(file))
@@ -42,6 +50,10 @@ test.group('Command names', () => {
         }
       })
     }
-    assert.deepEqual(found, [], 'use azu:resource, azu:action, azu:publish and azu:doctor')
+    assert.deepEqual(
+      found,
+      [],
+      'use azu:resource, azu:action, azu:publish, azu:doctor, config/azu.ts and start/azu.ts'
+    )
   })
 })

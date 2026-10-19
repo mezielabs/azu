@@ -228,7 +228,7 @@ test.group('Admin / filters (FR-13)', (group) => {
  * the admin's timezone.
  */
 test.group('Admin / date range filters in the admin timezone (FR-13)', (group) => {
-  const config = app.config.get<AzuConfig>('admin')
+  const config = app.config.get<AzuConfig>('azu')
   const original = config.timezone
 
   group.each.setup(() => testUtils.db().withGlobalTransaction())

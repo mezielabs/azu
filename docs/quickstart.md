@@ -36,7 +36,7 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 
    `node ace add` passes `--install` on to the configure step (checked with `node ace configure @mezielabs/azu --install true`, the form it forwards).
 
-   It writes `config/admin.ts`, `start/admin.ts` and `inertia/admin/app.tsx`, registers the provider, commands and preload file, adds the `#admin/*` alias and the `azu()` Vite plugin, and adds `accessAdmin` to `app/abilities/main.ts`.
+   It writes `config/azu.ts`, `start/azu.ts` and `inertia/admin/app.tsx`, registers the provider, commands and preload file, adds the `#admin/*` alias and the `azu()` Vite plugin, and adds `accessAdmin` to `app/abilities/main.ts`.
 
 3. **Access.** `accessAdmin` returns `false`, so no one gets in yet. The starter kit's User has no role column, and its signup page is public, so letting every signed-in user in would let in anyone who registers. While you try Azu, let yourself in by email:
 
@@ -74,8 +74,9 @@ Run again after the commands moved to the `azu:` namespace, from freshly packed 
 
 - **Times:** the app took 2 min 40 s to create; Bouncer 11 s; installing the tarballs 19 s; configure 4 s; `node ace azu:resource User --policy` 1 s.
 - **Commands:** `node ace list` shows an `azu` namespace with `azu:resource`, `azu:action`, `azu:publish` and `azu:doctor`, and nothing else from Azu. `azu:action Archive` wrote `app/admin/actions/archive.ts`. `azu:publish` listed the pages, and `azu:doctor` reported 0 errors and one expected warning (the generated `UserPolicy` has no `create`).
-- **Old names:** `node ace admin:doctor` and the other three old names say "Command … is not defined".
+- **Old names:** each of the four old command names says "Command … is not defined".
 - **The panel:** with `accessAdmin` checking the email, signing up at `/signup`, then opening `/admin/resources/users` and saving an edit, all worked. Guests at `/admin` are redirected to `/login`.
+- **Config and preload files:** after the move to `config/azu.ts` and `start/azu.ts`, a second fresh app was configured from new tarballs. Configure wrote both and registered the `#start/azu` preload, with no `admin.ts` files. With `brand.name` changed in `config/azu.ts`, the panel's title read "Users · Shop Admin", and `azu:doctor` checked the same file.
 - **Fixed on the way:** `azu:action`'s hint said "Add a archive(…) method"; it now picks "an" before a vowel.
 
 ## Not covered by this run

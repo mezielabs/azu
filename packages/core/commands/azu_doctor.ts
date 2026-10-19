@@ -46,7 +46,7 @@ export default class AzuDoctor extends BaseCommand {
   static options: CommandOptions = { startApp: true }
 
   async run() {
-    const config = this.app.config.get<AzuConfig>('admin', defineConfig())
+    const config = this.app.config.get<AzuConfig>('azu', defineConfig())
     const azu = await this.app.container.make('azu')
     const resources = azu.resources.all()
     const root = fileURLToPath(this.app.appRoot)

@@ -87,7 +87,7 @@ export default class AzuResource extends BaseCommand {
       return
     }
 
-    const config = this.app.config.get<AzuConfig>('admin', {} as AzuConfig)
+    const config = this.app.config.get<AzuConfig>('azu', {} as AzuConfig)
     const autoload = config.resources?.autoload
     const resourcesDir = this.app.makePath(
       autoload === false || !autoload ? 'app/admin/resources' : autoload
@@ -170,7 +170,7 @@ export default class AzuResource extends BaseCommand {
       )
     }
     if (autoload === false) {
-      this.logger.info(`Register it in start/admin.ts: azu.register(${name}Resource)`)
+      this.logger.info(`Register it in start/azu.ts: azu.register(${name}Resource)`)
     }
   }
 }

@@ -34,14 +34,14 @@ const themeAttribute = (page: Page) =>
   page.evaluate(() => (globalThis as any).document.documentElement.getAttribute('data-azu-theme'))
 
 /**
- * The demo's brand (config/admin.ts) drives the palettes, the header
+ * The demo's brand (config/azu.ts) drives the palettes, the header
  * and the page title, and dark mode follows the OS with a toggle that
  * this browser remembers (FR-14).
  */
 test.group('Theming (FR-14)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test("the brand's palettes, name and logo come from config/admin.ts", async ({
+  test("the brand's palettes, name and logo come from config/azu.ts", async ({
     visit,
     browserContext,
     assert,

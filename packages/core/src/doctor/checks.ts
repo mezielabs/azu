@@ -237,7 +237,7 @@ export type ConfigFacts = {
 }
 
 /**
- * Settings in config/admin.ts that point at things the app doesn't have.
+ * Settings in config/azu.ts that point at things the app doesn't have.
  * Values `defineConfig` validates (perPage, timezone, brand.color) fail
  * at boot, before doctor runs.
  */

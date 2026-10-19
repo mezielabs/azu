@@ -46,7 +46,7 @@ test.group('Admin / resources (FR-03)', (group) => {
     const response = await client.get('/admin').loginAs(admin).withInertia()
 
     response.assertStatus(200)
-    // Sales before Catalog: navigation.groups in config/admin.ts (FR-16)
+    // Sales before Catalog: navigation.groups in config/azu.ts (FR-16)
     assert.deepEqual(response.body().props.azu.navigation, [SALES, CATALOG])
   })
 
