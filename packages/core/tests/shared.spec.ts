@@ -33,9 +33,11 @@ import {
   parseListState,
   truncate,
   withPageParam,
+  fieldWidth,
+  formStatus,
   type ListState,
 } from '../shared.ts'
-import type { ActionSchema, ListRow } from '../src/schema.ts'
+import type { ActionSchema, FormFieldSchema, ListRow } from '../src/schema.ts'
 
 const options = { defaultPerPage: 25 as const, sortable: ['name', 'price'] }
 const base: ListState = {
@@ -506,5 +508,42 @@ test.group('Detail layout (layout 3/4)', () => {
     )
     assert.equal((layout.badge as { name: string } | null)?.name, 'status')
     assert.isNull(detailLayout(fields, []).badge)
+  })
+})
+
+test.group('Form layout (layout 4/4)', () => {
+  const width = (kind: FormFieldSchema['kind'], maxLength: number | null = null) =>
+    fieldWidth({ kind, maxLength })
+
+  test('short fields are half width; long and unbounded ones take the row', ({ assert }) => {
+    for (const kind of [
+      'number',
+      'decimal',
+      'date',
+      'datetime',
+      'select',
+      'boolean',
+      'belongsTo',
+    ] as const) {
+      assert.equal(width(kind), 'half', kind)
+    }
+    for (const kind of ['textarea', 'richText', 'manyToMany', 'file', 'image'] as const) {
+      assert.equal(width(kind), 'full', kind)
+    }
+    // A SKU (40) pairs up; a name (160) or unbounded text doesn't
+    assert.equal(width('text', 40), 'half')
+    assert.equal(width('text', 80), 'half')
+    assert.equal(width('text', 160), 'full')
+    assert.equal(width('text'), 'full')
+  })
+
+  test("the save bar's status", ({ assert }) => {
+    assert.isNull(formStatus({ dirty: false, invalid: 0 }))
+    assert.equal(formStatus({ dirty: true, invalid: 0 }), 'Unsaved changes')
+    assert.equal(formStatus({ dirty: false, invalid: 1 }), '1 field needs attention')
+    assert.equal(
+      formStatus({ dirty: true, invalid: 2 }),
+      'Unsaved changes · 2 fields need attention'
+    )
   })
 })

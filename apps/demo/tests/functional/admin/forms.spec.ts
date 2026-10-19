@@ -95,6 +95,25 @@ test.group('Admin / create (FR-06)', (group) => {
     assert.containsSubset(form.values, { isActive: true, code: null, kind: null })
   })
 
+  test("a decimal field shows its currency column's code as a prefix", async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const products = await client
+      .get('/admin/resources/products/create')
+      .loginAs(admin)
+      .withInertia()
+    const price = products.body().props.form.fields.find((f: any) => f.name === 'price')
+    // column.decimal('price').format('currency', 'NGN')
+    assert.equal(price.prefix, 'NGN')
+
+    // A coupon's amount column has no currency format: no prefix
+    const coupons = await client.get(`${COUPONS}/create`).loginAs(admin).withInertia()
+    const amount = coupons.body().props.form.fields.find((f: any) => f.name === 'amount')
+    assert.isNull(amount.prefix)
+  })
+
   test('creates through the validator and redirects to the detail page', async ({
     client,
     assert,

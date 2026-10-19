@@ -149,7 +149,7 @@ Rules:
 | `text` | Input, optional prefix/suffix | Text, truncated at 60 chars | String |
 | `textarea` | Auto-growing textarea | Hidden by default | Text |
 | `number` | Numeric input with min, max, step | Number, optional currency/percent format | Integer or float (`number` attribute) |
-| `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
+| `decimal` | Numeric input with min, max, step; the value stays a string. With a currency-formatted column of the same name, the input shows the currency code as a prefix (`number` too) | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
 | `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
@@ -364,6 +364,13 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Accessibility:** icons are decorative (`aria-hidden`); the link's label names it.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+
+**Form page (layout 4/4):** the create and edit pages keep the header and the form to a 760px reading width.
+
+- **Fields:** one panel, in declared order. Short fields are half width and sit side by side in pairs once the form is at least 32rem wide (a container query); others take the row. `fieldWidth()` decides: `number`, `decimal`, `date`, `datetime`, `select`, `boolean` and `belongsTo` are short, and so is `text` with a validator `maxLength` of 80 or less (a SKU, not a name). A field with its own component is sized by its kind.
+- **Currency:** a `number` or `decimal` field without a prefix of its own borrows the currency code of the list column with the same name (`column.decimal('price').format('currency', 'NGN')` gives the price input an `NGN` prefix), set on the server in `formFields()`.
+- **Save bar:** sticky at the bottom of the window, across the page: a status (`formStatus()`: "Unsaved changes", "1 field needs attention", or both) in a `role="status"` region, then Cancel and the submit button. The count is the fields showing a server error; editing a field clears its own.
+- **Rich text:** the toolbar's buttons are icons (B, I, H, then the lists and quote after a divider), each named by `aria-label` and a tooltip, with `aria-pressed` for the current formatting; 44px on touch screens.
 
 **Records:** clicking a list row opens its detail page when the policy's `view` allows it; selection stays on the checkboxes. Forms render required markers and limits (lengths, `min`/`max`/`step`, enum choices) from the operation's validator (§4). Leaving a form with unsaved changes asks first: a dialog for in-app navigation, and the browser's prompt for reloads and closing the tab. The browser's back button between admin pages can't be intercepted. Toasts appear in Azu's own `aria-live` region, rendered once beside the Inertia app so they survive the page change after a save.
 

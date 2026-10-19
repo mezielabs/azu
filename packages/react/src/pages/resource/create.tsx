@@ -20,26 +20,28 @@ export default function ResourceCreate({ azu, resource, form, errors }: Resource
 
   return (
     <AdminLayout azu={azu} title={resource.label}>
-      <Head title={title} />
-      <PageHeader
-        page="resource/create"
-        resource={resource.name}
-        title={title}
-        breadcrumbs={resourceBreadcrumbs(resource, path)}
-        actions={<Slot name="toolbar" {...slot} />}
-      />
-      <Slot name="header" {...slot} />
-      <ResourceForm
-        form={form}
-        errors={errors}
-        action={`${path}/create`}
-        method="post"
-        timezone={azu.timezone}
-        submitLabel={`Create ${singular}`}
-        cancelHref={path}
-        successMessage={`${resource.singularLabel} created`}
-      />
-      <Slot name="afterForm" {...slot} />
+      <div className="azu-form-page">
+        <Head title={title} />
+        <PageHeader
+          page="resource/create"
+          resource={resource.name}
+          title={title}
+          breadcrumbs={resourceBreadcrumbs(resource, path)}
+          actions={<Slot name="toolbar" {...slot} />}
+        />
+        <Slot name="header" {...slot} />
+        <ResourceForm
+          form={form}
+          errors={errors}
+          action={`${path}/create`}
+          method="post"
+          timezone={azu.timezone}
+          submitLabel={`Create ${singular}`}
+          cancelHref={path}
+          successMessage={`${resource.singularLabel} created`}
+        />
+        <Slot name="afterForm" {...slot} />
+      </div>
     </AdminLayout>
   )
 }

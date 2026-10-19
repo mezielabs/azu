@@ -6,7 +6,14 @@ import type { Resource, ValidatorLike } from '../resources/define_resource.ts'
 import { DEFAULT_FILE_TYPES, DEFAULT_IMAGE_TYPES, DEFAULT_MAX_SIZE } from '../files/file_types.ts'
 import { sanitizeRichText } from '../files/sanitize_html.ts'
 import { relationKeys } from '../records/relations.ts'
-import type { FieldKind, FieldSchema, FieldValue, FormFieldSchema, RecordData } from '../schema.ts'
+import type {
+  ColumnSchema,
+  FieldKind,
+  FieldSchema,
+  FieldValue,
+  FormFieldSchema,
+  RecordData,
+} from '../schema.ts'
 import { introspectValidator, isIntrospectable, type FieldHints } from './introspect.ts'
 
 export type FormMode = 'create' | 'edit'
@@ -141,15 +148,32 @@ export async function formFields(
   const validator = validatorFor(resource, mode)
   const hints = isIntrospectable(validator) ? introspectValidator(validator) : new Map()
 
+  const schema = resource.toSchema()
   const fields: FormFieldSchema[] = []
-  for (const field of resource.toSchema().fields) {
+  for (const field of schema.fields) {
     if (!FORM_KINDS.has(field.kind)) continue
     if (field.visibleOn && field.visibleOn !== mode) continue
     if (!(await fieldAllowed(ctx, resource, field, record))) continue
     const input = inputName(resource, field)
-    fields.push(withHints(field, hints.get(input), input))
+    fields.push(withCurrency(withHints(field, hints.get(input), input), schema.columns))
   }
   return fields
+}
+
+/**
+ * A number or decimal field without a prefix of its own borrows the
+ * currency of the list column with the same name: `price`, shown as
+ * `NGN 11,250.00`, is typed after an `NGN` prefix.
+ */
+export function withCurrency(
+  field: FormFieldSchema,
+  columns: Pick<ColumnSchema, 'name' | 'format'>[]
+): FormFieldSchema {
+  if ((field.kind !== 'number' && field.kind !== 'decimal') || field.prefix !== null) return field
+  const format = columns.find((column) => column.name === field.name)?.format
+  return format?.style === 'currency' && format.currency
+    ? { ...field, prefix: format.currency }
+    : field
 }
 
 type DateLike = { toISO(): string | null; toISODate(): string | null }
