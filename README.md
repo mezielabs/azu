@@ -167,7 +167,7 @@ azu.register(productResource)
 
 ### Navigation
 
-The sidebar holds your brand, the dashboard and your resources, and at the bottom a "View site" link (to `/`), the signed-in user, the theme button and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer.
+The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
 
 Resources without a `group` come first. Groups follow in the order you list in `config/admin.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
 
@@ -398,28 +398,33 @@ export default function StockBar({ value }: CellProps<number>) {
 
 Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. Each one loads only when a page that uses it opens, so they add nothing to the admin's initial JavaScript. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
 
-**Slots.** To add something to a page without replacing it, name a component for one of a resource's slots:
+**Slots.** To add something to a page without replacing it, name a component for one of a resource's slots. A Print button for an order:
 
 ```ts
-export default defineResource(Product, {
+// app/admin/resources/order_resource.ts
+export default defineResource(Order, {
   // ...
-  slots: { beforeTable: 'LowStockNotice' },
+  slots: { toolbar: 'PrintOrder' },
 })
 ```
 
 ```tsx
-// inertia/admin/components/low_stock_notice.tsx
-import { Link, type SlotProps } from '@mezielabs/azu-react'
+// inertia/admin/components/print_order.tsx
+import type { SlotProps } from '@mezielabs/azu-react'
 
-export default function LowStockNotice({ path }: SlotProps) {
+export default function PrintOrder({ page }: SlotProps) {
+  // The toolbar slot is on every Orders page; printing is for one order
+  if (page !== 'show') return null
+
   return (
-    <p>
-      Running low?{' '}
-      <Link href={`${path}?low-stock=1`}>Show products with fewer than 10 in stock</Link>
-    </p>
+    <button type="button" className="azu-button" onClick={() => window.print()}>
+      Print
+    </button>
   )
 }
 ```
+
+Azu's stylesheet leaves the sidebar, the top bar and the page's actions out of print, so the page prints just the order.
 
 The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, and the resource's list URL as `path`.
 
@@ -445,6 +450,8 @@ export default defineConfig({
   path: '/admin',
   guard: 'web',
   loginUrl: '/login',
+  // The account menu's "View site" link; false hides it
+  siteUrl: '/',
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
@@ -455,7 +462,7 @@ export default defineConfig({
 
 `brand.name` (default `Admin`) shows at the top of the sidebar and in page titles, and `brand.logo` is an image shown before it (without one, a tile with the name's first letter). `brand.color` is a hex colour (default `#2563eb`). Azu uses it as is where it's readable. Where it isn't, it shifts only the colour's lightness, so the hue stays, until all text reaches WCAG AA (4.5:1) on each theme's backgrounds. A very light brand colour gets darkened on the light theme, for example. So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. Text on brand-coloured buttons is white or near-black, whichever reads.
 
-Dark mode follows the user's system setting. The theme button at the bottom of the sidebar ("Switch to dark theme") overrides it, and this browser remembers the choice. Toggle back to your system's theme and Azu follows the system again.
+Dark mode follows the user's system setting (System, the default). Light or Dark in the account menu overrides it, and this browser remembers the choice; System forgets it and follows the system again, live.
 
 The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 

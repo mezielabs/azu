@@ -9,6 +9,7 @@ export const defaults: Omit<AzuConfig, 'timezone' | 'defaultDisk'> = {
   path: '/admin',
   entry: 'inertia/admin/app.tsx',
   loginUrl: '/login',
+  siteUrl: '/',
   resources: { autoload: 'app/admin/resources' },
   perPage: 25,
   brand: { name: 'Admin', logo: null, color: '#2563eb' },
@@ -55,6 +56,13 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
       `"brand.color" in config/admin.ts must be a hex colour such as "#2563eb", not "${config.brand.color}"`
     )
   }
+  if (
+    config.siteUrl !== undefined &&
+    config.siteUrl !== false &&
+    (typeof config.siteUrl !== 'string' || config.siteUrl.trim() === '')
+  ) {
+    throw new Error('"siteUrl" in config/admin.ts must be a path or URL such as "/", or false')
+  }
   const groups = config.navigation?.groups ?? []
   if (!Array.isArray(groups) || !groups.every((group) => typeof group === 'string')) {
     throw new Error('"navigation.groups" in config/admin.ts must be a list of group labels')
@@ -69,6 +77,7 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     guard: config.guard,
     defaultDisk: config.defaultDisk,
     loginUrl: config.loginUrl ?? defaults.loginUrl,
+    siteUrl: config.siteUrl === undefined ? defaults.siteUrl : config.siteUrl,
     perPage: config.perPage ?? defaults.perPage,
     timezone: config.timezone ?? processTimezone(),
     navigation: { groups: [...groups] },

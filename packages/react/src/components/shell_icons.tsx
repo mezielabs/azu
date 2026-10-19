@@ -116,3 +116,22 @@ export const SortIcon = ({ direction }: { direction: 'ascending' | 'descending' 
     {direction !== 'ascending' && <path d="m16 15-4 4-4-4" opacity={direction ? 1 : 0.55} />}
   </Icon>
 )
+
+export const ChevronsUpDownIcon = () => (
+  <Icon>
+    <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />
+  </Icon>
+)
+
+export const MonitorIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8M12 16v4" />
+  </Icon>
+)
+
+export const CheckIcon = () => (
+  <Icon strokeWidth="2.2">
+    <path d="m5 12 5 5 9-10" />
+  </Icon>
+)

@@ -26,6 +26,7 @@ export async function renderPage<Page extends keyof AzuPages>(
       timezone: context.config.timezone,
       brand: { name: context.config.brand.name, logo: context.config.brand.logo },
       user: adminUser(ctx, context.config),
+      siteUrl: context.config.siteUrl || null,
       navigation:
         context.navigation === false
           ? []

@@ -13,6 +13,11 @@ const adminConfig = defineConfig({
   loginUrl: '/login',
 
   /**
+   * The account menu's "View site" link. Set it to false to hide it.
+   */
+  siteUrl: '/',
+
+  /**
    * Resources in this directory load automatically. Set autoload to
    * false to register them in start/admin.ts instead.
    */
@@ -21,7 +26,8 @@ const adminConfig = defineConfig({
   /**
    * The name, logo and colour of the panel. Azu generates light and
    * dark palettes from the colour, adjusted where needed so text stays
-   * readable. Dark mode follows the OS, with a toggle in the header.
+   * readable. The theme follows the OS until the user picks Light or
+   * Dark from the account menu.
    */
   brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
 

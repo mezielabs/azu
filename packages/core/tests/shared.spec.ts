@@ -4,7 +4,8 @@ import {
   effectiveTheme,
   storedTheme,
   themeBootScript,
-  toggledTheme,
+  applyThemeSetting,
+  currentThemeSetting,
   activeFilters,
   dateRangeValue,
   isDate,
@@ -17,7 +18,7 @@ import {
   chunkedRunNote,
   detailLayout,
   filterValueLabel,
-  listSummary,
+  listRange,
   emptyListMessage,
   pageWindow,
   usedComponentNames,
@@ -336,13 +337,42 @@ test.group('Theme choice (FR-14)', () => {
     assert.isNull(storedTheme('sepia'))
   })
 
-  test('a toggle remembers the other theme, or forgets when that is the OS theme', ({ assert }) => {
-    // OS light: toggling to dark remembers dark; toggling back follows the OS again
-    assert.equal(toggledTheme('light', false), 'dark')
-    assert.isNull(toggledTheme('dark', false))
-    // OS dark
-    assert.equal(toggledTheme('dark', true), 'light')
-    assert.isNull(toggledTheme('light', true))
+  test('Light and Dark are stored; System forgets the choice and follows the OS', ({
+    assert,
+    cleanup,
+  }) => {
+    // Stand-ins for the browser's <html> and localStorage
+    const attributes = new Map<string, string>()
+    const storage = new Map<string, string>()
+    const globals = globalThis as Record<string, unknown>
+    globals.document = {
+      documentElement: {
+        setAttribute: (name: string, value: string) => attributes.set(name, value),
+        removeAttribute: (name: string) => attributes.delete(name),
+        getAttribute: (name: string) => attributes.get(name) ?? null,
+      },
+    }
+    globals.localStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    }
+    cleanup(() => {
+      delete globals.document
+      delete globals.localStorage
+    })
+
+    // Nothing stored: System
+    assert.equal(currentThemeSetting(), 'system')
+    applyThemeSetting('dark')
+    assert.equal(attributes.get('data-azu-theme'), 'dark')
+    assert.equal(storage.get('azu-theme'), 'dark')
+    assert.equal(currentThemeSetting(), 'dark')
+
+    applyThemeSetting('system')
+    assert.isFalse(attributes.has('data-azu-theme'))
+    assert.isFalse(storage.has('azu-theme'))
+    assert.equal(currentThemeSetting(), 'system')
   })
 
   test('the boot script reads the stored choice and survives blocked storage', ({ assert }) => {
@@ -414,7 +444,7 @@ test.group('App components a page renders (lazy registry)', () => {
   })
 })
 
-test.group('List summary (layout 2/4)', () => {
+test.group('List labels, empty states and the footer (layout 2/4)', () => {
   const filters = [
     { kind: 'select', name: 'status', label: 'Status', options: { published: 'Published' } },
     { kind: 'belongsTo', name: 'category', label: 'Category', options: null },
@@ -439,28 +469,27 @@ test.group('List summary (layout 2/4)', () => {
     assert.isNull(filterValueLabel(status, null))
   })
 
-  test('says how many rows, of how many, and why', ({ assert }) => {
-    const noun = { one: 'product', many: 'products' }
-    assert.equal(
-      listSummary({
-        meta: { total: 40, unfilteredTotal: null },
-        noun,
-        filters,
-        values: {},
-        search: '',
-      }),
-      '40 products'
-    )
-    assert.equal(
-      listSummary({
-        meta: { total: 32, unfilteredTotal: 1040 },
-        noun,
-        filters,
-        values: { 'status': 'published', 'low-stock': '1', 'category': '3' },
-        search: 'clay',
-      }),
-      '32 of 1,040 products · filtered by Status: Published, Category: Books and Low stock · matching “clay”'
-    )
+  test("the footer's range, filtered from the unfiltered count when one is on", ({ assert }) => {
+    const meta = { total: 30, unfilteredTotal: null, currentPage: 1, perPage: 25 }
+    assert.deepEqual(listRange(meta), { from: '1', to: '25', total: '30', filteredFrom: null })
+    assert.deepEqual(listRange({ ...meta, currentPage: 2 }), {
+      from: '26',
+      to: '30',
+      total: '30',
+      filteredFrom: null,
+    })
+    assert.deepEqual(listRange({ ...meta, total: 1250, unfilteredTotal: 40000, perPage: 100 }), {
+      from: '1',
+      to: '100',
+      total: '1,250',
+      filteredFrom: '40,000',
+    })
+    assert.deepEqual(listRange({ ...meta, total: 0, unfilteredTotal: 40 }), {
+      from: '0',
+      to: '0',
+      total: '0',
+      filteredFrom: '40',
+    })
   })
 
   test('an empty list names its search and filters, and what Clear clears', ({ assert }) => {

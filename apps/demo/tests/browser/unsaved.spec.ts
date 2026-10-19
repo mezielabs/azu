@@ -79,7 +79,14 @@ test.group('Unsaved changes', (group) => {
     // Sign out is a POST: asked too, and replayed as one
     await page.goto(`/admin/resources/categories/${category.id}/edit`)
     await name.fill('Kitchen and dining')
-    await page.locator('.azu-sidebar').getByRole('button', { name: 'Sign out' }).click()
+    await page
+      .locator('.azu-sidebar')
+      .getByRole('button', { name: /^Account:/ })
+      .click()
+    await page
+      .getByRole('menu', { name: 'Account' })
+      .getByRole('menuitem', { name: 'Sign out' })
+      .click()
     await dialog.getByRole('button', { name: 'Leave' }).click()
     await page.waitForURL('**/login')
   })

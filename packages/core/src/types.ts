@@ -58,6 +58,14 @@ export type AzuConfigInput = {
   loginUrl?: string
 
   /**
+   * The account menu's "View site" link: your public site, as a path
+   * or a full URL. `false` hides the link.
+   *
+   * @default '/'
+   */
+  siteUrl?: string | false
+
+  /**
    * Resource discovery. Files in `autoload` load at boot; set it to
    * `false` and register resources in `start/admin.ts` instead.
    *
@@ -164,6 +172,8 @@ export type AzuSharedProps = {
     brand: { name: string; logo: string | null }
     /** The signed-in user; `null` when there's none */
     user: AzuUser | null
+    /** The "View site" link (`siteUrl` in config/admin.ts); `null` hides it */
+    siteUrl: string | null
   }
 }
 

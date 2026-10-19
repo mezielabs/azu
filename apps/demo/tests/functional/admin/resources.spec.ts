@@ -105,7 +105,7 @@ test.group('Admin / resources (FR-03)', (group) => {
     assert.deepEqual(resource.slots, {
       header: null,
       toolbar: null,
-      beforeTable: 'LowStockNotice',
+      beforeTable: null,
       afterForm: null,
     })
     assert.containsSubset(resource.columns[2], {

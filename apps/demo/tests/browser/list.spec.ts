@@ -26,13 +26,12 @@ async function catalog() {
 
 /**
  * The list page (layout 2/4): one card with the controls or the bulk
- * bar, a summary strip, the table and a footer; cards and a filters
- * sheet below 768px.
+ * bar, the table and a footer; cards and a filters sheet below 768px.
  */
 test.group('List page', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('filters are buttons, the summary says what is shown, and titles link', async ({
+  test('filters are buttons, the footer says what is shown, and titles link', async ({
     visit,
     browserContext,
     assert,
@@ -41,9 +40,11 @@ test.group('List page', (group) => {
     await catalog()
     const page = await visit('/admin/resources/products')
     const list = page.getByRole('region', { name: 'Products' })
-    const summary = list.locator('.azu-list-summary')
+    const shown = list.locator('.azu-pagination-summary')
 
-    await summary.getByText('30 products').waitFor()
+    // No summary strip: the footer counts
+    assert.equal(await list.locator('.azu-list-summary').count(), 0)
+    await shown.getByText('Showing 1–25 of 30', { exact: true }).waitFor()
     // The title shows the count too
     assert.include(await page.getByRole('heading', { level: 1 }).innerText(), '30')
 
@@ -57,14 +58,14 @@ test.group('List page', (group) => {
     const status = list.getByRole('button', { name: 'Status Published' })
     await status.waitFor()
     assert.equal(await status.getAttribute('data-azu-active'), 'true')
-    await summary.getByText('20 of 30 products · filtered by Status: Published').waitFor()
+    await shown.getByText('Showing 1–20 of 20 · filtered from 30', { exact: true }).waitFor()
 
     // An on/off filter is a toggle
     const lowStock = list.getByRole('button', { name: 'Low stock' })
     assert.equal(await lowStock.getAttribute('aria-pressed'), 'false')
 
     await list.getByRole('button', { name: 'Clear filters' }).click()
-    await summary.getByText('30 products').waitFor()
+    await shown.getByText('Showing 1–25 of 30', { exact: true }).waitFor()
 
     // Cells: a status label, an image placeholder, a sort hint, a real title link
     const row = page.getByRole('row', { name: /Pot 30/ })
@@ -138,6 +139,10 @@ test.group('List page', (group) => {
     await cards.waitFor()
     assert.equal(await page.locator('.azu-table-container').count(), 0)
     await cards.getByRole('link', { name: /Pot 30/ }).waitFor()
+    // No "30 products" box: the cards follow the controls
+    assert.equal(await page.locator('.azu-list-summary').count(), 0)
+    const controls = (await page.locator('.azu-list-controls').boundingBox())!
+    assert.approximately((await cards.boundingBox())!.y, controls.y + controls.height, 1)
 
     // The New button is a 44px icon button with its name for screen readers
     const create = page.getByRole('link', { name: 'New product' })

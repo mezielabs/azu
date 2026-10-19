@@ -223,8 +223,81 @@
     background: var(--azu-subtle);
   }
 
-  .azu-user-row {
-    @apply flex items-center gap-1 py-1 pl-2.5;
+  /* The account button: the whole row opens the account menu */
+  .azu-account {
+    @apply flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-[10px] p-2 text-left outline-none;
+  }
+
+  .azu-account:hover,
+  .azu-account[aria-expanded='true'] {
+    background: var(--azu-subtle);
+  }
+
+  .azu-account:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-account .azu-icon {
+    @apply shrink-0;
+    color: var(--azu-muted);
+  }
+
+  .azu-account .azu-avatar {
+    @apply h-8 w-8;
+  }
+
+  .azu-account-popover {
+    @apply p-1.5;
+    width: max(var(--trigger-width), 14rem);
+  }
+
+  .azu-account-header {
+    @apply mb-1.5 border-b px-2.5 pt-2 pb-2.5;
+    border-color: var(--azu-border);
+    overflow-wrap: anywhere;
+  }
+
+  .azu-account-name {
+    @apply m-0 text-[13px] font-semibold;
+  }
+
+  .azu-account-email {
+    @apply m-0 text-xs;
+    color: var(--azu-muted);
+  }
+
+  .azu-account-menu {
+    @apply min-w-0 p-0;
+  }
+
+  .azu-menu-heading {
+    @apply block px-2.5 py-1 text-[11px] font-semibold tracking-wider uppercase;
+    color: var(--azu-muted);
+  }
+
+  /* Over `a.azu-menu-item`'s block: View site is a link */
+  .azu-menu-item.azu-menu-row {
+    @apply flex h-9 items-center gap-2.5 rounded-lg px-2.5;
+  }
+
+  .azu-menu-label {
+    @apply min-w-0 flex-1;
+  }
+
+  .azu-menu-check {
+    @apply flex;
+    color: var(--azu-brand);
+  }
+
+  /* The phone drawer's theme rows */
+  .azu-theme-radios {
+    @apply flex flex-col;
+  }
+
+  .azu-theme-radio.azu-is-focused {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: -2px;
   }
 
   .azu-user {
@@ -1390,13 +1463,6 @@
     @apply hidden;
   }
 
-  .azu-list-summary {
-    @apply flex min-h-10 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-3.5 py-2 text-[13px];
-    border-color: var(--azu-border);
-    background: color-mix(in oklab, var(--azu-subtle) 50%, var(--azu-surface));
-    color: var(--azu-muted);
-  }
-
   .azu-list .azu-table-container {
     @apply rounded-none border-0;
   }
@@ -1686,14 +1752,6 @@
       @apply h-11;
     }
 
-    .azu-list-summary {
-      @apply mb-3 rounded-lg border;
-    }
-
-    .azu-list-hint {
-      @apply hidden;
-    }
-
     .azu-list-cards {
       @apply m-0 flex list-none flex-col gap-2 p-0;
     }
@@ -1819,6 +1877,30 @@
   @media (max-width: 767px) {
     .azu-detail-side {
       @apply max-w-none;
+    }
+  }
+}
+
+/*
+ * Printing a page prints its content: no sidebar, top bar or page
+ * actions (Edit, the toolbar slot, Print itself), no skip link or toasts
+ */
+@layer components {
+  @media print {
+    .azu-sidebar,
+    .azu-topbar,
+    .azu-page-actions,
+    .azu-skip-link,
+    .azu-toast-region {
+      display: none !important;
+    }
+
+    .azu-shell {
+      @apply block min-h-0;
+    }
+
+    .azu-main {
+      @apply p-0;
     }
   }
 }

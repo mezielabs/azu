@@ -62,29 +62,25 @@ function filtersPhrase(filters: ListFilter[], values: FilterValues): string | nu
 }
 
 /**
- * The strip above the list (layout 2/4): "40 products", or with a search
- * or filters on, "32 of 40 products · filtered by Status: Published and
- * Low stock · matching “clay”".
+ * The list footer's numbers (layout 2/4): "Showing 1–25 of 30", and
+ * "filtered from 40" when a search or filter is on (`unfilteredTotal`,
+ * which the server counts only then).
  */
-export function listSummary(input: {
-  meta: Pick<ListMeta, 'total' | 'unfilteredTotal'>
-  noun: { one: string; many: string }
-  filters: ListFilter[]
-  values: FilterValues
-  search: string
-}): string {
-  const { total, unfilteredTotal } = input.meta
-  const noun = (count: number) => (count === 1 ? input.noun.one : input.noun.many)
-  const parts: string[] = []
-  parts.push(
-    unfilteredTotal === null
-      ? `${number(total)} ${noun(total)}`
-      : `${number(total)} of ${number(unfilteredTotal)} ${noun(unfilteredTotal)}`
-  )
-  const active = filtersPhrase(input.filters, input.values)
-  if (active) parts.push(`filtered by ${active}`)
-  if (input.search) parts.push(`matching “${input.search}”`)
-  return parts.join(' · ')
+export function listRange(
+  meta: Pick<ListMeta, 'total' | 'unfilteredTotal' | 'currentPage' | 'perPage'>
+): {
+  from: string
+  to: string
+  total: string
+  filteredFrom: string | null
+} {
+  const { total, currentPage, perPage, unfilteredTotal } = meta
+  return {
+    from: number(total === 0 ? 0 : (currentPage - 1) * perPage + 1),
+    to: number(Math.min(currentPage * perPage, total)),
+    total: number(total),
+    filteredFrom: unfilteredTotal === null ? null : number(unfilteredTotal),
+  }
 }
 
 /**
