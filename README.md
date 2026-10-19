@@ -184,14 +184,14 @@ navigation: { groups: ['Sales', 'Catalog'] },
 | --- | --- | --- |
 | `text`, `textarea` | Input, auto-growing textarea | |
 | `number` | Numeric input | For numeric attributes (integers, floats). Supports `min`, `max`, `step` |
-| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step` |
+| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. The value stays an exact string end to end and is formatted with `Intl.NumberFormat`, never converted through `Number`. Supports `min`, `max`, `step`. When the list column of the same name has a currency format, the input shows its code as a prefix (`NGN`) |
 | `boolean` | Toggle | |
 | `select` | Dropdown, or radios for four or fewer options | |
 | `date`, `datetime` | Date picker | Uses the admin timezone: `timezone` in `config/admin.ts`, or your server's timezone if you don't set it |
 | `richText` | Rich text editor | Sanitised on the server before your validator sees it, and again before it's shown. The editor is Tiptap, loaded only when a form needs it; install `@tiptap/react`, `@tiptap/pm` and `@tiptap/starter-kit`, or you get a plain HTML textarea |
 | `file`, `image` | Drag-and-drop upload | Stored with Drive on `disk()` or `defaultDisk`. Size (`maxSize()`, default 5mb for images, 10mb for files) and type (`accept()`) are checked on the server from the file's contents. SVG and HTML are refused unless you `accept()` them. Your validator sees the stored file's key |
 | `belongsTo` | Searchable select | Loads options as you type |
-| `hasMany` | Table on the detail page | |
+| `hasMany` | Table on the detail page | Shows the related resource's columns, except the `belongsTo` back to this record (a category's products table has no Category column) |
 | `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on edit when attachments fall outside the related resource scope or exceed 200 |
 
 You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree.

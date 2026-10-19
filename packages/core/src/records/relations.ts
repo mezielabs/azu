@@ -4,7 +4,13 @@ import type { Azu } from '../azu.ts'
 import { columnName, listRecords, whereSearch } from '../list/list_records.ts'
 import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
-import type { FieldSchema, RelationOption, RelationTable, RelationValue } from '../schema.ts'
+import type {
+  ColumnSchema,
+  FieldSchema,
+  RelationOption,
+  RelationTable,
+  RelationValue,
+} from '../schema.ts'
 import type { AzuConfig } from '../types.ts'
 
 export type RelationsContext = { config: AzuConfig; azu: Azu }
@@ -332,6 +338,27 @@ export async function relationOptions(
 }
 
 /**
+ * A `hasMany` table's columns: the related resource's, less the
+ * `belongsTo` column that points back to the parent. On a category's
+ * page, every product's Category is that category. It matches on the
+ * relation keys, from Lucid's metadata, not on names: a product's
+ * `belongsTo` whose `foreignKey` is the `hasMany`'s (`categoryId` for
+ * `category.products`) is dropped, whatever the column is called, and a
+ * `belongsTo` on another key is kept, even to the same model.
+ */
+export function hasManyColumns(
+  columns: ColumnSchema[],
+  related: LucidModel,
+  foreignKey: string
+): ColumnSchema[] {
+  return columns.filter((column) => {
+    if (column.kind !== 'belongsTo') return true
+    const keys = relationKeys(related, column.name)
+    return !(keys?.type === 'belongsTo' && keys.foreignKey === foreignKey)
+  })
+}
+
+/**
  * Rows per page in a detail page's `hasMany` table.
  */
 const RELATION_PAGE_SIZE = 10
@@ -390,7 +417,9 @@ export async function hasManyTables(
       name: field.name,
       label: field.label,
       resource: related.name,
-      columns: related.toSchema().columns.map((column) => ({ ...column, sortable: false })),
+      columns: hasManyColumns(related.toSchema().columns, keys.related, keys.foreignKey).map(
+        (column) => ({ ...column, sortable: false })
+      ),
       titleColumn: related.options.title ?? null,
       rows: list.rows,
       meta: list.meta,

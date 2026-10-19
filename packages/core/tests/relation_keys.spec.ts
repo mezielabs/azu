@@ -2,8 +2,8 @@ import { test } from '@japa/runner'
 import { Logger } from '@adonisjs/core/logger'
 import type { HttpContext } from '@adonisjs/core/http'
 import { Database } from '@adonisjs/lucid/database'
-import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
-import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import vine from '@vinejs/vine'
 import { Azu } from '../src/azu.ts'
 import { defineConfig } from '../src/define_config.ts'
@@ -11,12 +11,15 @@ import { formFields } from '../src/forms/form_fields.ts'
 import { saveRecord } from '../src/forms/save_record.ts'
 import { selectedRelations } from '../src/list/filters.ts'
 import {
+  hasManyColumns,
   manyToManyCount,
   manyToManyIds,
   manyToManyReadOnlyReason,
+  relationKeys,
   relationOptions,
   relationValues,
 } from '../src/records/relations.ts'
+import { column as listColumn } from '../src/resources/columns.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 import { filter } from '../src/resources/filters.ts'
@@ -249,5 +252,54 @@ test.group('Custom Lucid relation keys', (group) => {
       await manyToManyReadOnlyReason(context, Product, tags, product),
       "Some attached product tags are hidden from you, so this field can't be edited here."
     )
+  })
+})
+
+test.group('hasMany table columns', () => {
+  test('drop the belongsTo back to the parent, by keys, not by name', ({ assert }) => {
+    class Publisher extends BaseModel {
+      @column({ isPrimary: true }) declare id: number
+      @column() declare name: string
+    }
+    class Author extends BaseModel {
+      @column({ isPrimary: true }) declare id: number
+      @column() declare name: string
+      // A custom foreign key, and a relation named unlike the column below
+      @hasMany(() => Book, { foreignKey: 'writerId' })
+      declare books: HasMany<typeof Book>
+    }
+    class Book extends BaseModel {
+      @column({ isPrimary: true }) declare id: number
+      @column() declare title: string
+      @column() declare writerId: number
+      @column() declare reviewerId: number
+      @column() declare publisherId: number
+      @belongsTo(() => Author, { foreignKey: 'writerId' })
+      declare writer: BelongsTo<typeof Author>
+      // The same model, on another key: a different person
+      @belongsTo(() => Author, { foreignKey: 'reviewerId' })
+      declare reviewer: BelongsTo<typeof Author>
+      @belongsTo(() => Publisher)
+      declare publisher: BelongsTo<typeof Publisher>
+    }
+    const books = defineResource(Book, {
+      policy: Policy,
+      columns: [
+        listColumn.text('title'),
+        listColumn.belongsTo('writer', 'name'),
+        listColumn.belongsTo('reviewer', 'name'),
+        listColumn.belongsTo('publisher', 'name'),
+      ],
+    })
+
+    const keys = relationKeys(Author, 'books')!
+    assert.equal(keys.foreignKey, 'writerId')
+    const columns = hasManyColumns(books.toSchema().columns, Book, keys.foreignKey)
+    assert.deepEqual(
+      columns.map((item) => item.name),
+      ['title', 'reviewer', 'publisher']
+    )
+    // The resource's own list keeps them all
+    assert.lengthOf(books.toSchema().columns, 4)
   })
 })

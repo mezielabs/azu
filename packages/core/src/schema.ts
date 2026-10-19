@@ -73,7 +73,10 @@ export type FieldSchema = {
   min: number | string | null
   max: number | string | null
   step: number | string | null
-  /** `text` */
+  /**
+   * `text`. On a form, a `number` or `decimal` field without one shows
+   * the currency of its list column (`NGN`)
+   */
   prefix: string | null
   suffix: string | null
   /** `select`: value → label */

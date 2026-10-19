@@ -26,28 +26,30 @@ export default function ResourceEdit({
 
   return (
     <AdminLayout azu={azu} title={resource.label}>
-      <Head title={`Edit ${name}`} />
-      <PageHeader
-        page="resource/edit"
-        resource={resource.name}
-        title={`Edit ${name}`}
-        breadcrumbs={resourceBreadcrumbs(resource, path, {
-          trail: [{ label: name, href: detail }],
-        })}
-        actions={<Slot name="toolbar" {...slot} />}
-      />
-      <Slot name="header" {...slot} />
-      <ResourceForm
-        form={form}
-        errors={errors}
-        action={`${detail}/edit`}
-        method="put"
-        timezone={azu.timezone}
-        submitLabel="Save changes"
-        cancelHref={detail}
-        successMessage={`${resource.singularLabel} saved`}
-      />
-      <Slot name="afterForm" {...slot} />
+      <div className="azu-form-page">
+        <Head title={`Edit ${name}`} />
+        <PageHeader
+          page="resource/edit"
+          resource={resource.name}
+          title={`Edit ${name}`}
+          breadcrumbs={resourceBreadcrumbs(resource, path, {
+            trail: [{ label: name, href: detail }],
+          })}
+          actions={<Slot name="toolbar" {...slot} />}
+        />
+        <Slot name="header" {...slot} />
+        <ResourceForm
+          form={form}
+          errors={errors}
+          action={`${detail}/edit`}
+          method="put"
+          timezone={azu.timezone}
+          submitLabel="Save changes"
+          cancelHref={detail}
+          successMessage={`${resource.singularLabel} saved`}
+        />
+        <Slot name="afterForm" {...slot} />
+      </div>
     </AdminLayout>
   )
 }

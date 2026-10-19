@@ -138,6 +138,9 @@ function common({ field, errors }: ControlProps) {
   }
 }
 
+/**
+ * A prefix or suffix beside the input, such as a currency code
+ */
 function Affix({ children }: { children: string | null }) {
   return children ? <span className="azu-affix">{children}</span> : null
 }
@@ -195,7 +198,9 @@ export function NumberControl(props: ControlProps) {
     >
       <FieldLabel field={field} />
       <Group className="azu-input-group">
+        <Affix>{field.prefix}</Affix>
         <Input className="azu-input" placeholder={field.placeholder ?? undefined} />
+        <Affix>{field.suffix}</Affix>
       </Group>
       <Description field={field} />
       <Errors errors={errors} />

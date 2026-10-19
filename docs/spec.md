@@ -149,14 +149,14 @@ Rules:
 | `text` | Input, optional prefix/suffix | Text, truncated at 60 chars | String |
 | `textarea` | Auto-growing textarea | Hidden by default | Text |
 | `number` | Numeric input with min, max, step | Number, optional currency/percent format | Integer or float (`number` attribute) |
-| `decimal` | Numeric input with min, max, step; the value stays a string | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
+| `decimal` | Numeric input with min, max, step; the value stays a string. With a currency-formatted column of the same name, the input shows the currency code as a prefix (`number` too) | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
 | `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor (optional peer, lazy; a plain HTML textarea without it). Sanitised on the server with `sanitize-html` to Tiptap StarterKit's markup, before validation and again before display | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
-| `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns. Needs a resource for the related model | Count | Lucid relation |
+| `hasMany` | Paginated table on the detail page, 10 rows a page, with the related resource's columns, less the `belongsTo` column back to the parent: the one whose `foreignKey` is the `hasMany`'s, from Lucid's relation metadata, so a custom key or column name works (a category's products table has no Category column; the products list keeps it). Needs a resource for the related model | Count | Lucid relation |
 | `manyToMany` | Searchable picker: the attached records as removable tags, plus a search that adds one at a time. Submits the related keys (`tags` → `tagIds`). Read-only without the related resource's `viewList`, and on edit when attachments fall outside the related resource scope or exceed 200 | Not a list column yet | Lucid relation (pivot rows) |
 
 Every field supports `label`, `help`, `placeholder`, `default`, `visibleOn('create' | 'edit')`, `readOnly`, `ability`, and `component`.
@@ -353,7 +353,7 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Title:** the resource's first shown badge column is a pill beside it, and the field of the same name leaves the Details list (`detailLayout()` in shared).
 - **Actions:** the row actions the user may run follow the bulk bar's rule (`splitActions()`): three or fewer as buttons, destructive last (Restock, then Delete in danger style); more than three, the first two non-destructive as buttons and the rest in a "More" menu; below 1024px, one "Actions" menu. Edit is outside the rule: the primary button, after them, when the user may `update`.
 - **One line:** the page header never wraps. A long title is cut short with an ellipsis, never the actions; the full title is its tooltip and the page's `<title>`. This holds for every page's header (`PageHeader`).
-- **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12").
+- **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12"), without the column that points back to this record (§5, `hasManyColumns()`).
 - **No fields:** when the user may see none of the resource's fields (Orders), the page gets `cells`, the record's column values as the list shows them (`belongsTo` columns loaded for it), and the Details card shows the columns, custom cell components included.
 
 **Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
@@ -365,6 +365,13 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Accessibility:** icons are decorative (`aria-hidden`); the link's label names it.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+
+**Form page (layout 4/4):** the create and edit pages keep the header and the form to a 760px reading width.
+
+- **Fields:** one panel, in declared order. Short fields are half width and sit side by side in pairs once the form is at least 32rem wide (a container query); others take the row. `fieldWidth()` decides: `number`, `decimal`, `date`, `datetime`, `select`, `boolean` and `belongsTo` are short, and so is `text` with a validator `maxLength` of 80 or less (a SKU, not a name). A field with its own component is sized by its kind.
+- **Currency:** a `number` or `decimal` field without a prefix of its own borrows the currency code of the list column with the same name (`column.decimal('price').format('currency', 'NGN')` gives the price input an `NGN` prefix), set on the server in `formFields()`.
+- **Save bar:** sticky at the bottom of the window, across the page: a status (`formStatus()`: "Unsaved changes", "1 field needs attention", or both) in a `role="status"` region, then Cancel and the submit button. The count is the fields showing a server error; editing a field clears its own.
+- **Rich text:** the toolbar's buttons are icons (B, I, H, then the lists and quote after a divider), each named by `aria-label` and a tooltip, with `aria-pressed` for the current formatting; 44px on touch screens.
 
 **Records:** clicking a list row opens its detail page when the policy's `view` allows it; selection stays on the checkboxes. Forms render required markers and limits (lengths, `min`/`max`/`step`, enum choices) from the operation's validator (§4). Leaving a form with unsaved changes asks first: a dialog for in-app navigation, and the browser's prompt for reloads and closing the tab. The browser's back button between admin pages can't be intercepted. Toasts appear in Azu's own `aria-live` region, rendered once beside the Inertia app so they survive the page change after a save.
 
