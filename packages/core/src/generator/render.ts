@@ -1,4 +1,5 @@
 import string from '@adonisjs/core/helpers/string'
+import { humanize } from '../resources/labels.ts'
 import type { FieldPlan, ModelPlan } from './model_info.ts'
 
 export type Names = {
@@ -51,7 +52,7 @@ function header(command: string, what: string, notes: string[] = []) {
 }
 
 function optionsMap(values: string[]) {
-  return `{ ${values.map((value) => `${/^[A-Za-z_$][\w$]*$/.test(value) ? value : quote(value)}: ${quote(string.sentenceCase(value))}`).join(', ')} }`
+  return `{ ${values.map((value) => `${/^[A-Za-z_$][\w$]*$/.test(value) ? value : quote(value)}: ${quote(humanize(value))}`).join(', ')} }`
 }
 
 function fieldBuilder(field: FieldPlan) {

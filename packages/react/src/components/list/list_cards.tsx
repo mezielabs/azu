@@ -20,6 +20,8 @@ export function ListCards(props: {
   rowHref?: (row: ListRow) => string | undefined
   /** The row's menu, a 44px button beside the badge, outside the card's link */
   rowMenu?: (row: ListRow) => ReactNode
+  /** Shown when there are no rows. Defaults to "No records" */
+  emptyState?: ReactNode
 }) {
   const visible = props.columns.filter((column) => !column.hiddenByDefault)
   const image = visible.find((column) => column.kind === 'image')
@@ -31,7 +33,9 @@ export function ListCards(props: {
     .filter((column) => column !== image && column !== title && column !== badge)
     .slice(0, 2)
 
-  if (props.rows.length === 0) return <p className="azu-table-empty azu-list-cards">No records</p>
+  if (props.rows.length === 0) {
+    return <div className="azu-table-empty azu-list-cards">{props.emptyState ?? 'No records'}</div>
+  }
 
   return (
     <ul className="azu-list-cards" aria-label={props.label}>

@@ -1,4 +1,5 @@
 import string from '@adonisjs/core/helpers/string'
+import { humanize } from './labels.ts'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { ResourceSchema } from '../schema.ts'
@@ -182,11 +183,11 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
   }
 
   get label(): string {
-    return this.options.label ?? string.sentenceCase(string.plural(this.model.name))
+    return this.options.label ?? humanize(string.plural(this.model.name))
   }
 
   get singularLabel(): string {
-    return this.options.singularLabel ?? string.sentenceCase(this.model.name)
+    return this.options.singularLabel ?? humanize(this.model.name)
   }
 
   /**

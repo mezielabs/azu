@@ -178,6 +178,8 @@ navigation: { groups: ['Sales', 'Catalog'] },
 
 `icon` is a [Lucide](https://lucide.dev/icons) icon name in kebab case, like `'package'` or `'shopping-cart'`. Install `lucide-react` to show icons; without it, the navigation shows none. The `azu()` Vite plugin bundles only the icons your resources name, which it reads from `app/admin/resources`. If a resource sets `icon` in a way the plugin can't read, from a variable say, list the name in `azu({ icons: ['shopping-cart'] })`. An unknown name gives a warning at build time and shows no icon.
 
+Labels come from names: `isFeatured` reads "Is featured", and common acronyms are capitals, so `sku` reads "SKU" and `userId` "User ID" (also URL, API, VAT and UUID). Give any field, column, filter or action its own with `.label('Featured')`.
+
 ### Field types
 
 | Field | Form control | Notes |
@@ -258,6 +260,27 @@ When a related resource's `query` scope hides attached records, the edit form ma
 The edit form loads up to 200 attached records. For a record with more, it shows the field read-only with a note ("350 tags attached; too many to edit here") and leaves `tagIds` out, so saving the form never detaches the ones it didn't load. The server applies the same rule, so `tagIds` sent anyway is ignored, and doesn't reach your validator either.
 
 Validation errors show up under the field that caused them, including nested and array fields like `tags.0`.
+
+They read as your validator words them. VineJS's defaults name a field by its key ("The price field must be at least 0"); to use the labels the form shows, give the validator a messages provider with them, keyed by input name (`categoryId`, not `category`):
+
+```ts
+import vine, { SimpleMessagesProvider } from '@vinejs/vine'
+
+export const createProductValidator = vine.create({
+  /* ... */
+})
+
+createProductValidator.messagesProvider = new SimpleMessagesProvider(
+  {
+    'required': '{{ field }} is required',
+    'min': '{{ field }} must be at least {{ min }}',
+    'database.unique': '{{ field }} is already taken',
+  },
+  { price: 'Price', sku: 'SKU', categoryId: 'Category' }
+)
+```
+
+A failed `min` rule on `price` then reads "Price must be at least 0". The demo's `app/validators/messages.ts` has a fuller set, a helper that applies them, and a `minDecimal` rule for decimals kept as strings, so "-5" fails its bound rather than its format.
 
 Note: validators written for your API don't always fit a form. If update needs different rules from create (an optional password, say), give the resource a separate `update` validator.
 

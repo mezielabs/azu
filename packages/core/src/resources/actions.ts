@@ -1,4 +1,4 @@
-import string from '@adonisjs/core/helpers/string'
+import { humanize } from './labels.ts'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
@@ -159,7 +159,7 @@ export class Action<
     return {
       kind: this.kind,
       name: this.name,
-      label: this.#label ?? string.sentenceCase(this.name),
+      label: this.#label ?? humanize(this.name),
       confirm: this.#confirm,
       ability: this.effectiveAbility,
       destructive: this.#destructive,

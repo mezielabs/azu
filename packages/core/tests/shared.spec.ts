@@ -18,6 +18,7 @@ import {
   detailLayout,
   filterValueLabel,
   listSummary,
+  emptyListMessage,
   pageWindow,
   usedComponentNames,
   offersAllMatching,
@@ -460,6 +461,22 @@ test.group('List summary (layout 2/4)', () => {
       }),
       '32 of 1,040 products · filtered by Status: Published, Category: Books and Low stock · matching “clay”'
     )
+  })
+
+  test('an empty list names its search and filters, and what Clear clears', ({ assert }) => {
+    const noun = { one: 'product', many: 'products' }
+    const empty = (values: Record<string, string>, search = '') =>
+      emptyListMessage({ noun, filters, values, search })
+    assert.deepEqual(empty({}), { message: 'No products yet', clear: null })
+    assert.deepEqual(empty({}, 'zzz'), { message: 'No products match “zzz”', clear: 'search' })
+    assert.deepEqual(empty({ 'status': 'published', 'low-stock': '1' }), {
+      message: 'No products match Status: Published and Low stock',
+      clear: 'filters',
+    })
+    assert.deepEqual(empty({ category: '3' }, 'zzz'), {
+      message: 'No products match “zzz” with Category: Books',
+      clear: 'search and filters',
+    })
   })
 
   test('page numbers: the ends, the current page and its neighbours', ({ assert }) => {

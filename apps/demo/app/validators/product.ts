@@ -1,4 +1,5 @@
 import vine from '@vinejs/vine'
+import { decimalString, labelled } from '#validators/messages'
 
 const fields = {
   name: vine.string().trim().minLength(2).maxLength(160),
@@ -8,12 +9,9 @@ const fields = {
   thumbnail: vine.string().maxLength(255).nullable().optional(),
   /**
    * A decimal column: kept as an exact string end to end, so validate
-   * the format instead of parsing it into a float.
+   * the format instead of parsing it into a float (`decimalString`).
    */
-  price: vine
-    .string()
-    .trim()
-    .regex(/^\d{1,10}(\.\d{1,2})?$/),
+  price: decimalString(0),
   /**
    * Optional: the README's ProductResource has no stock field, and the
    * column defaults to 0
@@ -30,37 +28,67 @@ const fields = {
     .optional(),
 }
 
-export const createProductValidator = vine.create({
-  ...fields,
-  sku: vine
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z0-9-]+$/)
-    .maxLength(40)
-    .unique({ table: 'products', column: 'sku' }),
-})
+/**
+ * Labels for error messages, as the admin's fields show them
+ */
+const labels = {
+  name: 'Name',
+  sku: 'SKU',
+  price: 'Price',
+  description: 'Description',
+  thumbnail: 'Thumbnail',
+  stock: 'Stock',
+  status: 'Status',
+  isFeatured: 'Featured',
+  categoryId: 'Category',
+  publishedAt: 'Published at',
+  tagIds: 'Tags',
+}
 
-export const updateProductValidator = vine.create({
-  ...fields,
-  sku: vine
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z0-9-]+$/)
-    .maxLength(40)
-    .unique({
-      table: 'products',
-      column: 'sku',
-      filter: (query, _value, field) => {
-        query.whereNot('id', field.meta.productId)
-      },
-    }),
-})
+const skuFormat = { 'sku.regex': 'SKU may only contain letters, numbers and dashes' }
+
+export const createProductValidator = labelled(
+  vine.create({
+    ...fields,
+    sku: vine
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]+$/)
+      .maxLength(40)
+      .unique({ table: 'products', column: 'sku' }),
+  }),
+  labels,
+  skuFormat
+)
+
+export const updateProductValidator = labelled(
+  vine.create({
+    ...fields,
+    sku: vine
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]+$/)
+      .maxLength(40)
+      .unique({
+        table: 'products',
+        column: 'sku',
+        filter: (query, _value, field) => {
+          query.whereNot('id', field.meta.productId)
+        },
+      }),
+  }),
+  labels,
+  skuFormat
+)
 
 /**
  * The restock action's dialog (FR-12)
  */
-export const restockValidator = vine.create({
-  quantity: vine.number().withoutDecimals().min(1).max(10000),
-})
+export const restockValidator = labelled(
+  vine.create({
+    quantity: vine.number().withoutDecimals().min(1).max(10000),
+  }),
+  { quantity: 'Quantity' }
+)

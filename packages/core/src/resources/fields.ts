@@ -1,4 +1,4 @@
-import string from '@adonisjs/core/helpers/string'
+import { humanize } from './labels.ts'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 import type { FieldKind, FieldSchema } from '../schema.ts'
 import type {
@@ -180,7 +180,7 @@ export class Field<
     return {
       kind: this.kind,
       name: this.name,
-      label: label ?? string.sentenceCase(this.name),
+      label: label ?? humanize(this.name),
       ...state,
     }
   }

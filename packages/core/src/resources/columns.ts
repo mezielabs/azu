@@ -1,4 +1,4 @@
-import string from '@adonisjs/core/helpers/string'
+import { humanize } from './labels.ts'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 import type { ColumnKind, ColumnSchema } from '../schema.ts'
 import type {
@@ -105,7 +105,7 @@ export class Column<
     return {
       kind: this.kind,
       name: this.name,
-      label: this.#label ?? string.sentenceCase(this.name),
+      label: this.#label ?? humanize(this.name),
       sortable: this.#sortable,
       hiddenByDefault: this.#hiddenByDefault,
       component: this.#component,

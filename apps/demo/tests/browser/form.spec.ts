@@ -91,6 +91,11 @@ test.group('Form page', (group) => {
     await page.locator('[data-azu-field="price"] input').fill('-5')
     await bar.getByRole('button', { name: 'Save changes' }).click()
     await page.locator('[data-azu-field="price"] input[aria-invalid="true"]').waitFor()
+    // The demo's validator names the field by its label
+    await page
+      .locator('[data-azu-field="price"] .azu-field-error')
+      .getByText('Price must be at least 0', { exact: true })
+      .waitFor()
     assert.equal(await status.innerText(), 'Unsaved changes · 1 field needs attention')
     await pinned()
     for (const colorScheme of ['light', 'dark'] as const) {

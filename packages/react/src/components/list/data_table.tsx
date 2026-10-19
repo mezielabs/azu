@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   Cell,
   Checkbox,
@@ -85,6 +85,8 @@ export function DataTable(props: {
   rowActions?: (row: ListRow) => ReactNode
   /** Changing it clears the selection, e.g. after a bulk action */
   clearSelection?: number
+  /** Shown in place of the rows when there are none. Defaults to "No records" */
+  emptyState?: ReactNode
 }) {
   const selectable = props.selectable ?? true
   const { columns, rows, state, onSort, onSelectionChange } = props
@@ -98,15 +100,53 @@ export function DataTable(props: {
     onSelectionChange?.([])
   }, [rowKey, props.clearSelection])
 
+  // The header cells' widths while there are rows, held while there are
+  // none, so a search that matches nothing doesn't move the columns. A
+  // scoped stylesheet sets them: React Aria's Column doesn't render
+  // `style`, and it re-creates its cells, so writing to them is lost.
+  const element = useRef<HTMLTableElement>(null)
+  const tableId = useId()
+  const [widths, setWidths] = useState<number[] | null>(null)
+  useLayoutEffect(() => {
+    const table = element.current
+    if (rows.length === 0 || !table) return
+    // React Aria renders the cells after a first pass, and the window
+    // can resize: measure whenever the table's size changes
+    const measure = () => {
+      const cells = [...table.querySelectorAll<HTMLElement>('thead th')]
+      if (cells.length === 0) return
+      const measured = cells.map((cell) => Math.round(cell.getBoundingClientRect().width))
+      setWidths((current) => (current?.join() === measured.join() ? current : measured))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(table)
+    return () => observer.disconnect()
+  }, [rowKey, columns])
+  const held = rows.length === 0 && widths !== null
+
   const sortDescriptor: SortDescriptor | undefined = state.sort
     ? { column: state.sort, direction: state.direction === 'desc' ? 'descending' : 'ascending' }
     : undefined
 
   return (
     <div className="azu-table-container">
+      {held && (
+        <style>
+          {widths
+            .map(
+              (width, index) =>
+                `.azu-table[data-azu-table="${tableId}"] thead th:nth-child(${index + 1}) { width: ${width}px; }`
+            )
+            .join('\n')}
+        </style>
+      )}
       <Table
+        ref={element}
         aria-label={props.label}
         className="azu-table"
+        data-azu-table={tableId}
+        data-azu-held={held || undefined}
         selectionMode={selectable ? 'multiple' : 'none'}
         selectedKeys={selection}
         onSelectionChange={(next) => {
@@ -161,7 +201,9 @@ export function DataTable(props: {
         </TableHeader>
         <TableBody
           items={rows}
-          renderEmptyState={() => <p className="azu-table-empty">No records</p>}
+          renderEmptyState={() => (
+            <div className="azu-table-empty">{props.emptyState ?? 'No records'}</div>
+          )}
         >
           {(row) => (
             <Row

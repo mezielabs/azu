@@ -20,7 +20,7 @@ test.group('Customising (FR-15)', (group) => {
     const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-custom' })
 
     const page = await visit('/admin/resources/products/create')
-    const sku = page.getByLabel('Sku', { exact: true })
+    const sku = page.getByLabel('SKU', { exact: true })
     await sku.fill('pot-ab12')
     assert.equal(await sku.inputValue(), 'POT-AB12')
 
@@ -134,7 +134,7 @@ test.group('Customising (FR-15)', (group) => {
     assert.isBelow(await layoutShift(list), 0.01)
 
     const form = await visit('/admin/resources/products/create')
-    await form.getByLabel('Sku', { exact: true }).waitFor()
+    await form.getByLabel('SKU', { exact: true }).waitFor()
     assert.sameMembers(await loaded(form), ['sku_input.tsx'])
     assert.equal(await form.locator('.azu-placeholder').count(), 0)
     assert.isBelow(await layoutShift(form), 0.01)

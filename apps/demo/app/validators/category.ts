@@ -1,5 +1,6 @@
 import vine from '@vinejs/vine'
 import type Category from '#models/category'
+import { labelled } from '#validators/messages'
 
 const fields = {
   name: vine.string().trim().minLength(2).maxLength(100),
@@ -14,18 +15,32 @@ const slug = () =>
     .regex(/^[a-z0-9-]+$/)
     .maxLength(120)
 
-export const createCategoryValidator = vine.create({
-  ...fields,
-  slug: slug().unique({ table: 'categories', column: 'slug' }),
-})
+const labels = { name: 'Name', slug: 'Slug', description: 'Description' }
 
-export const updateCategoryValidator = vine.withMetaData<{ record: Category }>().create({
-  ...fields,
-  slug: slug().unique({
-    table: 'categories',
-    column: 'slug',
-    filter: (query, _value, field) => {
-      query.whereNot('id', field.meta.record.id)
-    },
+const slugFormat = {
+  'slug.regex': 'Slug may only contain lowercase letters, numbers and dashes',
+}
+
+export const createCategoryValidator = labelled(
+  vine.create({
+    ...fields,
+    slug: slug().unique({ table: 'categories', column: 'slug' }),
   }),
-})
+  labels,
+  slugFormat
+)
+
+export const updateCategoryValidator = labelled(
+  vine.withMetaData<{ record: Category }>().create({
+    ...fields,
+    slug: slug().unique({
+      table: 'categories',
+      column: 'slug',
+      filter: (query, _value, field) => {
+        query.whereNot('id', field.meta.record.id)
+      },
+    }),
+  }),
+  labels,
+  slugFormat
+)

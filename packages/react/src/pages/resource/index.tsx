@@ -6,6 +6,7 @@ import {
   bulkActionsFor,
   listStateUrl,
   listSummary,
+  emptyListMessage,
   nextListState,
   offersAllMatching,
   resourceBreadcrumbs,
@@ -130,6 +131,28 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         : { ids: selected }
     )
   }
+
+  // An empty list says why, and offers to clear what's narrowing it
+  const empty = emptyListMessage({
+    noun,
+    filters: list.filters,
+    values: list.state.filters,
+    search: list.state.search,
+  })
+  const emptyState = (
+    <>
+      <p className="azu-empty-message">{empty.message}</p>
+      {empty.clear && (
+        <button
+          type="button"
+          className="azu-button"
+          onClick={() => go({ search: '', filters: {} })}
+        >
+          Clear {empty.clear}
+        </button>
+      )}
+    </>
+  )
 
   return (
     <AdminLayout azu={azu} title={resource.label}>
@@ -257,6 +280,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
             timezone={azu.timezone}
             rowHref={rowHref}
             rowMenu={(row) => rowMenu(row, 'azu-icon-button azu-touch azu-card-menu')}
+            emptyState={emptyState}
           />
         ) : (
           <div ref={table} className="azu-list-table">
@@ -275,6 +299,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               rowHref={rowHref}
               clearSelection={cleared}
               rowActions={(row) => rowMenu(row)}
+              emptyState={emptyState}
             />
           </div>
         )}
