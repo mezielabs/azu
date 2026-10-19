@@ -11,6 +11,8 @@ export default defineResource(Order, {
   search: ['number'],
   policy: OrderPolicy,
   query: (q) => q.preload('user'),
+  // From the README's "Customising" section: inertia/admin/components/print_order.tsx
+  slots: { toolbar: 'PrintOrder' },
 
   columns: [
     column.text('number').sortable(),

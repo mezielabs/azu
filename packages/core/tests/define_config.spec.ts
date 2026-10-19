@@ -9,6 +9,7 @@ test.group('defineConfig', () => {
       guard: undefined,
       defaultDisk: undefined,
       loginUrl: '/login',
+      siteUrl: '/',
       resources: { autoload: 'app/admin/resources' },
       perPage: 25,
       timezone: processTimezone(),
@@ -69,5 +70,12 @@ test.group('defineConfig', () => {
 
   test('refuses to mount the panel at the site root', ({ assert }) => {
     assert.throws(() => defineConfig({ path: '/' }), /can't be mounted at "\/"/)
+  })
+
+  test('takes a site URL for View site, or false to hide it', ({ assert }) => {
+    assert.equal(defineConfig().siteUrl, '/')
+    assert.equal(defineConfig({ siteUrl: 'https://acme.test' }).siteUrl, 'https://acme.test')
+    assert.isFalse(defineConfig({ siteUrl: false }).siteUrl)
+    assert.throws(() => defineConfig({ siteUrl: ' ' }), /"siteUrl" in config\/admin.ts/)
   })
 })

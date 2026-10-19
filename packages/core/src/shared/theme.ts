@@ -1,12 +1,22 @@
 /**
- * The light/dark choice (FR-14). The admin follows the OS until the user
- * toggles; the choice is remembered per browser in `localStorage` and
- * set as `data-azu-theme` on `<html>`, which the generated palettes key
- * on. Plain TypeScript, shared by the root view's boot script and the
- * front ends.
+ * The light/dark choice (FR-14). The admin follows the OS (System) until
+ * the user picks Light or Dark; the choice is remembered per browser in
+ * `localStorage` and set as `data-azu-theme` on `<html>`, which the
+ * generated palettes key on. System clears both, and the stylesheet's
+ * `prefers-color-scheme` rules follow the OS live. Plain TypeScript,
+ * shared by the root view's boot script and the front ends.
  */
 
 export type ThemeChoice = 'light' | 'dark'
+
+/** What the theme menu offers: a stored choice, or `system` for none */
+export type ThemeSetting = ThemeChoice | 'system'
+
+export const THEME_SETTINGS: { value: ThemeSetting; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
 
 export const THEME_STORAGE_KEY = 'azu-theme'
 export const THEME_ATTRIBUTE = 'data-azu-theme'
@@ -18,15 +28,6 @@ export function storedTheme(value: unknown): ThemeChoice | null {
 /** The theme in effect: the stored choice, else the OS's */
 export function effectiveTheme(stored: ThemeChoice | null, osDark: boolean): ThemeChoice {
   return stored ?? (osDark ? 'dark' : 'light')
-}
-
-/**
- * What to remember after a toggle: the other theme, or nothing when the
- * other theme is what the OS prefers, so the admin follows the OS again.
- */
-export function toggledTheme(current: ThemeChoice, osDark: boolean): ThemeChoice | null {
-  const next: ThemeChoice = current === 'dark' ? 'light' : 'dark'
-  return next === (osDark ? 'dark' : 'light') ? null : next
 }
 
 /**
@@ -61,7 +62,7 @@ export function prefersDark(): boolean {
   return browser().matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
 }
 
-/** The choice on `<html>`, as the boot script or a toggle set it */
+/** The choice on `<html>`, as the boot script or the theme menu set it */
 export function currentChoice(): ThemeChoice | null {
   return storedTheme(browser().document?.documentElement.getAttribute(THEME_ATTRIBUTE))
 }
@@ -80,4 +81,17 @@ export function applyThemeChoice(choice: ThemeChoice | null) {
   } catch {
     // Storage is blocked: the choice lasts until the page reloads
   }
+}
+
+/** The setting in effect: the stored choice, else `system` */
+export function currentThemeSetting(): ThemeSetting {
+  return currentChoice() ?? 'system'
+}
+
+/**
+ * Applies and remembers a setting; `system` forgets the stored choice,
+ * so the admin follows the OS, live. Browser-only.
+ */
+export function applyThemeSetting(setting: ThemeSetting) {
+  applyThemeChoice(setting === 'system' ? null : setting)
 }

@@ -1,9 +1,9 @@
-import { Link, router, usePage } from '@inertiajs/react'
+import { Link, usePage } from '@inertiajs/react'
 import type { AzuSharedProps, NavigationGroup } from '@mezielabs/azu/types'
 import { initials } from '@mezielabs/azu/shared'
 import icons from '@mezielabs/azu-react/icons'
+import { AccountMenu, signOut, ThemeRadios } from './account_menu.tsx'
 import { DashboardIcon, ExternalIcon, SignOutIcon } from './shell_icons.tsx'
-import { ThemeToggle } from './theme_toggle.tsx'
 
 type Azu = AzuSharedProps['azu']
 
@@ -104,30 +104,36 @@ function UserCard({ azu }: { azu: Azu }) {
   )
 }
 
-function signOut(azu: Azu) {
-  router.post(`${azu.path}/logout`)
+/**
+ * "View site", a full page load: the app's site isn't an admin page.
+ * Hidden when `siteUrl` in config/admin.ts is `false`.
+ */
+function SiteLink({ azu }: { azu: Azu }) {
+  if (!azu.siteUrl) return null
+  return (
+    <a href={azu.siteUrl} className="azu-sidebar-row">
+      <ExternalIcon />
+      View site
+    </a>
+  )
 }
 
 /**
  * The sidebar's contents (FR-14 shell): the brand, the navigation, and
- * at the bottom "View site", the signed-in user, the theme toggle and
- * sign out. `rail` is the sidebar beside the page; `drawer` is the phone
- * menu, with full-width 44px rows.
+ * at the bottom the account button, whose menu holds the theme, View
+ * site and Sign out. `rail` is the sidebar beside the page; `drawer` is
+ * the phone menu, with full-width 44px rows instead of a menu.
  */
 export function SidebarContent({ azu, variant }: { azu: Azu; variant: 'rail' | 'drawer' }) {
-  const signedIn = azu.user !== null
   if (variant === 'drawer') {
     return (
       <>
         <Navigation azu={azu} />
         <div className="azu-sidebar-footer">
           <UserCard azu={azu} />
-          <ThemeToggle variant="row" />
-          <a href="/" className="azu-sidebar-row">
-            <ExternalIcon />
-            View site
-          </a>
-          {signedIn && (
+          <ThemeRadios />
+          <SiteLink azu={azu} />
+          {azu.user && (
             <button type="button" className="azu-sidebar-row" onClick={() => signOut(azu)}>
               <SignOutIcon />
               Sign out
@@ -144,24 +150,7 @@ export function SidebarContent({ azu, variant }: { azu: Azu; variant: 'rail' | '
       </div>
       <Navigation azu={azu} />
       <div className="azu-sidebar-footer">
-        <a href="/" className="azu-sidebar-row">
-          <ExternalIcon />
-          View site
-        </a>
-        <div className="azu-user-row">
-          <UserCard azu={azu} />
-          <ThemeToggle />
-          {signedIn && (
-            <button
-              type="button"
-              className="azu-icon-button"
-              aria-label="Sign out"
-              onClick={() => signOut(azu)}
-            >
-              <SignOutIcon />
-            </button>
-          )}
-        </div>
+        {azu.user ? <AccountMenu azu={azu} /> : <SiteLink azu={azu} />}
       </div>
     </>
   )

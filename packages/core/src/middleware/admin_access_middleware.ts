@@ -83,6 +83,7 @@ export class AdminAccessMiddleware {
         brand: { name: this.config.brand.name, logo: this.config.brand.logo },
         // Signed in but not allowed: they can still sign out
         user: adminUser(ctx, this.config),
+        siteUrl: this.config.siteUrl || null,
       },
     })
     ctx.response.status(403).send(page)

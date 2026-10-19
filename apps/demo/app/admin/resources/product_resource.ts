@@ -91,6 +91,4 @@ export default defineResource(Product, {
     // A reusable action from make:admin-action
     feature,
   ],
-  // From the README's "Customising" section: inertia/admin/components/low_stock_notice.tsx
-  slots: { beforeTable: 'LowStockNotice' },
 })
