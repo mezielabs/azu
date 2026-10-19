@@ -42,17 +42,24 @@ export default function Overview({ data }: ScreenProps<typeof overview>) {
       }}
     >
       {cards.map((card) => (
-        <li key={card.label} className="azu-panel" style={{ display: 'grid', gap: 8 }}>
+        <li key={card.label} className="azu-panel">
           <h2 className="azu-panel-title">{card.label}</h2>
-          <p
-            style={{ margin: 0, fontSize: 28, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
-          >
-            {card.value}
-          </p>
-          <Link href={card.href} style={{ color: 'var(--azu-brand)', fontWeight: 500 }}>
-            {card.action}
-            <span className="azu-visually-hidden">: {card.label.toLowerCase()}</span>
-          </Link>
+          <div style={{ display: 'grid', gap: 8, padding: '16px 20px 18px' }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 28,
+                fontWeight: 600,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {card.value}
+            </p>
+            <Link href={card.href} style={{ color: 'var(--azu-brand)', fontWeight: 500 }}>
+              {card.action}
+              <span className="azu-visually-hidden">: {card.label.toLowerCase()}</span>
+            </Link>
+          </div>
         </li>
       ))}
     </ul>

@@ -26,7 +26,9 @@ export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {
 
   return (
     <section className="azu-panel" aria-labelledby="sales-report-range">
+      {/* The panel's header bar: the summary, then the range */}
       <div
+        className="azu-panel-title"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -35,7 +37,7 @@ export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {
           gap: 12,
         }}
       >
-        <h2 id="sales-report-range" className="azu-panel-title">
+        <h2 id="sales-report-range" style={{ margin: 0, font: 'inherit' }}>
           Last {data.days} days: {data.orders} {data.orders === 1 ? 'order' : 'orders'},{' '}
           {naira(data.total)}
         </h2>
@@ -61,10 +63,10 @@ export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {
               <th className="azu-th" scope="col">
                 Day
               </th>
-              <th className="azu-th azu-is-numeric" scope="col">
+              <th className="azu-th" scope="col" style={{ textAlign: 'right' }}>
                 Orders
               </th>
-              <th className="azu-th azu-is-numeric" scope="col">
+              <th className="azu-th" scope="col" style={{ textAlign: 'right' }}>
                 Total
               </th>
             </tr>
