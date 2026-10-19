@@ -1463,13 +1463,6 @@
     @apply hidden;
   }
 
-  .azu-list-summary {
-    @apply flex min-h-10 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-3.5 py-2 text-[13px];
-    border-color: var(--azu-border);
-    background: color-mix(in oklab, var(--azu-subtle) 50%, var(--azu-surface));
-    color: var(--azu-muted);
-  }
-
   .azu-list .azu-table-container {
     @apply rounded-none border-0;
   }
@@ -1759,14 +1752,6 @@
       @apply h-11;
     }
 
-    .azu-list-summary {
-      @apply mb-3 rounded-lg border;
-    }
-
-    .azu-list-hint {
-      @apply hidden;
-    }
-
     .azu-list-cards {
       @apply m-0 flex list-none flex-col gap-2 p-0;
     }
@@ -1892,6 +1877,30 @@
   @media (max-width: 767px) {
     .azu-detail-side {
       @apply max-w-none;
+    }
+  }
+}
+
+/*
+ * Printing a page prints its content: no sidebar, top bar or page
+ * actions (Edit, the toolbar slot, Print itself), no skip link or toasts
+ */
+@layer components {
+  @media print {
+    .azu-sidebar,
+    .azu-topbar,
+    .azu-page-actions,
+    .azu-skip-link,
+    .azu-toast-region {
+      display: none !important;
+    }
+
+    .azu-shell {
+      @apply block min-h-0;
+    }
+
+    .azu-main {
+      @apply p-0;
     }
   }
 }

@@ -5,7 +5,6 @@ import {
   splitActions,
   bulkActionsFor,
   listStateUrl,
-  listSummary,
   emptyListMessage,
   nextListState,
   offersAllMatching,
@@ -64,9 +63,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     onDone: (result) => {
       if (result.redirect) return router.visit(result.redirect)
       setCleared((count) => count + 1)
-      // An action can change what a slot counts (a restock, say)
       router.reload({
-        only: ['list', 'slotData'],
+        only: ['list'],
         onFinish: () => table.current?.querySelector<HTMLElement>('[role="grid"]')?.focus(),
       })
     },
@@ -86,8 +84,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     const next = nextListState(current, change)
     setRequested(next)
     const url = listStateUrl(path, next, { defaultPerPage: list.defaultPerPage })
-    // Slot data too, so a slot's count follows the list
-    router.get(url, {}, { only: ['list', 'slotData'], preserveState: true, preserveScroll: true, replace })
+    router.get(url, {}, { only: ['list'], preserveState: true, preserveScroll: true, replace })
   }
 
   const count = new Intl.NumberFormat('en')
@@ -113,7 +110,6 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     !allMatching &&
     bulkActions.length > 0 &&
     offersAllMatching(selected.length, list.rows.length, list.meta.total)
-  const hasBulkActions = resource.actions.some((action) => action.kind === 'bulk')
   // Below 768px, rows are cards, without selection
   const phone = useMediaQuery(PHONE_QUERY)
   // The bar keeps one line: some actions in a menu, all of them below 1024px
@@ -256,22 +252,6 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
             />
           </div>
         )}
-        <div className="azu-list-summary">
-          <span>
-            {offerAll
-              ? `Every row on this page is selected. ${count.format(list.meta.total - list.rows.length)} more match the search and filters.`
-              : listSummary({
-                  meta: list.meta,
-                  noun,
-                  filters: list.filters,
-                  values: list.state.filters,
-                  search: list.state.search,
-                })}
-          </span>
-          {!selecting && hasBulkActions && list.rows.length > 0 && (
-            <span className="azu-list-hint">Select rows for bulk actions</span>
-          )}
-        </div>
         {/* One or the other, so each row is in the page once */}
         {phone ? (
           <ListCards

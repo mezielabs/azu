@@ -1,5 +1,5 @@
 import type { FormFieldSchema, RelationTable, ResourceSchema } from '../schema.ts'
-import { PAGE_SLOTS, type SlotPage } from './slots.ts'
+import type { SlotName } from './slots.ts'
 
 /**
  * The name an app component registers under, from its file in
@@ -16,6 +16,14 @@ export function componentName(path: string): string {
     .split(/[_-]/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join('')
+}
+
+/** The slots each resource page renders (see `ResourceOptions.slots`) */
+const PAGE_SLOTS: Record<string, readonly SlotName[]> = {
+  'resource/index': ['header', 'toolbar', 'beforeTable'],
+  'resource/create': ['header', 'toolbar', 'afterForm'],
+  'resource/edit': ['header', 'toolbar', 'afterForm'],
+  'resource/show': ['header', 'toolbar'],
 }
 
 /**
@@ -41,8 +49,7 @@ export function usedComponentNames(name: string, props: unknown): Set<string> {
       : page === 'resource/show'
         ? [...(data.relations ?? []).flatMap((table) => table.columns ?? []), ...actionFields]
         : (data.form?.fields ?? [])
-  const slotPage = page.replace(/^resource\//, '') as SlotPage
-  const slots = (PAGE_SLOTS[slotPage] ?? []).map((slot) => resource.slots?.[slot] ?? null)
+  const slots = (PAGE_SLOTS[page] ?? []).map((slot) => resource.slots?.[slot] ?? null)
   return new Set(
     [...used.map((item) => item.component), ...slots].filter(
       (component): component is string => typeof component === 'string'

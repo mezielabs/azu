@@ -1,11 +1,12 @@
 import { useId } from 'react'
-import { PAGE_SIZES, pageWindow, type PageSize } from '@mezielabs/azu/shared'
+import { PAGE_SIZES, listRange, pageWindow, type PageSize } from '@mezielabs/azu/shared'
 import type { ListMeta } from '@mezielabs/azu/types'
 
 /**
- * The list card's footer: which rows are showing, rows per page, and the
- * pages (Previous, numbers, Next). Below 768px, the count and Previous
- * and Next.
+ * The list card's footer: which rows are showing ("Showing 1–25 of 30",
+ * with "· filtered from 40" when a search or filter is on), rows per
+ * page, and the pages (Previous, numbers, Next). Below 768px, the count
+ * and Previous and Next.
  */
 export function Pagination(props: {
   meta: ListMeta
@@ -14,9 +15,7 @@ export function Pagination(props: {
 }) {
   const id = useId()
   const { total, currentPage, lastPage, perPage } = props.meta
-  const from = total === 0 ? 0 : (currentPage - 1) * perPage + 1
-  const to = Math.min(currentPage * perPage, total)
-  const number = (value: number) => new Intl.NumberFormat('en').format(value)
+  const range = listRange(props.meta)
 
   return (
     <footer className="azu-list-footer">
@@ -28,10 +27,13 @@ export function Pagination(props: {
           <>
             Showing{' '}
             <strong>
-              {number(from)}–{number(to)}
+              {range.from}–{range.to}
             </strong>{' '}
-            of {number(total)}
+            of {range.total}
           </>
+        )}
+        {range.filteredFrom !== null && (
+          <span className="azu-pagination-filtered"> · filtered from {range.filteredFrom}</span>
         )}
       </p>
       <div className="azu-list-footer-controls">

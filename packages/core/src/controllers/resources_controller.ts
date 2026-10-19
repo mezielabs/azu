@@ -127,7 +127,6 @@ export class ResourcesController {
 
     return renderPage(ctx, this.context, 'azu/resource/index', {
       resource: schema,
-      slotData: await resource.slotData(ctx, 'index'),
       list: {
         rows,
         meta,
@@ -211,7 +210,6 @@ export class ResourcesController {
     }
     return renderPage(ctx, this.context, 'azu/resource/show', {
       resource: schema,
-      slotData: await resource.slotData(ctx, 'show', record!),
       fields,
       record: recordData(resource, record!, fields, resolved),
       timestamps: {
@@ -393,7 +391,7 @@ export class ResourcesController {
     return result
   }
 
-  async #renderCreate(
+  #renderCreate(
     ctx: HttpContext,
     resource: Resource<any, any>,
     fields: FormFieldSchema[],
@@ -401,7 +399,6 @@ export class ResourcesController {
   ) {
     return renderPage(ctx, this.context, 'azu/resource/create', {
       resource: resource.toSchema(),
-      slotData: await resource.slotData(ctx, 'create'),
       form: { fields, values: formValues(fields) },
       errors,
     })
@@ -421,7 +418,6 @@ export class ResourcesController {
     }
     return renderPage(ctx, this.context, 'azu/resource/edit', {
       resource: resource.toSchema(),
-      slotData: await resource.slotData(ctx, 'edit', record),
       record: { id, title },
       form: { fields, values: formValues(fields, record, resolved) },
       errors,

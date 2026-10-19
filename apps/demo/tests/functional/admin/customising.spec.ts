@@ -43,20 +43,26 @@ test.group('README "Customising" examples (FR-15)', (group) => {
     }
   })
 
-  test("every resource example is in the demo's product resource", async ({ assert }) => {
-    const resource = await readFile(app.makePath('app/admin/resources/product_resource.ts'), 'utf8')
-    const examples = await customisingExamples()
-    const lines = examples
-      .filter((example) => example.lang === 'ts')
-      .flatMap((example) => example.source.split('\n'))
-      .map((line) => line.trim().replace(/,$/, ''))
-      .filter(
-        (line) =>
-          line && !line.startsWith('//') && !/^(\}\)|export default defineResource)/.test(line)
-      )
-    assert.isAbove(lines.length, 2)
+  test("every resource example is in the demo's resource it names", async ({ assert }) => {
+    const all = await customisingExamples()
+    const examples = all.filter((example) => example.lang === 'ts')
+    assert.isAbove(examples.length, 1)
 
-    for (const line of lines) assert.include(resource, line)
+    for (const example of examples) {
+      // A first-line path comment names the file; the product resource otherwise
+      const named = /^\/\/ (app\/admin\/resources\/\S+\.ts)\n/.exec(example.source)?.[1]
+      const path = named ?? 'app/admin/resources/product_resource.ts'
+      const resource = await readFile(app.makePath(path), 'utf8')
+      const lines = example.source
+        .split('\n')
+        .map((line) => line.trim().replace(/,$/, ''))
+        .filter(
+          (line) =>
+            line && !line.startsWith('//') && !/^(\}\)|export default defineResource)/.test(line)
+        )
+      assert.isAbove(lines.length, 0, path)
+      for (const line of lines) assert.include(resource, line, path)
+    }
   })
 
   test('admin:doctor finds nothing wrong with the demo', async ({ assert }) => {

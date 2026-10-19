@@ -41,8 +41,6 @@ export type {
   CellProps,
   SlotProps,
   SlotName,
-  SlotPage,
-  SlotData,
   DashboardPageProps,
   ResourceIndexPageProps,
   ResourceCreatePageProps,

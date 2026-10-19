@@ -398,78 +398,35 @@ export default function StockBar({ value }: CellProps<number>) {
 
 Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. Each one loads only when a page that uses it opens, so they add nothing to the admin's initial JavaScript. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
 
-**Slots.** To add something to a page without replacing it, name a component for one of a resource's slots:
+**Slots.** To add something to a page without replacing it, name a component for one of a resource's slots. A Print button for an order:
 
 ```ts
-export default defineResource(Product, {
+// app/admin/resources/order_resource.ts
+export default defineResource(Order, {
   // ...
-  slots: {
-    beforeTable: {
-      component: 'LowStockNotice',
-      // Counted on the server for each list page, with the "Low stock" filter's rule
-      data: async () => {
-        const [row] = await Product.query().where('stock', '<', 10).count('* as total')
-        return { count: Number(row.$extras.total) }
-      },
-    },
-  },
+  slots: { toolbar: 'PrintOrder' },
 })
 ```
 
 ```tsx
-// inertia/admin/components/low_stock_notice.tsx
-import { Link, type SlotProps } from '@mezielabs/azu-react'
+// inertia/admin/components/print_order.tsx
+import type { SlotProps } from '@mezielabs/azu-react'
 
-/**
- * Amber in both themes: Azu's yellow badge colours
- */
-const notice = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  marginBottom: 16,
-  padding: '10px 14px',
-  borderRadius: 10,
-  border: '1px solid color-mix(in srgb, var(--azu-badge-yellow-text) 25%, transparent)',
-  background: 'var(--azu-badge-yellow-bg)',
-  color: 'var(--azu-badge-yellow-text)',
-  fontSize: 14,
-  textDecoration: 'none',
-}
-
-export default function LowStockNotice({ path, data }: SlotProps<{ count: number }>) {
-  // The resource's `data` function counts them on the server
-  const count = data?.count ?? 0
-  if (count === 0) return null
+export default function PrintOrder({ page }: SlotProps) {
+  // The toolbar slot is on every Orders page; printing is for one order
+  if (page !== 'show') return null
 
   return (
-    <Link href={`${path}?low-stock=1`} style={notice}>
-      <svg
-        aria-hidden="true"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-      </svg>
-      <span style={{ flexGrow: 1 }}>
-        <strong>
-          {count} {count === 1 ? 'product has' : 'products have'}
-        </strong>{' '}
-        fewer than 10 in stock.
-      </span>
-      <span style={{ fontWeight: 600, textDecoration: 'underline' }}>Show them</span>
-    </Link>
+    <button type="button" className="azu-button" onClick={() => window.print()}>
+      Print
+    </button>
   )
 }
 ```
 
-The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, the resource's list URL as `path`, and `data`. A slot given as just a component name gets `data: null`. Given as `{ component, data }`, its `data` function runs on the server each time a page with that slot renders, after the page's own policy check, and gets `{ ctx, page, record }`. What it returns, as JSON, is the component's `data`. Your app's shared Inertia props don't reach admin pages, so this is how a slot gets server data.
+Azu's stylesheet leaves the sidebar, the top bar and the page's actions out of print, so the page prints just the order.
+
+The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, and the resource's list URL as `path`.
 
 **3. Publish a page.** Copy any page into your app and edit it however you like:
 
