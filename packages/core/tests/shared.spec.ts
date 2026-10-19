@@ -19,6 +19,7 @@ import {
   detailLayout,
   filterValueLabel,
   listRange,
+  afterSave,
   emptyListMessage,
   pageWindow,
   usedComponentNames,
@@ -644,5 +645,19 @@ test.group('Form layout (layout 4/4)', () => {
       formStatus({ dirty: true, invalid: 2 }),
       'Unsaved changes · 2 fields need attention'
     )
+  })
+})
+
+test.group('After a save (layout 4/4)', () => {
+  test('each form takes its own _after or show; anything else is show', ({ assert }) => {
+    assert.equal(afterSave('create', 'create'), 'create')
+    assert.equal(afterSave('edit', 'edit'), 'edit')
+    // The other form's value, a forged one, or none
+    assert.equal(afterSave('edit', 'create'), 'show')
+    assert.equal(afterSave('create', 'edit'), 'show')
+    for (const value of ['show', 'detail', '', null, undefined, 1, ['create'], { edit: true }]) {
+      assert.equal(afterSave(value, 'create'), 'show', String(value))
+      assert.equal(afterSave(value, 'edit'), 'show', String(value))
+    }
   })
 })

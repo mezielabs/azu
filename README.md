@@ -141,7 +141,7 @@ export default defineResource(Product, {
 
 Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo.
 
-The fields become the create and edit forms, checked by your validators:
+The fields become the create and edit forms, checked by your validators. Saving goes to the record's page, or with "Create & add another" to a fresh form and with "Save & keep editing" back to the edit form:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/form-dark.png">

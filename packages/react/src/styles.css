@@ -667,12 +667,13 @@
     background: var(--azu-surface);
   }
 
+  /* One line at every width: the status gives way to the buttons */
   .azu-save-bar-inner {
-    @apply mx-auto flex max-w-190 flex-wrap items-center justify-between gap-3;
+    @apply mx-auto flex max-w-190 flex-nowrap items-center justify-between gap-3;
   }
 
   .azu-save-status {
-    @apply flex min-h-5 items-center gap-2 text-sm;
+    @apply m-0 min-h-5 min-w-0 flex-1 truncate text-sm;
     color: var(--azu-muted);
   }
 
@@ -685,13 +686,22 @@
   }
 
   .azu-save-status:not(:empty)::before {
-    @apply inline-block h-2 w-2 shrink-0 rounded-full;
+    @apply mr-2 inline-block h-2 w-2 rounded-full align-middle;
     content: '';
     background: currentColor;
   }
 
   .azu-save-actions {
-    @apply ml-auto flex items-center gap-2;
+    @apply ml-auto flex shrink-0 items-center gap-2;
+  }
+
+  .azu-save-actions .azu-button {
+    @apply whitespace-nowrap;
+  }
+
+  /* "Create & add another" on wide screens, "Add another" on phones */
+  .azu-label-narrow {
+    @apply hidden;
   }
 
   .azu-save-actions .azu-button {
@@ -705,7 +715,15 @@
     }
 
     .azu-save-actions .azu-button {
-      @apply min-h-11;
+      @apply min-h-11 px-2.5;
+    }
+
+    .azu-save-actions .azu-label-wide {
+      @apply hidden;
+    }
+
+    .azu-save-actions .azu-label-narrow {
+      @apply inline;
     }
   }
 
@@ -982,6 +1000,11 @@
     border-color: var(--azu-border);
     background: var(--azu-surface);
     color: var(--azu-text);
+  }
+
+  .azu-toast-link {
+    @apply font-semibold underline;
+    color: var(--azu-brand);
   }
 
   .azu-toast[data-azu-tone='success'] {

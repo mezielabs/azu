@@ -28,6 +28,7 @@ import { allows } from '../resources/abilities.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import { canList } from '../resources/navigation.ts'
 import { listStateUrl, parseListState } from '../shared/list_state.ts'
+import { AFTER_SAVE_INPUT, afterSave } from '../shared/after_save.ts'
 import type { CellValue, FormErrors, FormFieldSchema } from '../schema.ts'
 import type { AzuConfig, RelationOptionsResponse } from '../types.ts'
 
@@ -41,6 +42,34 @@ function notFound(ctx: HttpContext, context: Context) {
 function forbidden(ctx: HttpContext, context: Context) {
   ctx.response.status(403)
   return renderPage(ctx, context, 'azu/errors/forbidden', {})
+}
+
+/**
+ * The session flash key "Create & add another" names the new record in
+ */
+const SAVED_FLASH = 'azu.saved'
+
+/**
+ * The request's session, when the app has session middleware. Without
+ * one, "Create & add another" still works, with no View link.
+ */
+function sessionOf(ctx: HttpContext) {
+  return (
+    ctx as unknown as {
+      session?: {
+        flash(key: string, value: unknown): void
+        flashMessages: { get(key: string): unknown }
+      }
+    }
+  ).session
+}
+
+function savedRecord(ctx: HttpContext): { id: string | number; title: string | null } | null {
+  const saved = sessionOf(ctx)?.flashMessages.get(SAVED_FLASH) as
+    { id: string | number; title: string | null } | undefined
+  return saved && (typeof saved.id === 'string' || typeof saved.id === 'number')
+    ? { id: saved.id, title: typeof saved.title === 'string' ? saved.title : null }
+    : null
 }
 
 function resourcePath(context: Context, resource: Resource<any, any>, ...segments: unknown[]) {
@@ -173,6 +202,13 @@ export class ResourcesController {
       return this.#renderCreate(ctx, resource, fields, result.errors)
     }
 
+    // "Create & add another": a fresh form, which names the new record
+    // for its toast's View link
+    if (afterSave(ctx.request.input(AFTER_SAVE_INPUT), 'create') === 'create') {
+      const { id, title } = recordData(resource, result.record, [])
+      sessionOf(ctx)?.flash(SAVED_FLASH, { id, title })
+      return this.#redirect(ctx, resourcePath(this.context, resource, 'create'))
+    }
     return this.#toDetail(ctx, resource, result.record)
   }
 
@@ -262,6 +298,13 @@ export class ResourcesController {
       return this.#renderEdit(ctx, resource, record!, fields, result.errors)
     }
 
+    // "Save & keep editing": the edit form again, with the values as stored
+    if (afterSave(ctx.request.input(AFTER_SAVE_INPUT), 'edit') === 'edit') {
+      return this.#redirect(
+        ctx,
+        resourcePath(this.context, resource, result.record.$primaryKeyValue, 'edit')
+      )
+    }
     return this.#toDetail(ctx, resource, result.record)
   }
 
@@ -399,6 +442,8 @@ export class ResourcesController {
   ) {
     return renderPage(ctx, this.context, 'azu/resource/create', {
       resource: resource.toSchema(),
+      // Set only right after "Create & add another"
+      saved: errors && Object.keys(errors).length > 0 ? null : savedRecord(ctx),
       form: { fields, values: formValues(fields) },
       errors,
     })
@@ -428,10 +473,10 @@ export class ResourcesController {
    * 303, so the browser follows a POST or PUT with a GET.
    */
   #toDetail(ctx: HttpContext, resource: Resource<any, any>, record: LucidRow) {
-    return ctx.response
-      .redirect()
-      .withQs(false)
-      .status(303)
-      .toPath(resourcePath(this.context, resource, record.$primaryKeyValue))
+    return this.#redirect(ctx, resourcePath(this.context, resource, record.$primaryKeyValue))
+  }
+
+  #redirect(ctx: HttpContext, path: string) {
+    return ctx.response.redirect().withQs(false).status(303).toPath(path)
   }
 }
