@@ -1,16 +1,24 @@
 import { router } from '@inertiajs/react'
-import { actionKey, detailLayout, formatDateTime, resourceBreadcrumbs } from '@mezielabs/azu/shared'
 import {
+  actionKey,
+  detailLayout,
+  formatDateTime,
+  resourceBreadcrumbs,
+  splitActions,
+} from '@mezielabs/azu/shared'
+import {
+  ActionsMenu,
   AdminLayout,
+  COMPACT_QUERY,
   FieldValueView,
   Head,
   Link,
   ListCell,
   PageHeader,
   RelationTableView,
-  RowActionsMenu,
   Slot,
   useActions,
+  useMediaQuery,
   type ResourceShowPageProps,
 } from '@mezielabs/azu-react'
 import type { FileValue, ListRow } from '@mezielabs/azu/types'
@@ -21,8 +29,10 @@ import type { FileValue, ListRow } from '@mezielabs/azu/types'
  * and the record's ID and timestamps on the right; `hasMany` tables
  * below. With no fields to show, it shows the columns instead.
  *
- * Row actions are buttons in the header, except destructive ones
- * (Delete), which sit in a "⋯" menu. The server checks the policy's
+ * The header's row actions follow the bulk bar's rule
+ * (`splitActions()`), so it never wraps: up to three as buttons, else
+ * two and a "More" menu, and one "Actions" menu below 1024px. Edit is
+ * apart from them, the primary button. The server checks the policy's
  * `view`; Edit shows only when `update` allows it, and the server checks
  * that again.
  */
@@ -60,8 +70,9 @@ export default function ResourceShow({
   const rowActions = resource.actions.filter(
     (action) => action.kind === 'row' && abilities.actions.includes(actionKey(action))
   )
-  const buttons = rowActions.filter((action) => !action.destructive)
-  const menu = rowActions.filter((action) => action.destructive)
+  const narrow = useMediaQuery(COMPACT_QUERY)
+  const split = splitActions(rowActions, { narrow })
+  const run = (action: (typeof rowActions)[number]) => actions.run(action, { ids: [record.id] })
 
   const layout = detailLayout(fields, resource.columns)
   // The row the list would have, for column cells (the fallback, the badge)
@@ -84,9 +95,10 @@ export default function ResourceShow({
       <PageHeader
         page="resource/show"
         resource={resource.name}
+        fullTitle={name}
         title={
           <>
-            {name}
+            <span className="azu-page-title-text">{name}</span>
             {layout.badge && badgeValue !== null && (
               <span className="azu-title-badge">
                 <ListCell
@@ -103,29 +115,32 @@ export default function ResourceShow({
         actions={
           <>
             <Slot name="toolbar" {...slot} />
-            {buttons.map((action) => (
+            {split.buttons.map((action) => (
               <button
                 key={action.name}
                 type="button"
                 className="azu-button"
+                data-azu-destructive={action.destructive || undefined}
                 disabled={actions.busy}
-                onClick={() => actions.run(action, { ids: [record.id] })}
+                onClick={() => run(action)}
               >
                 {action.label}
               </button>
             ))}
+            {split.menuLabel && (
+              <ActionsMenu
+                actions={split.menu}
+                label={split.menuLabel}
+                className="azu-button azu-header-menu"
+                isDisabled={actions.busy}
+                onAction={run}
+              />
+            )}
             {abilities.update && (
               <Link href={`${detail}/edit`} className="azu-button azu-button-primary">
                 Edit
               </Link>
             )}
-            <RowActionsMenu
-              actions={menu}
-              title={name}
-              label="More actions"
-              className="azu-button azu-more-button"
-              onAction={(action) => actions.run(action, { ids: [record.id] })}
-            />
           </>
         }
       />

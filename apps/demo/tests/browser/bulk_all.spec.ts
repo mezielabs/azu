@@ -52,11 +52,7 @@ test.group('Bulk actions on all matching rows (FR-17)', (group) => {
       assert.deepEqual(await axeViolations(page), [], `toolbar, ${colorScheme}`)
     }
 
-    await toolbar.getByRole('button', { name: 'Actions', exact: true }).click()
-    await page
-      .getByRole('menu', { name: 'Actions' })
-      .getByRole('menuitem', { name: 'Publish' })
-      .click()
+    await toolbar.getByRole('button', { name: 'Publish' }).click()
     const dialog = page.getByRole('alertdialog')
     await dialog.waitFor()
     assert.include(await dialog.textContent(), 'all 520 matching products')

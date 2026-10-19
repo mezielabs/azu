@@ -323,20 +323,33 @@
   }
 
   /* Every page's header: breadcrumb, title, actions on the right */
+  /* One line: the title truncates, never the actions */
   .azu-page-header {
-    @apply mb-6 flex flex-wrap items-end justify-between gap-4;
+    @apply mb-6 flex flex-nowrap items-end justify-between gap-4;
   }
 
   .azu-page-heading {
-    @apply flex min-w-0 flex-col gap-1.5;
+    @apply flex min-w-0 flex-1 flex-col gap-1.5;
   }
 
   .azu-page-title {
-    @apply m-0 text-[26px] leading-tight font-semibold tracking-tight;
+    @apply m-0 flex min-w-0 items-center text-[26px] leading-tight font-semibold tracking-tight;
+  }
+
+  .azu-page-title-text {
+    @apply min-w-0 truncate;
   }
 
   .azu-page-actions {
-    @apply flex flex-wrap items-center gap-2;
+    @apply flex shrink-0 flex-nowrap items-center gap-2;
+  }
+
+  .azu-page-actions .azu-button[data-azu-destructive] {
+    color: var(--azu-danger);
+  }
+
+  .azu-header-menu {
+    @apply gap-1.5;
   }
 
   .azu-breadcrumbs ol {
@@ -1782,11 +1795,7 @@
   }
 
   .azu-title-badge {
-    @apply ml-3 inline-flex align-middle text-sm font-normal tracking-normal;
-  }
-
-  .azu-more-button {
-    @apply inline-flex h-9 w-9 items-center justify-center p-0;
+    @apply ml-3 inline-flex shrink-0 align-middle text-sm font-normal tracking-normal;
   }
 
   .azu-relation {

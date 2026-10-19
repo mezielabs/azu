@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 /** Below 768px: the shell's drawer, the list's cards */
 export const PHONE_QUERY = '(max-width: 767px)'
 
+/** Below 1024px: the filters sheet, and one Actions menu in the bulk bar and the detail header */
+export const COMPACT_QUERY = '(max-width: 1023px)'
+
 /**
  * Whether a media query matches, kept up to date. Azu's pages render in
  * the browser only, so the first render already has the answer.
