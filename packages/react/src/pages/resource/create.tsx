@@ -36,7 +36,9 @@ export default function ResourceCreate({ azu, resource, form, errors }: Resource
           action={`${path}/create`}
           method="post"
           timezone={azu.timezone}
-          submitLabel={`Create ${singular}`}
+          submitLabel="Create"
+          secondary={{ label: 'Create & add another', short: 'Add another', after: 'create' }}
+          savedHref={(record) => `${path}/${encodeURIComponent(String(record.id))}`}
           cancelHref={path}
           successMessage={`${resource.singularLabel} created`}
         />

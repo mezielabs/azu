@@ -1,6 +1,9 @@
+import { Link } from '@inertiajs/react'
 import { useSyncExternalStore } from 'react'
 
-type Toast = { id: number; message: string; tone: 'success' | 'error' }
+type ToastLink = { label: string; href: string }
+
+type Toast = { id: number; message: string; tone: 'success' | 'error'; link: ToastLink | null }
 
 /**
  * Toasts live outside React, so one shown just before an Inertia visit
@@ -27,11 +30,16 @@ export function dismissToast(id: number) {
 }
 
 /**
- * Shows a message in Azu's toast region for five seconds.
+ * Shows a message in Azu's toast region for five seconds, with an
+ * optional link after it (`{ label: 'View', href }`).
  */
-export function showToast(message: string, tone: Toast['tone'] = 'success') {
+export function showToast(
+  message: string,
+  tone: Toast['tone'] = 'success',
+  link: ToastLink | null = null
+) {
   const id = nextId++
-  toasts = [...toasts, { id, message, tone }]
+  toasts = [...toasts, { id, message, tone, link }]
   emit()
   setTimeout(() => dismissToast(id), DURATION)
 }
@@ -54,6 +62,15 @@ export function ToastRegion() {
       {items.map((toast) => (
         <div key={toast.id} className="azu-toast" data-azu-tone={toast.tone}>
           <span>{toast.message}</span>
+          {toast.link && (
+            <Link
+              href={toast.link.href}
+              className="azu-toast-link"
+              onClick={() => dismissToast(toast.id)}
+            >
+              {toast.link.label}
+            </Link>
+          )}
           <button
             type="button"
             className="azu-toast-close"

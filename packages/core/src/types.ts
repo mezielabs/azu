@@ -226,6 +226,11 @@ export type ResourceCreatePageProps = AzuSharedProps & {
   resource: ResourceSchema
   form: ResourceFormData
   errors: FormErrors
+  /**
+   * The record "Create & add another" just created, for the fresh
+   * form's toast and its View link; `null` otherwise
+   */
+  saved: { id: string | number; title: string | null } | null
 }
 
 /**

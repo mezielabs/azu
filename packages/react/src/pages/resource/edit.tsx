@@ -45,6 +45,7 @@ export default function ResourceEdit({
           method="put"
           timezone={azu.timezone}
           submitLabel="Save changes"
+          secondary={{ label: 'Save & keep editing', short: 'Keep editing', after: 'edit' }}
           cancelHref={detail}
           successMessage={`${resource.singularLabel} saved`}
         />

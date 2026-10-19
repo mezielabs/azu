@@ -450,3 +450,208 @@ test.group('Admin / malformed ids (FR-06)', () => {
     }
   })
 })
+
+test.group('Admin / save and come back (layout 4/4)', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
+  test('_after=create goes to a fresh create form that names the new record', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const code = uniqueCode()
+    const response = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code }), _after: 'create' })
+      .redirects(0)
+
+    response.assertStatus(303)
+    assert.equal(response.header('location'), `${COUPONS}/create`)
+    const coupon = await Coupon.findByOrFail('code', code)
+    assert.deepEqual(response.flashMessages().azu, { saved: { id: coupon.id, title: code } })
+
+    // The fresh form gets it once, with declared defaults and no errors
+    const form = await client
+      .get(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withFlashMessages({ azu: { saved: { id: coupon.id, title: code } } })
+    assert.deepEqual(form.body().props.saved, { id: coupon.id, title: code })
+    assert.containsSubset(form.body().props.form.values, { code: null, isActive: true })
+    assert.deepEqual(form.body().props.errors, {})
+    const plain = await client.get(`${COUPONS}/create`).loginAs(admin).withInertia()
+    assert.isNull(plain.body().props.saved)
+  })
+
+  test("the View link needs the record's view: a user who may create but not view gets none", async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const { default: couponResource } = await import('#admin/resources/coupon_resource')
+    const { default: CouponPolicy } = await import('#policies/coupon_policy')
+    // Creating is allowed; viewing what was created isn't
+    class CreateOnlyPolicy extends CouponPolicy {
+      view() {
+        return false
+      }
+    }
+    const policy = couponResource.options.policy
+    couponResource.options.policy = CreateOnlyPolicy as never
+    cleanup(() => {
+      couponResource.options.policy = policy
+    })
+
+    const code = uniqueCode()
+    const response = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code }), _after: 'create' })
+      .redirects(0)
+
+    response.assertStatus(303)
+    assert.equal(response.header('location'), `${COUPONS}/create`)
+    assert.isNotNull(await Coupon.findBy('code', code))
+    // Nothing flashed, so the fresh form names no record
+    assert.isUndefined(response.flashMessages().azu)
+    const form = await client.get(`${COUPONS}/create`).loginAs(admin).withInertia()
+    assert.isNull(form.body().props.saved)
+  })
+
+  test('_after=edit goes back to the edit form, which shows the values as stored', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const coupon = await createCoupon()
+    const response = await client
+      .put(`${COUPONS}/${coupon.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code: ` ${coupon.code.toLowerCase()} ` }), _after: 'edit' })
+      .redirects(0)
+
+    response.assertStatus(303)
+    assert.equal(response.header('location'), `${COUPONS}/${coupon.id}/edit`)
+    const form = await client.get(`${COUPONS}/${coupon.id}/edit`).loginAs(admin).withInertia()
+    // As stored: the validator trimmed and uppercased it
+    assert.equal(form.body().props.form.values.code, coupon.code)
+  })
+
+  test('_after never reaches the validator; a forged or unknown value goes to the detail page', async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const { default: couponResource } = await import('#admin/resources/coupon_resource')
+    const validators = couponResource.options.validators!
+    const original = { create: validators.create, update: validators.update }
+    const seen: Record<string, unknown>[] = []
+    const spy = (validator: typeof validators.create) => ({
+      validate: (data: Record<string, unknown>, options?: unknown) => {
+        seen.push(data)
+        return validator!.validate(data, options)
+      },
+    })
+    validators.create = spy(original.create)
+    validators.update = spy(original.update ?? original.create)
+    cleanup(() => {
+      Object.assign(validators, original)
+    })
+
+    for (const value of ['create', 'edit', 'show', 'detail', '../../logout']) {
+      const code = uniqueCode()
+      const created = await client
+        .post(`${COUPONS}/create`)
+        .loginAs(admin)
+        .withInertia()
+        .withCsrfToken()
+        .json({ ...couponPayload({ code }), _after: value })
+        .redirects(0)
+      const coupon = await Coupon.findByOrFail('code', code)
+      // Only create's own value comes back to a form
+      assert.equal(
+        created.header('location'),
+        value === 'create' ? `${COUPONS}/create` : `${COUPONS}/${coupon.id}`,
+        `create, ${value}`
+      )
+
+      const updated = await client
+        .put(`${COUPONS}/${coupon.id}/edit`)
+        .loginAs(admin)
+        .withInertia()
+        .withCsrfToken()
+        .json({ ...couponPayload({ code }), _after: value })
+        .redirects(0)
+      assert.equal(
+        updated.header('location'),
+        value === 'edit' ? `${COUPONS}/${coupon.id}/edit` : `${COUPONS}/${coupon.id}`,
+        `update, ${value}`
+      )
+    }
+    assert.lengthOf(seen, 10)
+    for (const data of seen) assert.notProperty(data, '_after')
+  })
+
+  test('an invalid submit renders the form with its errors, whichever button sent it', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const coupon = await createCoupon()
+    const created = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ amount: '-5' }), _after: 'create' })
+    created.assertStatus(422)
+    created.assertInertiaComponent('azu/resource/create')
+    assert.deepEqual(errorsOf(created).amount, ['Amount must be at least 0'])
+    assert.isNull(created.body().props.saved)
+
+    const updated = await client
+      .put(`${COUPONS}/${coupon.id}/edit`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ amount: '-5' }), _after: 'edit' })
+    updated.assertStatus(422)
+    updated.assertInertiaComponent('azu/resource/edit')
+    assert.deepEqual(errorsOf(updated).amount, ['Amount must be at least 0'])
+  })
+
+  test('without create or update, neither the forms nor their buttons are offered', async ({
+    client,
+    assert,
+  }) => {
+    const staff = await createUser('staff')
+    const coupon = await createCoupon()
+    const code = uniqueCode()
+
+    const create = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(staff)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code }), _after: 'create' })
+    create.assertStatus(403)
+    assert.isNull(await Coupon.findBy('code', code))
+
+    const update = await client
+      .put(`${COUPONS}/${coupon.id}/edit`)
+      .loginAs(staff)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code }), _after: 'edit' })
+    update.assertStatus(403)
+  })
+})
