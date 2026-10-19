@@ -696,16 +696,12 @@
   }
 
   .azu-save-actions .azu-button {
-    @apply whitespace-nowrap;
+    @apply min-h-9 whitespace-nowrap;
   }
 
   /* "Create & add another" on wide screens, "Add another" on phones */
   .azu-label-narrow {
     @apply hidden;
-  }
-
-  .azu-save-actions .azu-button {
-    @apply min-h-9;
   }
 
   @media (max-width: 767px) {

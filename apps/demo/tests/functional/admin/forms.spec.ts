@@ -486,6 +486,44 @@ test.group('Admin / save and come back (layout 4/4)', (group) => {
     assert.isNull(plain.body().props.saved)
   })
 
+  test("the View link needs the record's view: a user who may create but not view gets none", async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const { default: couponResource } = await import('#admin/resources/coupon_resource')
+    const { default: CouponPolicy } = await import('#policies/coupon_policy')
+    // Creating is allowed; viewing what was created isn't
+    class CreateOnlyPolicy extends CouponPolicy {
+      view() {
+        return false
+      }
+    }
+    const policy = couponResource.options.policy
+    couponResource.options.policy = CreateOnlyPolicy as never
+    cleanup(() => {
+      couponResource.options.policy = policy
+    })
+
+    const code = uniqueCode()
+    const response = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json({ ...couponPayload({ code }), _after: 'create' })
+      .redirects(0)
+
+    response.assertStatus(303)
+    assert.equal(response.header('location'), `${COUPONS}/create`)
+    assert.isNotNull(await Coupon.findBy('code', code))
+    // Nothing flashed, so the fresh form names no record
+    assert.isUndefined(response.flashMessages().azu)
+    const form = await client.get(`${COUPONS}/create`).loginAs(admin).withInertia()
+    assert.isNull(form.body().props.saved)
+  })
+
   test('_after=edit goes back to the edit form, which shows the values as stored', async ({
     client,
     assert,

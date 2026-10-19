@@ -203,10 +203,12 @@ export class ResourcesController {
     }
 
     // "Create & add another": a fresh form, which names the new record
-    // for its toast's View link
+    // for its toast's View link, only to a user who may view it
     if (afterSave(ctx.request.input(AFTER_SAVE_INPUT), 'create') === 'create') {
-      const { id, title } = recordData(resource, result.record, [])
-      sessionOf(ctx)?.flash(SAVED_FLASH, { id, title })
+      if (await allows(ctx, resource, 'view', result.record)) {
+        const { id, title } = recordData(resource, result.record, [])
+        sessionOf(ctx)?.flash(SAVED_FLASH, { id, title })
+      }
       return this.#redirect(ctx, resourcePath(this.context, resource, 'create'))
     }
     return this.#toDetail(ctx, resource, result.record)
