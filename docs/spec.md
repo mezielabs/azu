@@ -144,6 +144,8 @@ Rules:
 
 ## 5. Fields, columns, filters, actions
 
+**Labels:** a field, column, filter or action without `.label()` is labelled from its name in sentence case (`humanize()`), with SKU, ID, URL, API, VAT and UUID in capitals, plurals included (`sku` → "SKU", `userId` → "User ID", `imageUrls` → "Image URLs"). Resource labels follow the same rule from the model's name. An explicit label is used as written.
+
 | Type | Form control | List column | Storage |
 | --- | --- | --- | --- |
 | `text` | Input, optional prefix/suffix | Text, truncated at 60 chars | String |
@@ -344,6 +346,7 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Summary strip:** `listSummary()`: "40 products", or "32 of 40 products · filtered by Status: Published and Low stock · matching “clay”". "of 40" is `meta.unfilteredTotal`, a count through the `query` hook without search and filters, run only when one is on (`null` otherwise). With every row on the page selected, it says how many more match.
 - **Table:** the title column's cell is a real link to the detail page (the rest of the row isn't). Sortable headers show a sort hint; the sorted one its direction. A badge shows the value's label (`ColumnSchema.labels`) from the resource's `select` field of the same name, else its `select` filter of that name (Orders' status), with a dot. An image column with no image shows a placeholder the thumbnail's size, and its header text is for screen readers only. The row actions button is borderless and opens the row menu: View when the user passes `view` for that row, Edit when they pass `update` (`ListRow.abilities.view` and `.update`, checked per row on the server), a separator, then the row actions they may run on it, destructive last. The menu shows whenever any item is available, so a resource with no row actions still gets one.
 - **Footer:** "Showing 1–25 of 32", Rows per page, and the pages: Previous, the first and last pages, the current one and its neighbours (`pageWindow()`), Next.
+- **Empty:** with no rows, the table (or the phone cards) says why (`emptyListMessage()`): "No products match “zzz”", "No products match Status: Published", "No products match “zzz” with Status: Published", or "No products yet", with a button that clears what's narrowing it ("Clear search", "Clear filters", "Clear search and filters"). The header cells keep the widths they had with rows, so the columns don't move.
 - **Below 768px:** rows are cards (`ListCards`): the first image column as the picture, the title, the next two columns as a line under it, the first badge column on the right; only one of the table or the cards renders. No selection there. The filters sheet's rows are 44px, toggles included, with a gap between the box and its label. New is a 44px icon button whose name stays "New product".
 
 **Detail page (layout 3/4):** two columns, stacking below 768px.

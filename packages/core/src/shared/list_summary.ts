@@ -43,6 +43,24 @@ export function filterValueLabel(
   }
 }
 
+type FilterInput = { filters: ListFilter[]; values: FilterValues }
+
+/**
+ * The filters that are on, as a phrase: "Status: Published and Low
+ * stock". `null` when none is.
+ */
+function filtersPhrase(filters: ListFilter[], values: FilterValues): string | null {
+  const active = filters
+    .map((filter) => {
+      const value = filterValueLabel(filter, values[filter.name])
+      if (value === null) return null
+      return value === '' ? filter.label : `${filter.label}: ${value}`
+    })
+    .filter((text): text is string => text !== null)
+  if (active.length === 0) return null
+  return active.length === 1 ? active[0] : `${active.slice(0, -1).join(', ')} and ${active.at(-1)}`
+}
+
 /**
  * The strip above the list (layout 2/4): "40 products", or with a search
  * or filters on, "32 of 40 products · filtered by Status: Published and
@@ -63,20 +81,30 @@ export function listSummary(input: {
       ? `${number(total)} ${noun(total)}`
       : `${number(total)} of ${number(unfilteredTotal)} ${noun(unfilteredTotal)}`
   )
-  const active = input.filters
-    .map((filter) => {
-      const value = filterValueLabel(filter, input.values[filter.name])
-      if (value === null) return null
-      return value === '' ? filter.label : `${filter.label}: ${value}`
-    })
-    .filter((text): text is string => text !== null)
-  if (active.length > 0) {
-    const list =
-      active.length === 1 ? active[0] : `${active.slice(0, -1).join(', ')} and ${active.at(-1)}`
-    parts.push(`filtered by ${list}`)
-  }
+  const active = filtersPhrase(input.filters, input.values)
+  if (active) parts.push(`filtered by ${active}`)
   if (input.search) parts.push(`matching “${input.search}”`)
   return parts.join(' · ')
+}
+
+/**
+ * What an empty list says, and what its Clear button clears: "No
+ * products match “zzz”", "No products match Status: Published", both
+ * ("No products match “zzz” with Status: Published"), or "No products
+ * yet" with nothing to clear.
+ */
+export function emptyListMessage(
+  input: FilterInput & { noun: { one: string; many: string }; search: string }
+): { message: string; clear: 'search' | 'filters' | 'search and filters' | null } {
+  const filtered = filtersPhrase(input.filters, input.values)
+  const search = input.search ? `“${input.search}”` : null
+  const none = `No ${input.noun.many}`
+  if (search && filtered) {
+    return { message: `${none} match ${search} with ${filtered}`, clear: 'search and filters' }
+  }
+  if (search) return { message: `${none} match ${search}`, clear: 'search' }
+  if (filtered) return { message: `${none} match ${filtered}`, clear: 'filters' }
+  return { message: `${none} yet`, clear: null }
 }
 
 /**

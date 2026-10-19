@@ -34,7 +34,12 @@ export function FieldValueView(props: {
   if (value === null || value === '') return EMPTY
 
   if (column && !column.component && FORMATTED.has(column.kind) && PLAIN.has(field.kind)) {
-    const row = { id: '', title: null, cells: {}, abilities: { view: false, update: false, actions: [] } }
+    const row = {
+      id: '',
+      title: null,
+      cells: {},
+      abilities: { view: false, update: false, actions: [] },
+    }
     return (
       <ListCell
         column={column}

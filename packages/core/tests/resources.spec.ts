@@ -6,6 +6,7 @@ import { column } from '../src/resources/columns.ts'
 import { defineResource, Resource } from '../src/resources/define_resource.ts'
 import { field } from '../src/resources/fields.ts'
 import { filter } from '../src/resources/filters.ts'
+import { humanize } from '../src/resources/labels.ts'
 import { loadResources } from '../src/resources/loader.ts'
 import { buildNavigation, canList } from '../src/resources/navigation.ts'
 import { ResourceRegistry } from '../src/resources/registry.ts'
@@ -359,5 +360,48 @@ test.group('Navigation', () => {
     const { ctx } = requestWith(undefined)
 
     assert.deepEqual(await buildNavigation(ctx, [products, orders], '/admin'), [])
+  })
+})
+
+test.group('Labels', () => {
+  test('known acronyms are capitals, plurals included; other words are left alone', ({
+    assert,
+  }) => {
+    const cases: Record<string, string> = {
+      sku: 'SKU',
+      skuCode: 'SKU code',
+      id: 'ID',
+      userId: 'User ID',
+      ids: 'IDs',
+      imageUrl: 'Image URL',
+      imageUrls: 'Image URLs',
+      apiKey: 'API key',
+      vatRate: 'VAT rate',
+      uuid: 'UUID',
+      ApiKeys: 'API keys',
+      // Words that merely start or end like one
+      idea: 'Idea',
+      identity: 'Identity',
+      status: 'Status',
+      guid: 'Guid',
+    }
+    for (const [name, label] of Object.entries(cases)) {
+      assert.equal(humanize(name), label, name)
+    }
+  })
+
+  test('fields, columns, filters and actions use them; an explicit label() wins', ({ assert }) => {
+    assert.equal(field.text('sku').toJSON().label, 'SKU')
+    assert.equal(column.text('imageUrl').toJSON().label, 'Image URL')
+    assert.equal(filter.boolean('hasVat').toJSON().label, 'Has VAT')
+    assert.equal(
+      action
+        .row('regenerateUuid')
+        .handle(async () => {})
+        .toJSON().label,
+      'Regenerate UUID'
+    )
+    assert.equal(field.text('sku').label('Sku').toJSON().label, 'Sku')
+    assert.equal(column.text('sku').label('Stock code').toJSON().label, 'Stock code')
   })
 })

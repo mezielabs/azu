@@ -191,6 +191,61 @@ test.group('List page', (group) => {
       .waitFor()
   })
 
+  test('an empty list names the search and filters, offers Clear, and keeps its columns', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    await catalog()
+    const page = await visit('/admin/resources/products')
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const firstRow = page.locator('.azu-table tbody .azu-title-link').first()
+    await firstRow.waitFor()
+    const headers = () =>
+      page
+        .locator('.azu-table thead th')
+        .evaluateAll((cells: any[]) =>
+          cells.map((cell) => Math.round(cell.getBoundingClientRect().width))
+        )
+    const before = await headers()
+
+    // A search that matches nothing
+    await page.getByRole('searchbox', { name: 'Search products' }).fill('zzz')
+    const empty = page.locator('.azu-table-empty')
+    await empty.getByText('No products match “zzz”', { exact: true }).waitFor()
+    assert.deepEqual(await headers(), before, 'the columns keep their widths')
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(await axeViolations(page), [], `empty list, ${colorScheme}`)
+    }
+
+    // Clear brings the rows back and empties the search box
+    await empty.getByRole('button', { name: 'Clear search' }).click()
+    await firstRow.waitFor()
+    assert.equal(await page.getByRole('searchbox', { name: 'Search products' }).inputValue(), '')
+    assert.notInclude(page.url(), 'search=')
+
+    // Filters and a search together, straight from a URL
+    await page.goto('/admin/resources/products?status=draft&search=Pot%2002')
+    await empty
+      .getByText('No products match “Pot 02” with Status: Draft', { exact: true })
+      .waitFor()
+    await empty.getByRole('button', { name: 'Clear search and filters' }).click()
+    await firstRow.waitFor()
+    assert.notInclude(page.url(), 'status=')
+
+    // Phone cards say the same
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/admin/resources/products?search=zzz')
+    await page
+      .locator('.azu-list-cards')
+      .getByText('No products match “zzz”', { exact: true })
+      .waitFor()
+    await page.getByRole('button', { name: 'Clear search' }).click()
+    await page.locator('.azu-card').first().waitFor()
+  })
+
   test('six bulk actions: the bar keeps one line and one height at 1440px and 900px', async ({
     visit,
     browserContext,

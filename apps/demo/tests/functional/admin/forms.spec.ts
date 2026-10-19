@@ -180,6 +180,49 @@ test.group('Admin / create (FR-06)', (group) => {
     assert.lengthOf(await Coupon.query().where('code', taken.code), 1)
   })
 
+  test('errors name the field by its label (the demo labels its validators)', async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const taken = await createCoupon()
+    const response = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(
+        couponPayload({
+          code: taken.code,
+          amount: '-5',
+          usageLimit: 0,
+          startsOn: null,
+          kind: 'bogus',
+        })
+      )
+
+    response.assertStatus(422)
+    assert.deepEqual(errorsOf(response), {
+      code: ['Code is already taken'],
+      amount: ['Amount must be at least 0'],
+      usageLimit: ['Usage limit must be at least 1'],
+      startsOn: ['Starts on is required'],
+      kind: ['Kind must be one of the options'],
+    })
+
+    // A decimal that isn't one still fails its format, not its bound
+    const format = await client
+      .post(`${COUPONS}/create`)
+      .loginAs(admin)
+      .withInertia()
+      .withCsrfToken()
+      .json(couponPayload({ amount: '12.345', code: 'bad code!' }))
+    assert.deepEqual(errorsOf(format), {
+      code: ['Code may only contain letters, numbers, dashes and underscores'],
+      amount: ['Amount is not in the right format'],
+    })
+  })
+
   test('staff can open neither the form nor the submit (CouponPolicy.create)', async ({
     client,
     assert,

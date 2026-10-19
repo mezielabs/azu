@@ -1,4 +1,5 @@
 import string from '@adonisjs/core/helpers/string'
+import { humanize } from './labels.ts'
 import type { LucidModel, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { FilterKind, FilterSchema } from '../schema.ts'
 import type { BooleanColumn, DateColumn, RelationName, StringColumn } from './model_types.ts'
@@ -35,7 +36,7 @@ export class Filter<
     return {
       kind: this.kind,
       name: this.name,
-      label: this.#label ?? string.sentenceCase(this.name),
+      label: this.#label ?? humanize(this.name),
       options: this.choices,
     }
   }
