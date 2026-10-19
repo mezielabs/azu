@@ -31,6 +31,9 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-17 | Bulk action on all filtered rows | "Select all N matching" runs the action in chunks of 500 | P1 |
 | FR-18 | Soft deletes | Trashed filter and restore action when the model uses soft deletes | P2 |
 | FR-19 | Global search | Cmd/Ctrl+K palette searches every resource's title column | P2 |
+| FR-20 | Custom screens | `defineScreen({ label, group?, icon?, order?, ability, component, data? })` in `app/admin/screens` (autoloaded, named after the file) renders at `<path>/screens/<name>` behind its required Bouncer ability, with `data` as a lazy prop and `ScreenProps<typeof screen>` typing the component; `node ace azu:screen <Name>` generates both files | P1 |
+| FR-21 | Navigation links | `navigation.links` adds links to any URL in the navigation, grouped and ordered with resources and screens; an optional ability hides one; absolute URLs open in a new tab | P1 |
+| FR-22 | Home screen | `home` in `config/azu.ts` renders a screen at `<path>/` or redirects to a resource's list; a user who fails the screen's ability gets the welcome page; a `home` naming nothing fails at boot | P1 |
 
 **Out of scope for v1:** Vue or Svelte front ends, a visual no-code builder, ORMs other than Lucid, AdonisJS versions before 7, a plugin marketplace, replacing the app's auth, and all Pro features (dashboards, audit log, CSV import/export, impersonation, multi-tenancy, premium theme).
 
@@ -260,8 +263,9 @@ Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /a
 | `node ace add @mezielabs/azu` | Registers provider, writes `config/azu.ts` and `start/azu.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise; skipped when the app's package.json already lists it). Timed on a fresh starter kit in `docs/quickstart.md` |
 | `node ace azu:resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
 | `node ace azu:action <Name>` | Writes `app/admin/actions/<name>.ts` from a stub: a row action (`--bulk` for bulk) built with `action.row()`, named and with its ability in camelCase (`MarkAsPaid` → `markAsPaid`), a `confirm`, and a handler that saves through `trx`. Refuses `delete` and won't overwrite without `--force`. Exported as the file's default, so any resource can list it; `tsc` checks the ability against each resource's policy |
+| `node ace azu:screen <Name>` | Writes `app/admin/screens/<snake>.ts` (a `defineScreen` with `accessAdmin` as its ability, a label from the name and a small `data` function) and `inertia/admin/components/<snake>.tsx` (the component, typed with `ScreenProps<typeof screen>`), from stubs, as AdonisJS's own `make:` commands do. Both compile and render with no edits. `--force` overwrites |
 | `node ace azu:publish [page]` | Copies one of Azu's pages from the installed `@mezielabs/azu-react` (which ships `src/pages`) into `inertia/admin/pages`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` and `azu/resource/index` are accepted too. The copy starts with a stamp: `// azu-publish: resource/index@<version> sha256:<hash of the original>`. It refuses to replace an existing file without `--force`. No argument lists the pages, marking published ones. Pages only: Azu's own components aren't resolved from the app, so a copied one would never render |
-| `node ace azu:doctor` | Boots the app and checks: config that points at missing things (the `guard` in config/auth.ts, upload disks in config/drive.ts, the Vite `entry`, the `azu()` plugin in vite.config.ts, the autoload directory, no resources); policy methods resources rely on (`viewList`, `view`, `create`/`update` with form fields, a field's `ability`; an action's ability is an error, since the action can never run); form fields whose input the create or update validator doesn't declare (errors, since VineJS drops them); component names from fields, columns and slots that no file in `inertia/admin/components` registers, and two files registering one name; and published pages whose original changed (a stamp hash that no longer matches the installed page), unstamped pages, and pages Azu doesn't have. Errors exit with 1; warnings and notes don't |
+| `node ace azu:doctor` | Boots the app and checks: config that points at missing things (the `guard` in config/auth.ts, upload disks in config/drive.ts, the Vite `entry`, the `azu()` plugin in vite.config.ts, the autoload directory, no resources); policy methods resources rely on (`viewList`, `view`, `create`/`update` with form fields, a field's `ability`; an action's ability is an error, since the action can never run); form fields whose input the create or update validator doesn't declare (errors, since VineJS drops them); component names from fields, columns, slots and screens that no file in `inertia/admin/components` registers, and two files registering one name; and published pages whose original changed (a stamp hash that no longer matches the installed page), unstamped pages, and pages Azu doesn't have. Errors exit with 1; warnings and notes don't. Screens and links (FR-20 to FR-22): a `home` naming no screen or resource is an error, and a link whose group `navigation.groups` doesn't list is a note |
 
 Generator mapping:
 
@@ -358,13 +362,30 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12"), without the column that points back to this record (§5, `hasManyColumns()`).
 - **No fields:** when the user may see none of the resource's fields (Orders), the page gets `cells`, the record's column values as the list shows them (`belongsTo` columns loaded for it), and the Details card shows the columns, custom cell components included.
 
-**Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/azu.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
+**Navigation (FR-16, FR-21):** built per request from the resources the user may `viewList`, the screens whose ability they pass, and the `navigation.links` they may see. Ungrouped items come first. Groups follow `navigation.groups` in `config/azu.ts`, then any others by label. Within a group, resources, screens and links sort together by `order` (lower first), then those without one, by label. Items carry `kind` (`resource`, `screen` or `link`) and `external`.
+
+- **Links:** `{ label, url, group?, icon?, order?, ability? }`. An `ability` (a Bouncer ability object) only hides the link, failing closed. It doesn't protect the target, which must check access itself. An absolute `http(s)` URL is `external`: it opens in a new tab (`target="_blank"`, `rel="noopener"`), with an external-link icon and "(opens in a new tab)" for screen readers. Admin paths are Inertia links; other paths in the app are plain links.
+- **Current item:** `currentNavigationItem()` in shared. A link is current when the URL's path and query (in any order) both match it. Otherwise it's the resource or screen the path is under, so the "Awaiting shipping" link, not Orders, is current on `/admin/resources/orders?status=paid`.
+- **Home:** with a home screen (FR-22) the user may open, the first link takes its label and icon (`azu.home`), and the screen isn't listed again; otherwise it reads "Dashboard".
 
 - **Icons:** `icon` is a Lucide icon name in kebab case. `lucide-react` is an optional peer of `@mezielabs/azu-react`, and without it the navigation has no icons.
 - **Bundling:** `@mezielabs/azu-react/icons` is an empty map that the `azu()` Vite plugin replaces with a generated module. The plugin reads the resource files (`resources`, default `app/admin/resources`, plus its `icons` option) for `icon:` names, and imports one file per icon in use, so the bundle holds no others.
 - **Unknown names and dev:** an unknown name is a build warning and renders nothing. In dev, an edit that changes the icons in use reloads the admin.
 - **Agnostic plugin:** the front-end package's manifest (`azu.icons`) names the icon package and file pattern, so `azu()` knows nothing of React or Lucide.
 - **Accessibility:** icons are decorative (`aria-hidden`); the link's label names it.
+
+**Screens (FR-20):** `defineScreen({ label, group?, icon?, order?, ability, component, data? })` from `@mezielabs/azu`.
+
+- **Discovery:** default exports from `app/admin/screens` load at boot (`screens.autoload`; `false` to call `azu.registerScreen(name, screen)` from `start/azu.ts`). Each is named after its file in kebab case: `sales_report.ts` → `sales-report`. Two screens with one name are a boot error.
+- **Ability:** `ability` is required and is a Bouncer ability object (`Bouncer.ability(...)`), checked with `ctx.bouncer.allows(ability)` on every request. `false`, an ability that throws, or no Bouncer is denied (`abilityAllows()`).
+- **Route:** `GET <path>/screens/:screen` (`azu.screens.show`), inside the access gate. An unknown screen is a 404; a failed ability is the forbidden page (403).
+- **Page:** `azu/screen`, rendered through `renderPage`, with `screen` (`ScreenSchema`: name, label, group, icon, component) and `data`. `data(ctx)` is a lazy prop, so a partial reload of `data` computes only it, without the shared `azu` props. The page is the shell, a breadcrumb (group, then label), a `PageHeader` with the label, then the registered component with `{ data, screen }`. A component no file registers renders an inline error naming it and the file to add. The page's component is preloaded with it (`usedComponentNames`), and `screen` is publishable like any other page.
+- **Types:** `ScreenProps<typeof screen>` (in core, re-exported by `@mezielabs/azu-react`) types `data` as the awaited return of the screen's `data`. The component imports the screen's type from `#admin/screens/*`. The app's Inertia tsconfig already includes server code through AdonisJS's generated types, so the type import needs no setup.
+- **Generator and doctor:** `node ace azu:screen <Name>` (§7). `azu:doctor` reports a screen component no file registers (error).
+- **Icons:** the `azu()` plugin reads `icon:` names from `app/admin/screens` and `config/azu.ts` too (option `screens`), for screens and links.
+- **Planned next:** screen actions (buttons on a screen that run server-side, like row actions) and screen forms (a validated form on a screen, through a VineJS validator). Neither is built yet.
+
+**Home (FR-22):** `home?: string | { resource: string }` in `config/azu.ts`. A screen name renders that screen at `<path>/` with the URL unchanged; `{ resource }` redirects (302) to its list. A user who fails the home screen's ability gets the welcome page (`azu/dashboard`), not a 403. A `home` naming no registered screen or resource is a boot error, checked in the provider's `ready()` hook after `start/azu.ts` has run, and reported by `azu:doctor`. Without `home`, `<path>/` is the welcome page as before.
 
 **URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/azu.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 
@@ -409,6 +430,15 @@ export default defineConfig({
   // IANA name; defaults to the server process's timezone (TZ)
   timezone: 'Africa/Lagos',
   resources: { autoload: 'app/admin/resources' },
+  // Custom screens (FR-20); false to register them in start/azu.ts
+  screens: { autoload: 'app/admin/screens' },
+  // What <path>/ shows (FR-22): a screen's name, or { resource: 'orders' }
+  home: 'overview',
+  navigation: {
+    groups: ['Sales', 'Catalog'],
+    // Links to any URL (FR-21); an ability only hides one
+    links: [{ label: 'Help', url: 'https://docs.example.com', group: 'Help' }],
+  },
   // Optional; must match azu({ entry }) in vite.config.ts
   entry: 'inertia/admin/app.tsx',
 })

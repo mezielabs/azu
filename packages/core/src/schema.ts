@@ -162,14 +162,34 @@ export type ResourceSchema = {
 }
 
 export type NavigationItem = {
+  /** A resource, a custom screen (FR-20), or a link (FR-21) */
+  kind: 'resource' | 'screen' | 'link'
   name: string
   label: string
   icon: string | null
   href: string
+  /**
+   * An absolute `http(s)` link: it opens in a new tab, with an
+   * external-link icon
+   */
+  external: boolean
+}
+
+/**
+ * A custom screen (FR-20), as its page and the navigation see it.
+ */
+export type ScreenSchema = {
+  /** From its file: `sales_report.ts` → `sales-report` */
+  name: string
+  label: string
+  group: string | null
+  icon: string | null
+  /** The registered component that renders it */
+  component: string
 }
 
 export type NavigationGroup = {
-  /** `null` for resources without a group */
+  /** `null` for items without a group */
   label: string | null
   items: NavigationItem[]
 }

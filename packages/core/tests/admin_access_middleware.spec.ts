@@ -121,6 +121,7 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
           // So the forbidden page can still offer sign out
           user: { name: 'Ada Admin', email: 'ada@azu.test' },
           siteUrl: '/',
+          home: null,
         },
       },
     })

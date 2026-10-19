@@ -9,6 +9,8 @@ import { AdminAccessMiddleware } from '../src/middleware/admin_access_middleware
 import type { AzuConfig } from '../src/types.ts'
 import { Azu } from '../src/azu.ts'
 import { loadResources } from '../src/resources/loader.ts'
+import { loadScreens } from '../src/screens/loader.ts'
+import { assertHome } from '../src/screens/home.ts'
 import { themeCss } from '../src/theme/palette.ts'
 import { themeBootScript } from '../src/shared/theme.ts'
 
@@ -65,9 +67,9 @@ export default class AzuProvider {
   }
 
   /**
-   * Autoloads resources from `resources.autoload`, then mounts the
-   * routes. Resources registered in `start/azu.ts` join the same
-   * registry.
+   * Autoloads resources from `resources.autoload` and screens from
+   * `screens.autoload`, then mounts the routes. Those registered in
+   * `start/azu.ts` join the same registries.
    */
   async start() {
     const router = await this.app.container.make('router')
@@ -77,6 +79,13 @@ export default class AzuProvider {
     if (config.resources.autoload) {
       azu.register(...(await loadResources(this.app.makePath(config.resources.autoload))))
     }
+    if (config.screens.autoload) {
+      for (const { name, screen } of await loadScreens(
+        this.app.makePath(config.screens.autoload)
+      )) {
+        azu.registerScreen(name, screen)
+      }
+    }
 
     this.assertDriveForUploads(azu)
 
@@ -84,5 +93,13 @@ export default class AzuProvider {
       adminInertia: new AdminInertiaMiddleware(this.app),
       access: new AdminAccessMiddleware(config),
     })
+  }
+
+  /**
+   * After `start/azu.ts` has run: `home` must name a registered screen
+   * or resource (FR-22)
+   */
+  async ready() {
+    assertHome(this.getConfig(), await this.app.container.make('azu'))
   }
 }

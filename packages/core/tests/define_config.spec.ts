@@ -11,16 +11,19 @@ test.group('defineConfig', () => {
       loginUrl: '/login',
       siteUrl: '/',
       resources: { autoload: 'app/admin/resources' },
+      screens: { autoload: 'app/admin/screens' },
+      home: null,
       perPage: 25,
       timezone: processTimezone(),
       brand: { name: 'Admin', logo: null, color: '#2563eb' },
-      navigation: { groups: [] },
+      navigation: { groups: [], links: [] },
     })
   })
 
   test('takes the navigation group order (FR-16)', ({ assert }) => {
     assert.deepEqual(defineConfig({ navigation: { groups: ['Sales', 'Catalog'] } }).navigation, {
       groups: ['Sales', 'Catalog'],
+      links: [],
     })
     assert.throws(
       () => defineConfig({ navigation: { groups: 'Sales' as never } }),

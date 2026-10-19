@@ -2,6 +2,7 @@ import { introspectValidator, isIntrospectable } from '../forms/introspect.ts'
 import { FORM_KINDS, inputName, validatorFor, type FormMode } from '../forms/form_fields.ts'
 import { PAGE_NAMES, readStamp, sourceHash, type PageName } from '../publish/pages.ts'
 import { isBuiltInDelete, type Resource } from '../resources/define_resource.ts'
+import type { Screen } from '../screens/define_screen.ts'
 import { SLOT_NAMES } from '../shared/slots.ts'
 import type { AzuConfig } from '../types.ts'
 
@@ -130,13 +131,14 @@ export function checkValidators(resources: Resource<any, any>[]): Finding[] {
 }
 
 /**
- * Component names that fields, columns and slots use, which no file in
- * `inertia/admin/components` registers. Azu then renders its own
- * control, or nothing for a slot.
+ * Component names that fields, columns, slots and screens use, which no
+ * file in `inertia/admin/components` registers. Azu then renders its own
+ * control, nothing for a slot, or an error for a screen.
  */
 export function checkComponents(
   resources: Resource<any, any>[],
-  registered: Map<string, string[]>
+  registered: Map<string, string[]>,
+  screens: { name: string; screen: Screen<any> }[] = []
 ): Finding[] {
   const findings: Finding[] = []
   for (const [name, files] of registered) {
@@ -163,6 +165,15 @@ export function checkComponents(
         message: `${resource.name}: ${where} uses ${name}, but no file in inertia/admin/components registers it`,
       })
     }
+  }
+  // A screen without its component renders an error in its place (FR-20)
+  for (const { name, screen } of screens) {
+    if (registered.has(screen.options.component)) continue
+    findings.push({
+      level: 'error',
+      area: 'components',
+      message: `the ${name} screen uses ${screen.options.component}, but no file in inertia/admin/components registers it`,
+    })
   }
   return findings
 }
@@ -234,6 +245,10 @@ export type ConfigFacts = {
   /** Whether `resources.autoload` exists; `null` when autoload is off */
   autoloadExists: boolean | null
   resourceCount: number
+  /** Registered screen names (FR-20) */
+  screenNames?: string[]
+  /** Registered resource names */
+  resourceNames?: string[]
 }
 
 /**
@@ -287,6 +302,28 @@ export function checkConfig(facts: ConfigFacts): Finding[] {
   }
   if (facts.resourceCount === 0) {
     add('warning', 'no resources are registered, so the admin panel is empty')
+  }
+
+  // The home screen or resource (FR-22); the app also refuses to boot
+  const { home } = config
+  if (typeof home === 'string' && !(facts.screenNames ?? []).includes(home)) {
+    add('error', `"home" is "${home}", but no screen has that name`)
+  } else if (
+    home &&
+    typeof home === 'object' &&
+    !(facts.resourceNames ?? []).includes(home.resource)
+  ) {
+    add('error', `"home" is { resource: "${home.resource}" }, but no resource has that name`)
+  }
+
+  // Links in a group navigation.groups doesn't list go after the listed ones (FR-21)
+  for (const link of config.navigation.links) {
+    if (link.group && !config.navigation.groups.includes(link.group)) {
+      add(
+        'note',
+        `the "${link.label}" link's group, ${link.group}, isn't in navigation.groups, so it comes after the listed groups`
+      )
+    }
   }
   return findings
 }

@@ -18,6 +18,12 @@ const routes = {
     tokens: [{"old":"/admin","type":0,"val":"admin","end":""}],
     types: placeholder as Registry['azu.dashboard']['types'],
   },
+  'azu.screens.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/screens/:screen',
+    tokens: [{"old":"/admin/screens/:screen","type":0,"val":"admin","end":""},{"old":"/admin/screens/:screen","type":0,"val":"screens","end":""},{"old":"/admin/screens/:screen","type":1,"val":"screen","end":""}],
+    types: placeholder as Registry['azu.screens.show']['types'],
+  },
   'azu.resources.index': {
     methods: ["GET","HEAD"],
     pattern: '/admin/resources/:resource',

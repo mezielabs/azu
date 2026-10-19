@@ -2,13 +2,15 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
- * `icon: 'package'` in a resource definition. Icon names are kebab case,
- * as Lucide names its icons.
+ * `icon: 'package'` in a resource, screen or navigation link. Icon names
+ * are kebab case, as Lucide names its icons.
  */
 const ICON = /\bicon\s*:\s*(['"`])([a-z0-9]+(?:-[a-z0-9]+)*)\1/g
 
 function sourceFiles(dir: string): string[] {
   if (!existsSync(dir)) return []
+  // A single file, such as config/azu.ts
+  if (!statSync(dir).isDirectory()) return [dir]
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry)
     if (statSync(path).isDirectory()) return sourceFiles(path)
@@ -17,13 +19,14 @@ function sourceFiles(dir: string): string[] {
 }
 
 /**
- * The icon names the app's resources use, read from their source, plus
- * any listed in the plugin's `icons` option (for names set in code the
- * scan can't follow). Sorted, without repeats.
+ * The icon names the app's resources, screens and navigation links use,
+ * read from their source (`dirs`: directories or files), plus any listed
+ * in the plugin's `icons` option (for names set in code the scan can't
+ * follow). Sorted, without repeats.
  */
-export function usedIconNames(resourcesDir: string, extra: string[] = []): string[] {
+export function usedIconNames(dirs: string | string[], extra: string[] = []): string[] {
   const names = new Set(extra)
-  for (const file of sourceFiles(resourcesDir)) {
+  for (const file of [dirs].flat().flatMap(sourceFiles)) {
     for (const match of readFileSync(file, 'utf8').matchAll(ICON)) names.add(match[2])
   }
   return [...names].sort()

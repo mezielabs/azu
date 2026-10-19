@@ -169,14 +169,24 @@ azu.register(productResource)
 
 The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
 
-Resources without a `group` come first. Groups follow in the order you list in `config/azu.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
+The navigation lists your resources, your [screens](#screens) and any links you add. Items without a `group` come first. Groups follow in the order you list in `config/azu.ts`, then any others alphabetically. Within a group, resources, screens and links sort together: `order` first (lower first), then items without one, alphabetically.
+
+Links point anywhere: a filtered list, a page of your app, another site. A link to an absolute `http(s)` URL opens in a new tab, with an external-link icon. A link is highlighted when the page's path and query match it.
 
 ```ts
 // config/azu.ts
-navigation: { groups: ['Sales', 'Catalog'] },
+navigation: {
+  groups: ['Sales', 'Catalog'],
+  links: [
+    { label: 'Awaiting shipping', url: '/admin/resources/orders?status=paid', group: 'Sales', icon: 'truck', ability: viewOrders },
+    { label: 'Help', url: 'https://docs.example.com' },
+  ],
+},
 ```
 
-`icon` is a [Lucide](https://lucide.dev/icons) icon name in kebab case, like `'package'` or `'shopping-cart'`. Install `lucide-react` to show icons; without it, the navigation shows none. The `azu()` Vite plugin bundles only the icons your resources name, which it reads from `app/admin/resources`. If a resource sets `icon` in a way the plugin can't read, from a variable say, list the name in `azu({ icons: ['shopping-cart'] })`. An unknown name gives a warning at build time and shows no icon.
+A link's `ability` (a Bouncer ability, like a screen's) only hides it from users who fail it. It doesn't protect the page it opens: that page must check access itself, as Azu's resource pages do through their policies.
+
+`icon` is a [Lucide](https://lucide.dev/icons) icon name in kebab case, like `'package'` or `'shopping-cart'`. Install `lucide-react` to show icons; without it, the navigation shows none. The `azu()` Vite plugin bundles only the icons your resources, screens and links name, which it reads from `app/admin/resources`, `app/admin/screens` and `config/azu.ts`. If a resource sets `icon` in a way the plugin can't read, from a variable say, list the name in `azu({ icons: ['shopping-cart'] })`. An unknown name gives a warning at build time and shows no icon.
 
 Labels come from names: `isFeatured` reads "Is featured", and common acronyms are capitals, so `sku` reads "SKU" and `userId` "User ID" (also URL, API, VAT and UUID). Give any field, column, filter or action its own with `.label('Featured')`.
 
@@ -351,6 +361,60 @@ To share an action between resources, generate it with `node ace azu:action Arch
 
 When the policy has a `delete` method, every resource gets a Delete row and bulk action, with a confirmation. It runs `beforeDelete` for each record, and deletes their stored files after the transaction commits.
 
+## Screens
+
+A screen is a page of your own in the panel: a report, a summary, a tool. It has its own ability, your component, and data from the server. Generate one:
+
+```sh
+node ace azu:screen SalesReport
+```
+
+That writes `app/admin/screens/sales_report.ts` and its component, `inertia/admin/components/sales_report.tsx`. Both compile and render as they are. The screen opens at `/admin/screens/sales-report`, named after its file:
+
+```ts
+// app/admin/screens/sales_report.ts
+import { defineScreen } from '@mezielabs/azu'
+import { viewReports } from '#abilities/main'
+
+export default defineScreen({
+  label: 'Sales report',
+  group: 'Reports',
+  icon: 'chart-column',
+  ability: viewReports,
+  component: 'SalesReport',
+  data: async (ctx) => ({ rows: await totalsByDay(ctx.request.qs().days) }),
+})
+```
+
+- **`ability`** is required: a Bouncer ability object from `app/abilities/main.ts`, not a string. Azu checks it on every request, inside the panel's access gate. A user who fails it, or an ability that throws, gets a 403, and doesn't see the screen in the navigation.
+- **`data`** runs on the server for each request, after the ability check. Return plain, JSON-serialisable values. It's a lazy Inertia prop, so a partial reload of `data` (`router.reload({ only: ['data'] })`) computes only that.
+- **`component`** names a component in `inertia/admin/components`, as fields and slots do. It gets `{ data, screen }`, typed from the screen:
+
+```tsx
+// inertia/admin/components/sales_report.tsx
+import type { ScreenProps } from '@mezielabs/azu-react'
+import type salesReport from '#admin/screens/sales_report'
+
+export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {
+  return <p>{data.rows.length} days</p>
+}
+```
+
+Screens in `app/admin/screens` load at boot (`screens.autoload` in `config/azu.ts`, like resources). Two with the same name stop the app from booting. With autoload off, register them in `start/azu.ts`: `azu.registerScreen('sales-report', salesReport)`.
+
+### The home screen
+
+By default `/admin` is a welcome page. Set `home` to show a screen there instead, with the URL unchanged, or to go to a resource's list:
+
+```ts
+// config/azu.ts
+home: 'overview',
+// or
+home: { resource: 'orders' },
+```
+
+The home screen replaces "Dashboard" at the top of the navigation. A user who fails its ability gets the welcome page, not a 403. A `home` that names no screen or resource stops the app from booting.
+
 ## Customising
 
 Azu gives you three levels of control. Start with the smallest one that works.
@@ -473,8 +537,9 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
 | `node ace azu:resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
 | `node ace azu:action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
+| `node ace azu:screen <Name>` | Creates a [screen](#screens) in `app/admin/screens` and its component in `inertia/admin/components`, ready to open at `/admin/screens/<name>` |
 | `node ace azu:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
-| `node ace azu:doctor` | Checks config, missing policy methods, validators that miss form fields, component names with no file, and published pages that drifted. Exits with 1 on an error |
+| `node ace azu:doctor` | Checks config (including a `home` that names nothing), missing policy methods, validators that miss form fields, component names with no file (screens' too), and published pages that drifted. Exits with 1 on an error |
 
 ## Azu Pro
 

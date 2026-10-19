@@ -94,10 +94,12 @@ export default class AzuDoctor extends BaseCommand {
         viteConfig: existsSync(vite) ? await readFile(vite, 'utf8') : null,
         autoloadExists: autoload === false ? null : existsSync(this.app.makePath(autoload)),
         resourceCount: resources.length,
+        screenNames: azu.screens.all().map((entry) => entry.name),
+        resourceNames: resources.map((resource) => resource.name),
       }),
       ...checkPolicies(resources),
       ...checkValidators(resources),
-      ...checkComponents(resources, registered),
+      ...checkComponents(resources, registered, azu.screens.all()),
       ...checkPublished(published, pkg && { version: pkg.version, sources }),
     ]
 

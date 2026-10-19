@@ -6,6 +6,11 @@ import { defineConfig } from '../src/define_config.ts'
 import type { AzuConfigInput } from '../src/types.ts'
 
 const definer = new URL('../src/resources/define_resource.ts', import.meta.url).href
+const screenDefiner = new URL('../src/screens/define_screen.ts', import.meta.url).href
+
+/** A screen file, with a stand-in ability */
+const screenFile = (label: string) =>
+  `import { defineScreen } from '${screenDefiner}'\nexport default defineScreen({ label: '${label}', ability: { execute() {} } as any, component: 'Report' })\n`
 
 /**
  * Boots a real app with AzuProvider, runs its start hook, and returns
@@ -68,5 +73,39 @@ test.group('AzuProvider resource discovery (FR-03)', (group) => {
       ['orders']
     )
     await app.terminate()
+  })
+})
+
+test.group('AzuProvider screens and home (FR-20, FR-22)', (group) => {
+  group.each.timeout(30_000)
+
+  test('autoloads screens from app/admin/screens, named after their files', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create('app/admin/screens/sales_report.ts', screenFile('Sales report'))
+    const { app, azu } = await bootApp(fs, { home: 'sales-report' })
+    assert.deepEqual(
+      azu.screens.all().map((entry) => entry.name),
+      ['sales-report']
+    )
+    await app.terminate()
+  })
+
+  test('two screens with one name are a boot error', async ({ assert, fs }) => {
+    await fs.create('app/admin/screens/sales_report.ts', screenFile('Sales report'))
+    await fs.create('app/admin/screens/sales-report.ts', screenFile('Sales'))
+    await assert.rejects(() => bootApp(fs, {}), /Two admin screens are named "sales-report"/)
+  })
+
+  test('a home naming no screen or resource is a boot error', async ({ assert, fs }) => {
+    await assert.rejects(
+      () => bootApp(fs, { home: 'nowhere' }),
+      /"home" in config\/azu.ts is "nowhere", but no screen has that name/
+    )
+    await assert.rejects(
+      () => bootApp(fs, { home: { resource: 'invoices' } }),
+      /\{ resource: "invoices" \}, but no resource has that name/
+    )
   })
 })

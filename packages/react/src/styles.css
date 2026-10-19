@@ -196,6 +196,16 @@
     @apply flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm;
   }
 
+  .azu-nav-label {
+    @apply min-w-0 flex-1 truncate;
+  }
+
+  /* A link that opens another site in a new tab (FR-21) */
+  .azu-nav-link[data-azu-external] > .azu-icon {
+    @apply h-3.5 w-3.5 shrink-0;
+    color: var(--azu-muted);
+  }
+
   .azu-nav-icon {
     @apply h-4 w-4 shrink-0;
   }

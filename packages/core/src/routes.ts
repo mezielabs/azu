@@ -3,9 +3,9 @@ import type { AdminInertiaMiddleware } from './middleware/admin_inertia_middlewa
 import type { AdminAccessMiddleware } from './middleware/admin_access_middleware.ts'
 import type { AzuConfig } from './types.ts'
 import type { Azu } from './azu.ts'
-import { renderPage } from './render.ts'
 import { logout } from './auth/admin_user.ts'
 import { ResourcesController } from './controllers/resources_controller.ts'
+import { ScreensController } from './controllers/screens_controller.ts'
 
 /**
  * Mounts the admin routes under `config.path`. Route names are prefixed
@@ -20,10 +20,14 @@ export function registerRoutes(
 ) {
   const context = { config, azu }
   const resources = new ResourcesController(context)
+  const screens = new ScreensController(context)
 
   router
     .group(() => {
-      router.get('/', (ctx) => renderPage(ctx, context, 'azu/dashboard', {})).as('azu.dashboard')
+      // The home screen, a resource's list, or the welcome page (FR-22)
+      router.get('/', (ctx) => screens.home(ctx)).as('azu.dashboard')
+      // Custom screens (FR-20), under /screens/ so the panel's own routes have room
+      router.get('/screens/:screen', (ctx) => screens.show(ctx)).as('azu.screens.show')
 
       router
         .group(() => {

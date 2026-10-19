@@ -19,8 +19,8 @@ test.group('Navigation (FR-16)', (group) => {
     await page.waitForSelector('.azu-sidebar .azu-nav-link svg')
     const sidebar = page.locator('.azu-sidebar')
 
-    // The dashboard comes first, with the shell's own icon
-    await sidebar.getByRole('link', { name: 'Dashboard' }).waitFor()
+    // The home screen comes first (FR-22): Overview, with its icon
+    await sidebar.getByRole('link', { name: 'Overview' }).waitFor()
     const links = await sidebar.locator('.azu-nav-group .azu-nav-link').evaluateAll((elements) =>
       elements.map((link: any) => {
         const svg = link.querySelector('svg')
@@ -34,14 +34,25 @@ test.group('Navigation (FR-16)', (group) => {
     )
     assert.deepEqual(links, [
       { text: 'Orders', icon: 'receipt', svgHidden: 'true', lucide: true },
+      { text: 'Awaiting shipping', icon: 'truck', svgHidden: 'true', lucide: true },
       { text: 'Coupons', icon: 'ticket', svgHidden: 'true', lucide: true },
       { text: 'Products', icon: 'package', svgHidden: 'true', lucide: true },
       { text: 'Categories', icon: 'folder', svgHidden: 'true', lucide: true },
       { text: 'Tags', icon: 'tag', svgHidden: 'true', lucide: true },
+      { text: 'Sales report', icon: 'chart-column', svgHidden: 'true', lucide: true },
+      // An external link (FR-21): its own icon, then the new-tab one
+      {
+        text: 'Azu documentation (opens in a new tab)',
+        icon: 'book-open',
+        svgHidden: 'true',
+        lucide: true,
+      },
     ])
     assert.deepEqual(await sidebar.locator('.azu-nav-heading').allInnerTexts(), [
       'SALES',
       'CATALOG',
+      'REPORTS',
+      'HELP',
     ])
   })
 })

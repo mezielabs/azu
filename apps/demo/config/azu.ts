@@ -1,4 +1,5 @@
 import { defineConfig } from '@mezielabs/azu'
+import { viewOrders } from '#abilities/main'
 
 const azuConfig = defineConfig({
   /**
@@ -18,6 +19,11 @@ const azuConfig = defineConfig({
   siteUrl: '/',
 
   /**
+   * What /admin shows: the Overview screen from app/admin/screens (FR-22)
+   */
+  home: 'overview',
+
+  /**
    * Resources in this directory load automatically. Set autoload to
    * false to register them in start/azu.ts instead.
    */
@@ -34,7 +40,26 @@ const azuConfig = defineConfig({
   /**
    * Navigation group order. Groups not listed follow, by label.
    */
-  navigation: { groups: ['Sales', 'Catalog'] },
+  navigation: {
+    groups: ['Sales', 'Catalog', 'Reports', 'Help'],
+    // Links to any URL (FR-21). An ability would only hide one; its page checks access itself
+    links: [
+      {
+        label: 'Awaiting shipping',
+        url: '/admin/resources/orders?status=paid',
+        group: 'Sales',
+        icon: 'truck',
+        order: 2,
+        ability: viewOrders,
+      },
+      {
+        label: 'Azu documentation',
+        url: 'https://github.com/mezielabs/azu#readme',
+        group: 'Help',
+        icon: 'book-open',
+      },
+    ],
+  },
 })
 
 export default azuConfig

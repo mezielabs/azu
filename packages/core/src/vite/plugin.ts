@@ -36,8 +36,18 @@ export type AzuVitePluginOptions = {
   resources?: string
 
   /**
-   * More icon names to bundle, for resources that set `icon` in a way
-   * the plugin can't read from their source (a variable, say).
+   * Where the app's custom screens are (FR-20). Their `icon:` names are
+   * bundled too, as are those of `navigation.links` in `config/azu.ts`.
+   * Must match `screens.autoload`.
+   *
+   * @default 'app/admin/screens'
+   */
+  screens?: string
+
+  /**
+   * More icon names to bundle, for resources, screens or links that set
+   * `icon` in a way the plugin can't read from their source (a variable,
+   * say).
    */
   icons?: string[]
 }
@@ -74,6 +84,12 @@ export function azu(options: AzuVitePluginOptions = {}): Plugin {
   let bundledIcons = ''
   const resourcesDir = () =>
     resolve(root, options.resources ?? (defaults.resources.autoload as string))
+  // Resources, screens, and config/azu.ts for its navigation links
+  const iconSources = () => [
+    resourcesDir(),
+    resolve(root, options.screens ?? (defaults.screens.autoload as string)),
+    resolve(root, 'config/azu.ts'),
+  ]
 
   return {
     name: 'azu',
@@ -103,26 +119,31 @@ export function azu(options: AzuVitePluginOptions = {}): Plugin {
     load(id) {
       if (id !== ICONS_MODULE || !icons) return
       const found: { name: string; file: string }[] = []
-      const names = usedIconNames(resourcesDir(), options.icons)
+      const names = usedIconNames(iconSources(), options.icons)
       bundledIcons = names.join(',')
       for (const name of names) {
         const file = icons.file(name)
         if (file) found.push({ name, file })
-        else this.warn(`Unknown icon "${name}" in your admin resources; it shows no icon`)
+        else
+          this.warn(
+            `Unknown icon "${name}" in your admin resources, screens or links; it shows no icon`
+          )
       }
       return iconsModule(found)
     },
 
     /**
-     * In dev, a resource edit that changes the icons in use reloads the
-     * admin with the new set
+     * In dev, an edit to a resource, a screen or config/azu.ts that
+     * changes the icons in use reloads the admin with the new set
      */
     configureServer(server) {
-      const dir = resourcesDir()
-      server.watcher.add(dir)
+      const sources = iconSources()
+      server.watcher.add(sources)
       const refresh = (file: string) => {
-        if (!icons || !file.startsWith(dir + sep)) return
-        if (usedIconNames(dir, options.icons).join(',') === bundledIcons) return
+        if (!icons || !sources.some((source) => file === source || file.startsWith(source + sep))) {
+          return
+        }
+        if (usedIconNames(sources, options.icons).join(',') === bundledIcons) return
         const graph = server.environments.client.moduleGraph
         const module = graph.getModuleById(ICONS_MODULE)
         if (!module) return
