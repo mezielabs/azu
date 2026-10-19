@@ -4,13 +4,13 @@ import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
 
 /**
- * The admin shell: the sidebar's user, theme and sign out, and below
- * 768px the top bar's menu, a modal drawer.
+ * The admin shell: the sidebar's account menu (theme, View site, Sign
+ * out), and below 768px the top bar's menu, a modal drawer.
  */
 test.group('Shell', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('the sidebar shows the signed-in user, and signs them out', async ({
+  test('the account menu shows the user, links to the site, and signs out', async ({
     visit,
     browserContext,
     assert,
@@ -18,19 +18,126 @@ test.group('Shell', (group) => {
     const admin = await createUser('admin')
     await browserContext.loginAs(admin)
     const page = await visit('/admin/resources/products')
-    const sidebar = page.locator('.azu-sidebar')
+    const account = page
+      .locator('.azu-sidebar')
+      .getByRole('button', { name: `Account: ${admin.fullName}` })
 
-    await sidebar.getByText(admin.fullName!).waitFor()
-    await sidebar.getByText(admin.email).waitFor()
-    assert.equal(await sidebar.getByRole('link', { name: 'View site' }).getAttribute('href'), '/')
+    // The whole row is the button: initials, name and email, the email
+    // as its description
+    assert.include(await account.innerText(), admin.email)
+    const described = await account.getAttribute('aria-describedby')
+    assert.equal(await page.locator(`[id="${described}"]`).innerText(), admin.email)
+    assert.equal(await account.getAttribute('aria-expanded'), 'false')
     // Every page's header: breadcrumb, title, actions
     await page.getByRole('navigation', { name: 'Breadcrumb' }).getByText('Catalog').waitFor()
     await page.getByRole('heading', { level: 1, name: 'Products' }).waitFor()
 
-    await sidebar.getByRole('button', { name: 'Sign out' }).click()
+    await account.click()
+    assert.equal(await account.getAttribute('aria-expanded'), 'true')
+    const menu = page.getByRole('menu', { name: 'Account' })
+    // It opens upward, above the button
+    const menuBox = (await menu.boundingBox())!
+    assert.isAtMost(menuBox.y + menuBox.height, (await account.boundingBox())!.y)
+    await page.locator('.azu-account-header').getByText(admin.email).waitFor()
+    assert.equal(await menu.getByRole('menuitem', { name: 'View site' }).getAttribute('href'), '/')
+
+    await menu.getByRole('menuitem', { name: 'Sign out' }).click()
     await page.waitForURL('**/login')
     await page.goto('/admin')
     await page.waitForURL('**/login')
+  })
+
+  test('a long name and email truncate in the 248px sidebar', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    admin.fullName = 'Chimamanda Ngozi Adichie-Oluwaseun Abernathy'
+    admin.email = `a-very-long-address-for-testing-${admin.id}@a-long-company-domain.example`
+    await admin.save()
+    await browserContext.loginAs(admin)
+    const page = await visit('/admin')
+    const account = page.locator('.azu-sidebar .azu-account')
+    await account.waitFor()
+
+    const layout = await page.locator('.azu-sidebar').evaluate((sidebar: any) => {
+      const button = sidebar.querySelector('.azu-account')
+      const name = sidebar.querySelector('.azu-account .azu-user-name')
+      const email = sidebar.querySelector('.azu-account .azu-user-email')
+      const style = (element: any) => (globalThis as any).getComputedStyle(element)
+      return {
+        sidebar: Math.round(sidebar.getBoundingClientRect().width),
+        buttonRight: button.getBoundingClientRect().right,
+        sidebarRight: sidebar.getBoundingClientRect().right,
+        overflows: sidebar.scrollWidth > sidebar.clientWidth,
+        nameCut: name.scrollWidth > name.clientWidth,
+        emailCut: email.scrollWidth > email.clientWidth,
+        ellipses: [style(name).textOverflow, style(email).textOverflow],
+      }
+    })
+    assert.equal(layout.sidebar, 248)
+    assert.isFalse(layout.overflows)
+    assert.isAtMost(layout.buttonRight, layout.sidebarRight)
+    assert.isTrue(layout.nameCut)
+    assert.isTrue(layout.emailCut)
+    assert.deepEqual(layout.ellipses, ['ellipsis', 'ellipsis'])
+    // The button's name is the whole name, cut short or not
+    assert.equal(
+      await page.getByRole('button', { name: `Account: ${admin.fullName}`, exact: true }).count(),
+      1
+    )
+  })
+
+  test('the account menu works from the keyboard, and passes axe open', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    await browserContext.loginAs(admin)
+    const page = await visit('/admin')
+    const account = page.getByRole('button', { name: `Account: ${admin.fullName}` })
+    await account.focus()
+    await page.keyboard.press('Enter')
+    const menu = page.getByRole('menu', { name: 'Account' })
+    await menu.waitFor()
+    const focused = () =>
+      page.evaluate(() => (globalThis as any).document.activeElement?.textContent?.trim())
+
+    // Focus starts on the first item; the arrows move through them
+    assert.equal(await focused(), 'Light')
+    await page.keyboard.press('ArrowDown')
+    assert.equal(await focused(), 'Dark')
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    assert.equal(await focused(), 'View site')
+
+    // The theme items are one single-selection group; System is the default
+    const themes = menu.getByRole('menuitemradio')
+    assert.deepEqual(await themes.allInnerTexts(), ['Light', 'Dark', 'System'])
+    assert.equal(
+      await menu.getByRole('menuitemradio', { name: 'System' }).getAttribute('aria-checked'),
+      'true'
+    )
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(
+        await axeViolations(page, { popoverOpen: true }),
+        [],
+        `account menu, ${colorScheme}`
+      )
+    }
+
+    // Escape closes it and returns focus to the button
+    await page.keyboard.press('Escape')
+    await menu.waitFor({ state: 'detached' })
+    assert.equal(
+      await page.evaluate(() =>
+        (globalThis as any).document.activeElement?.classList.contains('azu-account')
+      ),
+      true
+    )
   })
 
   test('below 768px, the menu is a drawer: focus trapped, Escape closes, 44px targets', async ({
@@ -63,6 +170,18 @@ test.group('Shell', (group) => {
       sizes.every((height) => height >= 44),
       `heights: ${sizes.join(', ')}`
     )
+
+    // The theme row is the three choices
+    const theme = menu.getByRole('radiogroup', { name: 'Theme' })
+    assert.deepEqual(
+      await theme
+        .getByRole('radio')
+        .evaluateAll((radios: any[]) =>
+          radios.map((radio) => radio.closest('label').textContent.trim())
+        ),
+      ['Light', 'Dark', 'System']
+    )
+    assert.isTrue(await theme.getByRole('radio', { name: 'System' }).isChecked())
 
     // Focus stays inside the drawer
     for (let index = 0; index < 20; index++) {

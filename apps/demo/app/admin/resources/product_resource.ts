@@ -92,5 +92,14 @@ export default defineResource(Product, {
     feature,
   ],
   // From the README's "Customising" section: inertia/admin/components/low_stock_notice.tsx
-  slots: { beforeTable: 'LowStockNotice' },
+  slots: {
+    beforeTable: {
+      component: 'LowStockNotice',
+      // Counted on the server for each list page, with the "Low stock" filter's rule
+      data: async () => {
+        const [row] = await Product.query().where('stock', '<', 10).count('* as total')
+        return { count: Number(row.$extras.total) }
+      },
+    },
+  },
 })

@@ -4,7 +4,8 @@ import {
   effectiveTheme,
   storedTheme,
   themeBootScript,
-  toggledTheme,
+  applyThemeSetting,
+  currentThemeSetting,
   activeFilters,
   dateRangeValue,
   isDate,
@@ -336,13 +337,42 @@ test.group('Theme choice (FR-14)', () => {
     assert.isNull(storedTheme('sepia'))
   })
 
-  test('a toggle remembers the other theme, or forgets when that is the OS theme', ({ assert }) => {
-    // OS light: toggling to dark remembers dark; toggling back follows the OS again
-    assert.equal(toggledTheme('light', false), 'dark')
-    assert.isNull(toggledTheme('dark', false))
-    // OS dark
-    assert.equal(toggledTheme('dark', true), 'light')
-    assert.isNull(toggledTheme('light', true))
+  test('Light and Dark are stored; System forgets the choice and follows the OS', ({
+    assert,
+    cleanup,
+  }) => {
+    // Stand-ins for the browser's <html> and localStorage
+    const attributes = new Map<string, string>()
+    const storage = new Map<string, string>()
+    const globals = globalThis as Record<string, unknown>
+    globals.document = {
+      documentElement: {
+        setAttribute: (name: string, value: string) => attributes.set(name, value),
+        removeAttribute: (name: string) => attributes.delete(name),
+        getAttribute: (name: string) => attributes.get(name) ?? null,
+      },
+    }
+    globals.localStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    }
+    cleanup(() => {
+      delete globals.document
+      delete globals.localStorage
+    })
+
+    // Nothing stored: System
+    assert.equal(currentThemeSetting(), 'system')
+    applyThemeSetting('dark')
+    assert.equal(attributes.get('data-azu-theme'), 'dark')
+    assert.equal(storage.get('azu-theme'), 'dark')
+    assert.equal(currentThemeSetting(), 'dark')
+
+    applyThemeSetting('system')
+    assert.isFalse(attributes.has('data-azu-theme'))
+    assert.isFalse(storage.has('azu-theme'))
+    assert.equal(currentThemeSetting(), 'system')
   })
 
   test('the boot script reads the stored choice and survives blocked storage', ({ assert }) => {

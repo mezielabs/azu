@@ -317,25 +317,29 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
    - **Loading:** the admin entry registers components with a lazy `import.meta.glob('./components/**/*.tsx')` (an eager glob still works). Each is its own chunk. The page resolver loads the components a page renders (`usedComponentNames`: the list's columns and action fields, the form's fields, the detail page's `hasMany` columns and action fields, and that page's slots) together with the page, so they're ready on first paint. Should one still be loading, a field shows its label over an input-sized placeholder, a cell a one-line placeholder, and a slot a one-line box.
 3. **Page publish:** `admin:publish resource/index` copies the page to `inertia/admin/pages/resource/index.tsx`; Azu renders the app's copy. `Resource/Index` is accepted too. Package pages import only from `@mezielabs/azu-react` and `@mezielabs/azu/*`, never by relative path, so the copy compiles in the app unchanged.
 
-**Slots (FR-15)** cover cases between levels 2 and 3. A resource's `slots` option names a registered component for each slot: `slots: { beforeTable: 'LowStockNotice' }`. The schema carries all four (`header`, `toolbar`, `beforeTable`, `afterForm`), `null` when unset.
+**Slots (FR-15)** cover cases between levels 2 and 3. A resource's `slots` option names a registered component for each slot, `slots: { beforeTable: 'LowStockNotice' }`, or gives it server data too, `{ component: 'LowStockNotice', data: async ({ ctx, page, record }) => ({ count }) }` (`SlotDefinition`). The schema carries all four slots' component names (`header`, `toolbar`, `beforeTable`, `afterForm`), `null` when unset.
 
 - `header`: under the page title, on the list, create, edit and detail pages.
 - `toolbar`: in the page header, before the page's own buttons (New, the detail page's actions and Edit), on the same four pages.
 - `beforeTable`: on the list, above the bulk toolbar and the table.
 - `afterForm`: under the create and edit forms.
 
-A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `edit`, `show`), `record` (`{ id, title }` on edit and detail, else `null`) and `path` (the resource's list URL). Unset, or naming no registered component, a slot renders nothing; `admin:doctor` reports the second case. `<Slot>` is exported, so published pages keep their slots. The dashboard and error pages have no slots; publish them instead.
+A slot component receives `SlotProps<Data>`: `resource`, `page` (`index`, `create`, `edit`, `show`), `record` (`{ id, title }` on edit and detail, else `null`), `path` (the resource's list URL) and `data`.
 
-**Theming (FR-14):** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS with a remembered toggle.
+- **Slot data:** each resource page gets a `slotData` prop. It holds what the `data` functions of the slots on that page returned (`Resource.slotData()`, after the page's policy check, with the record on edit and detail). `<Slot>` reads it with `usePage()`, so published pages get it without changes. `data` is `null` for a slot without a function. The list's partial reloads (paging, search, filters, after an action) ask for `slotData` along with `list`, so a count stays current. The app's shared Inertia props don't reach admin pages (`AdminInertiaMiddleware`), which is why slots need this.
+
+ Unset, or naming no registered component, a slot renders nothing; `admin:doctor` reports the second case. `<Slot>` is exported, so published pages keep their slots. The dashboard and error pages have no slots; publish them instead.
+
+**Theming (FR-14):** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS (System) until the user picks Light or Dark, which is remembered.
 
 - **Palettes:** `palette(color, theme)` in core (`src/theme`, plain TypeScript, no dependency) gives Azu's own variables (non-negotiable 9): neutrals (`surface`, `subtle`, `text`, `muted`, `border`), brand (`brand` for text and accents, `brand-solid` and `on-brand` for filled areas), danger, success, and a background and text pair for each badge colour (gray, green, blue, red, yellow).
 - **Contrast:** every text pair reaches WCAG AA, 4.5:1, for any brand colour. `brand` is the configured colour with only its OKLCH lightness moved as far as 4.5:1 against `surface` and `subtle` needs, so the hue stays. `on-brand` is white or near-black, falling back to black on the mid-tones where near-black misses. A unit test tries fifteen brand colours, from white to black, in both themes.
 - **Delivery:** the root view inlines the palettes as a `<style>`, built once at boot. Light is the default; dark applies under `prefers-color-scheme: dark` unless `data-azu-theme="light"` is on `<html>`, or when it's `"dark"`. A boot script sets that attribute from `localStorage` (`azu-theme`) before the first paint. Both carry Shield's CSP nonce. The stylesheet keeps the default brand's palettes as zero-specificity fallbacks.
-- **Toggle:** the sidebar's theme button, an icon button labelled by what it does ("Switch to dark theme", "Switch to light theme"; a full row in the phone menu), stores the other theme, or clears the stored choice when the other theme is the OS's, so the admin follows the OS again.
+- **Choice:** the account menu's Theme section, a single-selection group of Light, Dark and System, with a check on the current one (`applyThemeSetting()`, `currentThemeSetting()`); the phone drawer offers the same three as radio rows. Light and Dark store the choice; System, the default, clears it, so the stylesheet's `prefers-color-scheme` rules follow the OS live. The boot script reads the same `azu-theme` key.
 - **Name and logo:** `brand.name` (default `Admin`) heads the sidebar and page titles (`Products · Acme`). `brand.logo` is a decorative image beside it; without one, a brand-coloured tile with the name's first letter. Pages get them as `azu.brand`.
 - **Checks:** the axe scans (§10) run in both themes.
 
-**Shell:** no top bar on wide screens. A 248px sidebar holds the brand, a Dashboard link, the grouped navigation, and at the bottom "View site" (`/`), the signed-in user (`azu.user`: `fullName`, else `name`, and `email`, read from the guard's user; initials as the avatar), the theme button and Sign out. The navigation's current item gets a brand tint, with its text pulled toward the text colour to keep AA. Below 768px, a sticky top bar with a menu button (44px) and the brand replaces the sidebar, and the menu opens the sidebar's contents as a modal drawer: React Aria's modal traps focus, closes on Escape or a press outside, returns focus to the menu button, and loads on first open. Rows in it are 44px. A "Skip to content" link comes first. Every page starts with the same `PageHeader`: a breadcrumb (the resource's group, then its list, then the record), the title, and the page's actions on the right.
+**Shell:** no top bar on wide screens. A 248px sidebar holds the brand, a Dashboard link, the grouped navigation, and at the bottom an account button: the signed-in user (`azu.user`: `fullName`, else `name`, and `email`, read from the guard's user; initials as the avatar), each line truncated, with an up/down chevron, named "Account: <name>". It opens a menu upward (React Aria `MenuTrigger`): a header with the full name and email, the Theme section, a separator, View site (`siteUrl`, a full page load) and Sign out. The phone drawer keeps full-width rows: the user, the three theme choices, View site and Sign out. Inertia's progress bar is `var(--azu-brand)`, so it reads in both themes. The navigation's current item gets a brand tint, with its text pulled toward the text colour to keep AA. Below 768px, a sticky top bar with a menu button (44px) and the brand replaces the sidebar, and the menu opens the sidebar's contents as a modal drawer: React Aria's modal traps focus, closes on Escape or a press outside, returns focus to the menu button, and loads on first open. Rows in it are 44px. A "Skip to content" link comes first. Every page starts with the same `PageHeader`: a breadcrumb (the resource's group, then its list, then the record), the title, and the page's actions on the right.
 
 - **Sign out:** `POST <path>/logout` (route `azu.logout`), outside the access gate so a user who has lost access can still sign out, with Shield's CSRF check. It calls the guard's `logout()`, then redirects to `loginUrl` (a 409 location response for Inertia visits). A guard without `logout()` is left alone, and logged. There's no `logoutUrl` setting: the app's own logout route doesn't run.
 
@@ -397,6 +401,8 @@ export default defineConfig({
   path: '/admin',
   guard: 'web',
   loginUrl: '/login',
+  // The account menu's "View site" link; false hides it
+  siteUrl: '/',
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
@@ -408,7 +414,7 @@ export default defineConfig({
 })
 ```
 
-`path` can't be `/`; `defineConfig` throws so the panel never replaces the app's homepage. `brand.color` must be a hex colour (`#2563eb` or `#26e`); anything else throws. `brand` defaults to `{ name: 'Admin', color: '#2563eb' }` with no logo.
+`path` can't be `/`; `defineConfig` throws so the panel never replaces the app's homepage. `siteUrl` (default `/`) is a path or URL, or `false` to hide View site; pages get it as `azu.siteUrl` (`null` when hidden). `brand.color` must be a hex colour (`#2563eb` or `#26e`); anything else throws. `brand` defaults to `{ name: 'Admin', color: '#2563eb' }` with no logo.
 
 ## 10. Testing
 

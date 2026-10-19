@@ -66,23 +66,36 @@ test.group('Theming (FR-14)', (group) => {
     assert.equal(await brand.locator('img').getAttribute('src'), '/images/logo.svg')
   })
 
-  test('dark mode follows the OS until toggled, and the toggle is remembered', async ({
+  test('the theme follows the OS (System) until Light or Dark is chosen, and remembers it', async ({
     visit,
     browserContext,
     assert,
   }) => {
-    await browserContext.loginAs(await createUser('admin'))
+    const admin = await createUser('admin')
+    await browserContext.loginAs(admin)
     const page = await visit('/admin')
     await page.emulateMedia({ colorScheme: 'light' })
-    // An icon button labelled by what it does
-    const sidebar = page.locator('.azu-sidebar')
-    const toDark = sidebar.getByRole('button', { name: 'Switch to dark theme' })
-    await toDark.waitFor()
+    const choose = async (name: 'Light' | 'Dark' | 'System') => {
+      await page.getByRole('button', { name: `Account: ${admin.fullName}` }).click()
+      await page.getByRole('menu', { name: 'Account' }).getByRole('menuitemradio', { name }).click()
+      await page.getByRole('menu', { name: 'Account' }).waitFor({ state: 'detached' })
+    }
+    const checked = async () => {
+      await page.getByRole('button', { name: `Account: ${admin.fullName}` }).click()
+      const item = page.getByRole('menu', { name: 'Account' }).locator('[aria-checked="true"]')
+      const name = await item.innerText()
+      await page.keyboard.press('Escape')
+      return name.trim()
+    }
+    const stored = () => page.evaluate(() => (globalThis as any).localStorage.getItem('azu-theme'))
+
+    // Nothing stored: System, following the OS
+    assert.equal(await checked(), 'System')
     assert.equal(await variable(page, '--azu-surface'), '#ffffff')
 
-    await toDark.click()
-    await sidebar.getByRole('button', { name: 'Switch to light theme' }).waitFor()
+    await choose('Dark')
     assert.equal(await themeAttribute(page), 'dark')
+    assert.equal(await stored(), 'dark')
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
 
     // Remembered across loads in this browser, before the first paint
@@ -90,14 +103,39 @@ test.group('Theming (FR-14)', (group) => {
     await page.waitForSelector('.azu-main')
     assert.equal(await themeAttribute(page), 'dark')
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
+    assert.equal(await checked(), 'Dark')
 
-    // Toggling back to the OS's theme follows the OS again
-    await sidebar.getByRole('button', { name: 'Switch to light theme' }).click()
+    // Light holds even when the OS goes dark
+    await choose('Light')
+    await page.emulateMedia({ colorScheme: 'dark' })
+    assert.equal(await variable(page, '--azu-surface'), '#ffffff')
+
+    // System forgets the choice and follows the OS, live
+    await choose('System')
     assert.isNull(await themeAttribute(page))
-    assert.isNull(await page.evaluate(() => (globalThis as any).localStorage.getItem('azu-theme')))
+    assert.isNull(await stored())
+    assert.equal(await variable(page, '--azu-surface'), '#09090b')
+    await page.emulateMedia({ colorScheme: 'light' })
+    assert.equal(await variable(page, '--azu-surface'), '#ffffff')
     await page.emulateMedia({ colorScheme: 'dark' })
     assert.equal(await variable(page, '--azu-surface'), '#09090b')
-    // The toggle hears the OS change, and now offers the light theme
-    await sidebar.getByRole('button', { name: 'Switch to light theme' }).waitFor({ timeout: 5000 })
+  })
+
+  test("the progress bar is the theme's brand colour", async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await page.locator('.azu-main').waitFor()
+    // Inertia writes its bar's styles once, with the colour it was given
+    const css = await page.evaluate(() =>
+      [...(globalThis as any).document.querySelectorAll('style')]
+        .map((style: any) => style.textContent)
+        .join('\n')
+    )
+    assert.include(css, 'var(--azu-brand)')
+    assert.notInclude(css, '#29d')
   })
 })

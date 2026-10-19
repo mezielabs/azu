@@ -3,6 +3,7 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import Category from '#models/category'
 import Product from '#models/product'
 import { createUser } from '../functional/admin/helpers.ts'
+import { axeViolations } from './axe.ts'
 
 /**
  * The README's "Customising" examples (FR-15), in the browser: a field
@@ -67,8 +68,21 @@ test.group('Customising (FR-15)', (group) => {
       .getByText('40 in stock')
       .waitFor()
 
+    // The count comes from the database, as the filter counts
+    const [{ $extras: low }] = await Product.query().where('stock', '<', 10).count('* as total')
+    const count = Number(low.total)
     const notice = page.locator('[data-azu-slot="beforeTable"]')
-    await notice.getByRole('link', { name: 'Show products with fewer than 10 in stock' }).click()
+    const link = notice.getByRole('link', { name: /fewer than 10 in stock\. Show them$/ })
+    const text = await link.innerText()
+    assert.equal(
+      text.replace(/\s+/g, ' ').trim(),
+      `${count} ${count === 1 ? 'product has' : 'products have'} fewer than 10 in stock. Show them`
+    )
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      assert.deepEqual(await axeViolations(page), [], `notice, ${colorScheme}`)
+    }
+    await link.click()
     await page.waitForURL(/low-stock=1/)
     await page.getByRole('row', { name: /Steel pan/ }).waitFor({ state: 'detached' })
     assert.equal(await page.getByRole('row', { name: /Clay pot/ }).count(), 1)

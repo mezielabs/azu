@@ -13,6 +13,7 @@ export {
   defineResource,
   Resource,
   type ResourceOptions,
+  type SlotDefinition,
   type ValidatorLike,
 } from './src/resources/define_resource.ts'
 export { column, Column, type ColumnFor } from './src/resources/columns.ts'

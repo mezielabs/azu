@@ -20,9 +20,10 @@ import type {
   ResourceSchema,
 } from './schema.ts'
 import type { ListState, PageSize } from './shared/list_state.ts'
+import type { SlotName, SlotPage } from './shared/slots.ts'
 
 export type * from './schema.ts'
-export type { SlotName } from './shared/slots.ts'
+export type { SlotName, SlotPage } from './shared/slots.ts'
 
 /**
  * Options accepted by `defineConfig` in `config/admin.ts`.
@@ -56,6 +57,14 @@ export type AzuConfigInput = {
    * @default '/login'
    */
   loginUrl?: string
+
+  /**
+   * The account menu's "View site" link: your public site, as a path
+   * or a full URL. `false` hides the link.
+   *
+   * @default '/'
+   */
+  siteUrl?: string | false
 
   /**
    * Resource discovery. Files in `autoload` load at boot; set it to
@@ -164,6 +173,8 @@ export type AzuSharedProps = {
     brand: { name: string; logo: string | null }
     /** The signed-in user; `null` when there's none */
     user: AzuUser | null
+    /** The "View site" link (`siteUrl` in config/admin.ts); `null` hides it */
+    siteUrl: string | null
   }
 }
 
@@ -184,6 +195,8 @@ export type ForbiddenPageProps = AzuSharedProps
  */
 export type ResourceIndexPageProps = AzuSharedProps & {
   resource: ResourceSchema
+  /** The data this page's slots asked for */
+  slotData: SlotData
   list: {
     rows: ListRow[]
     meta: ListMeta
@@ -214,6 +227,8 @@ export type ResourceFormData = {
  */
 export type ResourceCreatePageProps = AzuSharedProps & {
   resource: ResourceSchema
+  /** The data this page's slots asked for */
+  slotData: SlotData
   form: ResourceFormData
   errors: FormErrors
 }
@@ -224,6 +239,8 @@ export type ResourceCreatePageProps = AzuSharedProps & {
  */
 export type ResourceEditPageProps = AzuSharedProps & {
   resource: ResourceSchema
+  /** The data this page's slots asked for */
+  slotData: SlotData
   record: Omit<RecordData, 'values'>
   form: ResourceFormData
   errors: FormErrors
@@ -234,6 +251,8 @@ export type ResourceEditPageProps = AzuSharedProps & {
  */
 export type ResourceShowPageProps = AzuSharedProps & {
   resource: ResourceSchema
+  /** The data this page's slots asked for */
+  slotData: SlotData
   /** The fields this user may see */
   fields: FieldSchema[]
   record: RecordData
@@ -299,14 +318,26 @@ export type CellProps<Value = unknown> = {
  * Props a slot component receives (FR-15): which resource and page it's
  * on, and the record on the edit and detail pages.
  */
-export type SlotProps = {
+export type SlotProps<Data = unknown> = {
   resource: ResourceSchema
-  page: 'index' | 'create' | 'edit' | 'show'
+  page: SlotPage
   /** The record being edited or shown; `null` on the list and create pages */
   record: { id: string | number; title: string | null } | null
   /** The resource's list URL, e.g. `/admin/resources/products` */
   path: string
+  /**
+   * What the slot's `data` function returned on the server for this
+   * page (`slots: { beforeTable: { component, data } }`); `null` without
+   * one
+   */
+  data: Data | null
 }
+
+/**
+ * Each resource page's slot data, by slot name: what the resource's
+ * `slots: { name: { data } }` functions returned for the page
+ */
+export type SlotData = Partial<Record<SlotName, unknown>>
 
 /**
  * Props every custom field component receives. Swap a field's component

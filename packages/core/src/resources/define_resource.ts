@@ -9,7 +9,7 @@ import type { ColumnFor } from './columns.ts'
 import type { FieldFor } from './fields.ts'
 import type { Filter, FilterFor } from './filters.ts'
 import { LIST_PARAMS } from '../shared/list_filters.ts'
-import { SLOT_NAMES, type SlotName } from '../shared/slots.ts'
+import { PAGE_SLOTS, SLOT_NAMES, type SlotName, type SlotPage } from '../shared/slots.ts'
 import type { PolicyClass, Row, StringAttribute, StringColumn } from './model_types.ts'
 
 /**
@@ -75,9 +75,26 @@ export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
    * - `beforeTable`: above the list's table
    * - `afterForm`: under the create and edit forms
    *
-   * Each gets `SlotProps`.
+   * Each gets `SlotProps`. Name the component, or give it data from
+   * the server too: `{ component: 'LowStockNotice', data: async () =>
+   * ({ count }) }`.
    */
-  slots?: Partial<Record<SlotName, string>>
+  slots?: Partial<Record<SlotName, string | SlotDefinition<M>>>
+}
+
+/**
+ * A slot's component, with data for it from the server (FR-15).
+ */
+export type SlotDefinition<M extends LucidModel> = {
+  /** A component from `inertia/admin/components`, by registered name */
+  component: string
+  /**
+   * Runs on the server for each page the slot renders on, after the
+   * page's own policy check; its result reaches the component as
+   * `SlotProps.data`. Return JSON-serialisable data. `record` is the
+   * record on the edit and detail pages, else `null`.
+   */
+  data?: (input: { ctx: HttpContext; page: SlotPage; record: InstanceType<M> | null }) => unknown
 }
 
 /**
@@ -220,9 +237,34 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
       filters: this.filters().map((item) => item.toJSON()),
       actions: this.actions().map((item) => item.toJSON()),
       slots: Object.fromEntries(
-        SLOT_NAMES.map((slot) => [slot, this.options.slots?.[slot] ?? null])
+        SLOT_NAMES.map((slot) => {
+          const definition = this.options.slots?.[slot]
+          return [
+            slot,
+            typeof definition === 'string' ? definition : (definition?.component ?? null),
+          ]
+        })
       ) as Record<SlotName, string | null>,
     }
+  }
+
+  /**
+   * The data a page's slots asked for (`slots: { name: { data } }`), by
+   * slot name, for the slots that render on that page.
+   */
+  async slotData(
+    ctx: HttpContext,
+    page: SlotPage,
+    record: InstanceType<M> | null = null
+  ): Promise<Partial<Record<SlotName, unknown>>> {
+    const data: Partial<Record<SlotName, unknown>> = {}
+    for (const slot of PAGE_SLOTS[page]) {
+      const definition = this.options.slots?.[slot]
+      if (typeof definition === 'object' && definition.data) {
+        data[slot] = (await definition.data({ ctx, page, record })) ?? null
+      }
+    }
+    return data
   }
 }
 

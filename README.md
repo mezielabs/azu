@@ -167,7 +167,7 @@ azu.register(productResource)
 
 ### Navigation
 
-The sidebar holds your brand, the dashboard and your resources, and at the bottom a "View site" link (to `/`), the signed-in user, the theme button and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer.
+The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/admin.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
 
 Resources without a `group` come first. Groups follow in the order you list in `config/admin.ts`, then any others alphabetically. Within a group, `order` sets a resource's place (lower first), and resources without one follow alphabetically:
 
@@ -403,7 +403,16 @@ Components in `inertia/admin/components` are registered by file name, so `sku_in
 ```ts
 export default defineResource(Product, {
   // ...
-  slots: { beforeTable: 'LowStockNotice' },
+  slots: {
+    beforeTable: {
+      component: 'LowStockNotice',
+      // Counted on the server for each list page, with the "Low stock" filter's rule
+      data: async () => {
+        const [row] = await Product.query().where('stock', '<', 10).count('* as total')
+        return { count: Number(row.$extras.total) }
+      },
+    },
+  },
 })
 ```
 
@@ -411,17 +420,56 @@ export default defineResource(Product, {
 // inertia/admin/components/low_stock_notice.tsx
 import { Link, type SlotProps } from '@mezielabs/azu-react'
 
-export default function LowStockNotice({ path }: SlotProps) {
+/**
+ * Amber in both themes: Azu's yellow badge colours
+ */
+const notice = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  marginBottom: 16,
+  padding: '10px 14px',
+  borderRadius: 10,
+  border: '1px solid color-mix(in srgb, var(--azu-badge-yellow-text) 25%, transparent)',
+  background: 'var(--azu-badge-yellow-bg)',
+  color: 'var(--azu-badge-yellow-text)',
+  fontSize: 14,
+  textDecoration: 'none',
+}
+
+export default function LowStockNotice({ path, data }: SlotProps<{ count: number }>) {
+  // The resource's `data` function counts them on the server
+  const count = data?.count ?? 0
+  if (count === 0) return null
+
   return (
-    <p>
-      Running low?{' '}
-      <Link href={`${path}?low-stock=1`}>Show products with fewer than 10 in stock</Link>
-    </p>
+    <Link href={`${path}?low-stock=1`} style={notice}>
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+      </svg>
+      <span style={{ flexGrow: 1 }}>
+        <strong>
+          {count} {count === 1 ? 'product has' : 'products have'}
+        </strong>{' '}
+        fewer than 10 in stock.
+      </span>
+      <span style={{ fontWeight: 600, textDecoration: 'underline' }}>Show them</span>
+    </Link>
   )
 }
 ```
 
-The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, and the resource's list URL as `path`.
+The slots are `header` (under the page title, on every page of the resource), `toolbar` (beside the page's own buttons), `beforeTable` (above the list) and `afterForm` (under the create and edit forms). A slot component gets `SlotProps`: the `resource`, the `page` (`index`, `create`, `edit` or `show`), the `record` on the edit and detail pages, the resource's list URL as `path`, and `data`. A slot given as just a component name gets `data: null`. Given as `{ component, data }`, its `data` function runs on the server each time a page with that slot renders, after the page's own policy check, and gets `{ ctx, page, record }`. What it returns, as JSON, is the component's `data`. Your app's shared Inertia props don't reach admin pages, so this is how a slot gets server data.
 
 **3. Publish a page.** Copy any page into your app and edit it however you like:
 
@@ -445,6 +493,8 @@ export default defineConfig({
   path: '/admin',
   guard: 'web',
   loginUrl: '/login',
+  // The account menu's "View site" link; false hides it
+  siteUrl: '/',
   brand: { name: 'Acme', logo: '/images/logo.svg', color: '#2563eb' },
   perPage: 25,
   defaultDisk: 's3',
@@ -455,7 +505,7 @@ export default defineConfig({
 
 `brand.name` (default `Admin`) shows at the top of the sidebar and in page titles, and `brand.logo` is an image shown before it (without one, a tile with the name's first letter). `brand.color` is a hex colour (default `#2563eb`). Azu uses it as is where it's readable. Where it isn't, it shifts only the colour's lightness, so the hue stays, until all text reaches WCAG AA (4.5:1) on each theme's backgrounds. A very light brand colour gets darkened on the light theme, for example. So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. Text on brand-coloured buttons is white or near-black, whichever reads.
 
-Dark mode follows the user's system setting. The theme button at the bottom of the sidebar ("Switch to dark theme") overrides it, and this browser remembers the choice. Toggle back to your system's theme and Azu follows the system again.
+Dark mode follows the user's system setting (System, the default). Light or Dark in the account menu overrides it, and this browser remembers the choice; System forgets it and follows the system again, live.
 
 The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 

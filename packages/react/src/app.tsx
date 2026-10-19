@@ -11,6 +11,13 @@ import {
 } from './components/registry.tsx'
 import { ToastRegion } from './components/toast.tsx'
 
+declare module 'react-aria-components' {
+  interface RouterConfig {
+    /** `document`: a full page load rather than an Inertia visit, e.g. to the app's site */
+    routerOptions: { document?: boolean }
+  }
+}
+
 export type CreateAzuAppOptions = {
   /**
    * The app's page overrides: `import.meta.glob('./pages/**\/*.tsx')`
@@ -49,6 +56,8 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
   const registry = new ComponentRegistry((options.components ?? {}) as ComponentModules)
 
   return createInertiaApp({
+    // The theme's brand colour, so the bar reads in light and dark
+    progress: { color: 'var(--azu-brand)' },
     // The app's name (`brand.name` in config/admin.ts), from the root view
     title: (title) => {
       const name =
@@ -73,7 +82,11 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
       createRoot(el).render(
         <RegistryProvider registry={registry}>
           {/* React Aria links (table rows with an href) navigate through Inertia */}
-          <RouterProvider navigate={(href) => router.visit(href)}>
+          <RouterProvider
+            navigate={(href, options) =>
+              options?.document ? window.location.assign(href) : router.visit(href)
+            }
+          >
             <App {...props} />
             <ToastRegion />
           </RouterProvider>

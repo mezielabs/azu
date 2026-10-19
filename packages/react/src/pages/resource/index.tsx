@@ -64,8 +64,9 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     onDone: (result) => {
       if (result.redirect) return router.visit(result.redirect)
       setCleared((count) => count + 1)
+      // An action can change what a slot counts (a restock, say)
       router.reload({
-        only: ['list'],
+        only: ['list', 'slotData'],
         onFinish: () => table.current?.querySelector<HTMLElement>('[role="grid"]')?.focus(),
       })
     },
@@ -85,7 +86,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     const next = nextListState(current, change)
     setRequested(next)
     const url = listStateUrl(path, next, { defaultPerPage: list.defaultPerPage })
-    router.get(url, {}, { only: ['list'], preserveState: true, preserveScroll: true, replace })
+    // Slot data too, so a slot's count follows the list
+    router.get(url, {}, { only: ['list', 'slotData'], preserveState: true, preserveScroll: true, replace })
   }
 
   const count = new Intl.NumberFormat('en')
