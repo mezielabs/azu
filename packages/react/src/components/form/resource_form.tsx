@@ -179,7 +179,10 @@ export function ResourceForm(props: {
           </div>
         </div>
       </div>
-      <UnsavedChanges when={dirty && !processing} />
+      <UnsavedChanges
+        when={dirty && !processing}
+        submit={{ method: props.method, url: props.action }}
+      />
     </form>
   )
 }
