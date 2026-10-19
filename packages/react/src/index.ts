@@ -2,7 +2,7 @@
  * Public entry for `@mezielabs/azu-react`.
  *
  * Package pages import shared pieces from here, never by relative path,
- * so a page copied into an app by `admin:publish` compiles there
+ * so a page copied into an app by `azu:publish` compiles there
  * unchanged. `Head` and `Link` are re-exported for the same reason: the
  * AdonisJS lint config rejects `Link` from `@inertiajs/react` in apps.
  */

@@ -47,7 +47,7 @@ const names: Names = {
   createValidator: 'createProductValidator',
   updateValidator: 'updateProductValidator',
   validatorImport: '#validators/product_admin',
-  command: 'node ace make:admin-resource Product --policy',
+  command: 'node ace azu:resource Product --policy',
 }
 
 function plan(fields: FieldPlan[], overrides: Partial<ModelPlan> = {}): ModelPlan {

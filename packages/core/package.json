@@ -114,10 +114,10 @@
       "./providers/azu_provider.ts",
       "./services/main.ts",
       "./src/types.ts",
-      "./commands/make_admin_resource.ts",
-      "./commands/make_admin_action.ts",
-      "./commands/admin_publish.ts",
-      "./commands/admin_doctor.ts"
+      "./commands/azu_resource.ts",
+      "./commands/azu_action.ts",
+      "./commands/azu_publish.ts",
+      "./commands/azu_doctor.ts"
     ],
     "outDir": "./build",
     "clean": true,

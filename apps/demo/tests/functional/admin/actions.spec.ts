@@ -227,10 +227,7 @@ test.group('Admin / bulk actions (FR-12)', (group) => {
     assert.equal(order.status, 'pending')
   })
 
-  test('a reusable action from make:admin-action runs like any other', async ({
-    client,
-    assert,
-  }) => {
+  test('a reusable action from azu:action runs like any other', async ({ client, assert }) => {
     const admin = await createUser('admin')
     const products = [await createProduct(), await createProduct()]
 

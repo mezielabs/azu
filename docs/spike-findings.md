@@ -33,7 +33,7 @@ What exists now:
 
 - **Root:** a pnpm workspace with `packages/*` and `apps/*`. Root scripts build the packages first, then fan out (see Commands in `CLAUDE.md`).
 - **`packages/core` (`@mezielabs/azu`):** follows the AdonisJS package starter kit (tsdown, `configure.ts`, `stubs/`, Japa). It has a provider that mounts the package's Edge views. Spike code lives in `spike/` and ships under `@mezielabs/azu/spike`, so the demo consumes it across a real package boundary.
-- **`packages/react` (`@mezielabs/azu-react`):** compiled with `tsc` and the Tailwind CLI. It ships `build/` and `src/`, because `admin:publish` needs the TSX source.
+- **`packages/react` (`@mezielabs/azu-react`):** compiled with `tsc` and the Tailwind CLI. It ships `build/` and `src/`, because `azu:publish` needs the TSX source.
 - **`apps/demo`:** the official `inertia-react` starter kit plus Bouncer, with users (with `role`), categories, products, tags, `product_tag`, orders, and `order_items`. `node ace migration:fresh --seed` gives 5 users, 4 categories, 5 tags, 40 products, and 20 orders. There's an `accessAdmin` ability, `ProductPolicy`, and create/update product validators. The spike runs on SQLite; Postgres and MySQL connections are Phase 1 CI work.
 
 ### Removing the spike code
@@ -142,7 +142,7 @@ The prototype `introspectValidator()` walks the compiled tree for structure and 
   2. If neither source gives a hint, the field renders without one.
   3. The server always validates through the named validator, and 422 errors render under the field. No `required()` on fields, as the README says.
 - **Write only validator output.** VineJS output contains only schema keys. So Azu picks declared fields, validates, then writes the validator output, never the raw payload. That's two layers of mass-assignment protection.
-- **`admin:doctor` can compare top-level validator keys with declared fields.** The prototype already lists them.
+- **`azu:doctor` can compare top-level validator keys with declared fields.** The prototype already lists them.
 
 ---
 
@@ -181,14 +181,14 @@ The prototype `introspectValidator()` walks the compiled tree for structure and 
 
 ### Recommendation
 
-Build Phase 1 on this design: app-owned admin entry, package pages as a static dynamic-import map, `azu/<page>` names, app overrides first, Edge root view mounted from core, and a precompiled stylesheet. For `admin:publish`, copy from `@mezielabs/azu-react/src/pages/*` into `inertia/admin/pages/*` and stamp a version comment for `admin:doctor`. AdonisJS 7's `node ace eject` copies package stubs in a similar way and is worth reading first.
+Build Phase 1 on this design: app-owned admin entry, package pages as a static dynamic-import map, `azu/<page>` names, app overrides first, Edge root view mounted from core, and a precompiled stylesheet. For `azu:publish`, copy from `@mezielabs/azu-react/src/pages/*` into `inertia/admin/pages/*` and stamp a version comment for `azu:doctor`. AdonisJS 7's `node ace eject` copies package stubs in a similar way and is worth reading first.
 
 ---
 
 ## Other findings
 
 - **Node version mismatch.** The README says "Node.js 22 or later". The spec, `CLAUDE.md`, and the AdonisJS 7 starter (`engines: >=24`) say 24. The README should say 24 or later.
-- **Lucid 22 generates schema classes.** Migrations write `database/schema.ts` (`ProductSchema` and so on), and models extend them. `make:admin-resource` (FR-04) can read `$columns` and decorator metadata instead of guessing. `database/schema_rules.ts` can narrow enum columns to unions. The demo does this for `status` and `role`, which gives the generator its `select` options.
+- **Lucid 22 generates schema classes.** Migrations write `database/schema.ts` (`ProductSchema` and so on), and models extend them. `azu:resource` (FR-04) can read `$columns` and decorator metadata instead of guessing. `database/schema_rules.ts` can narrow enum columns to unions. The demo does this for `status` and `role`, which gives the generator its `select` options.
 - **Decimal columns.** The generated schema types them as `number`, but the Postgres driver returns decimals as strings. This isn't verified, because the spike ran on SQLite. Check it in Phase 1 Postgres CI before building number fields and currency formatting.
 - **Codegen before tsc.** AdonisJS 7 needs `node ace codegen` before `tsc` (generated policy and page indexes). The demo's `typecheck` script now runs it.
 - **The monorepo works.** AdonisJS package tooling (tsdown, ts-exec, Japa) runs fine in pnpm workspaces. The demo consumes the packages' built output, so root scripts build first. That settles the 2026-10-11 "revisit in the spike" note.
@@ -224,9 +224,9 @@ All six were approved and applied to `README.md` and `docs/spec.md` in one commi
    Without this, update validators that exclude the current record from `unique` can't work. The default could pass `{ record, id }` for validators that don't declare metadata.
 
    **Outcome:** the default is `{ record }`: the record being edited on update, `undefined` on create.
-2. **Page names (spec §8, README "Customising").** Spec §8 lists `Admin/Dashboard` and `Admin/Resource/Index`. AdonisJS 7 uses snake_case page paths (`auth/login`), so I propose `azu/dashboard` and `azu/resource/index` on the wire. Published copies would live at `inertia/admin/pages/resource/index.tsx`. `node ace admin:publish Resource/Index` can keep working by accepting both spellings, or the README example becomes `admin:publish resource/index`. Your call.
+2. **Page names (spec §8, README "Customising").** Spec §8 lists `Admin/Dashboard` and `Admin/Resource/Index`. AdonisJS 7 uses snake_case page paths (`auth/login`), so I propose `azu/dashboard` and `azu/resource/index` on the wire. Published copies would live at `inertia/admin/pages/resource/index.tsx`. `node ace azu:publish Resource/Index` can keep working by accepting both spellings, or the README example becomes `azu:publish resource/index`. Your call.
 
-   **Outcome:** snake_case. The README example is now `admin:publish resource/index`, and `Resource/Index` is still accepted.
+   **Outcome:** snake_case. The README example is now `azu:publish resource/index`, and `Resource/Index` is still accepted.
 3. **Spec §4 clarifications (no API change):**
    - Sortable columns, `search`, and form fields must be persisted columns; getters are display-only.
    - Full getter/column separation needs generated schema classes (`$columns`).

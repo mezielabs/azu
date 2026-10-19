@@ -82,7 +82,7 @@ export const valid = [
 ]
 
 /**
- * make:admin-action's output, unedited (generated_action.ts), plugs
+ * azu:action's output, unedited (generated_action.ts), plugs
  * into any resource whose policy has its ability.
  */
 class PaymentPolicy extends BasePolicy {

@@ -4,7 +4,7 @@ import type { SlotName } from './slots.ts'
 /**
  * The name an app component registers under, from its file in
  * `inertia/admin/components`: `sku_input.tsx` → `SkuInput`. The admin
- * entry registers components this way, and `admin:doctor` checks that
+ * entry registers components this way, and `azu:doctor` checks that
  * every name a resource uses has a file.
  */
 export function componentName(path: string): string {

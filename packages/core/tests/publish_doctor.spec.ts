@@ -3,7 +3,7 @@ import { IgnitorFactory } from '@adonisjs/core/factories'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 import type { FileSystem } from '@japa/file-system'
 import vine from '@vinejs/vine'
-import AdminPublish from '../commands/admin_publish.ts'
+import AzuPublish from '../commands/azu_publish.ts'
 import { defineConfig } from '../src/define_config.ts'
 import {
   checkComponents,
@@ -86,12 +86,12 @@ test.group('Published pages (FR-15)', () => {
   })
 })
 
-test.group('admin:publish (FR-15)', (group) => {
+test.group('azu:publish (FR-15)', (group) => {
   group.each.timeout(30_000)
 
   test('copies a page into inertia/admin/pages with a version stamp', async ({ assert, fs }) => {
     const ace = await createAce(fs)
-    const command = await ace.create(AdminPublish, ['Resource/Index'])
+    const command = await ace.create(AzuPublish, ['Resource/Index'])
     await command.exec()
     command.assertSucceeded()
 
@@ -106,12 +106,12 @@ test.group('admin:publish (FR-15)', (group) => {
     const ace = await createAce(fs)
     await fs.create('inertia/admin/pages/resource/index.tsx', 'my edits')
 
-    const refused = await ace.create(AdminPublish, ['resource/index'])
+    const refused = await ace.create(AzuPublish, ['resource/index'])
     await refused.exec()
     refused.assertFailed()
     assert.equal(await fs.contents('inertia/admin/pages/resource/index.tsx'), 'my edits')
 
-    const forced = await ace.create(AdminPublish, ['resource/index', '--force'])
+    const forced = await ace.create(AzuPublish, ['resource/index', '--force'])
     await forced.exec()
     forced.assertSucceeded()
     assert.isNotNull(readStamp(await fs.contents('inertia/admin/pages/resource/index.tsx')))
@@ -120,7 +120,7 @@ test.group('admin:publish (FR-15)', (group) => {
   test('lists the pages without an argument, marking published ones', async ({ fs }) => {
     const ace = await createAce(fs)
     await fs.create('inertia/admin/pages/dashboard.tsx', '')
-    const command = await ace.create(AdminPublish, [])
+    const command = await ace.create(AzuPublish, [])
     await command.exec()
 
     command.assertSucceeded()
@@ -131,12 +131,12 @@ test.group('admin:publish (FR-15)', (group) => {
   test('explains an unknown page, or a missing package', async ({ fs }) => {
     const ace = await createAce(fs, { withPackage: false })
 
-    const unknown = await ace.create(AdminPublish, ['resource/archive'])
+    const unknown = await ace.create(AzuPublish, ['resource/archive'])
     await unknown.exec()
     unknown.assertFailed()
     unknown.assertLogMatches(/Azu has no page named "resource\/archive"/)
 
-    const missing = await ace.create(AdminPublish, ['resource/index'])
+    const missing = await ace.create(AzuPublish, ['resource/index'])
     await missing.exec()
     missing.assertFailed()
     missing.assertLogMatches(/Can't find @mezielabs\/azu-react's pages/)
@@ -151,7 +151,7 @@ class ProductPolicy {
   publish() {}
 }
 
-test.group('admin:doctor checks (FR-15)', () => {
+test.group('azu:doctor checks (FR-15)', () => {
   test('policies: a missing action ability is an error; other gaps are warnings', ({ assert }) => {
     class ThinPolicy {
       update() {}
@@ -295,11 +295,11 @@ test.group('admin:doctor checks (FR-15)', () => {
       [
         [
           'warning',
-          "inertia/admin/pages/dashboard.tsx drifted: Azu's original changed since it was published from @mezielabs/azu-react 1.3.0 (installed: 1.4.0). Compare it with node_modules/@mezielabs/azu-react/src/pages/dashboard.tsx, then merge the changes or run node ace admin:publish dashboard --force",
+          "inertia/admin/pages/dashboard.tsx drifted: Azu's original changed since it was published from @mezielabs/azu-react 1.3.0 (installed: 1.4.0). Compare it with node_modules/@mezielabs/azu-react/src/pages/dashboard.tsx, then merge the changes or run node ace azu:publish dashboard --force",
         ],
         [
           'note',
-          "inertia/admin/pages/resource/show.tsx has no admin:publish stamp, so it can't be checked for drift",
+          "inertia/admin/pages/resource/show.tsx has no azu:publish stamp, so it can't be checked for drift",
         ],
         [
           'warning',

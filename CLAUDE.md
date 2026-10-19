@@ -28,7 +28,7 @@ If the code forces a change to the API in `README.md` or `docs/spec.md`, update 
 ## Layout
 
 ```
-packages/core    @mezielabs/azu        provider, resource API, controllers, Ace commands
+packages/core    @mezielabs/azu        provider, resource API, controllers, Ace commands (azu:*)
 packages/react   @mezielabs/azu-react  Inertia pages and components
 apps/demo        AdonisJS 7 + Inertia React store app; the test bed
 docs/            spec, decisions, spike findings
@@ -52,6 +52,7 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 - Admin bundle budget: `pnpm budget` (production build of the demo, then `scripts/check_admin_bundle.mjs`; CI runs it)
 - List performance (spec §2, before each release): on Postgres, `node ace migration:fresh --seed` and `node ace bench:products --count=100000` in `apps/demo`, start the demo with `NODE_ENV=production`, then `pnpm bench:list <url>`
 - Format: `pnpm format`
+- Azu's own Ace commands, in the app: `node ace azu:resource`, `azu:action`, `azu:publish`, `azu:doctor`. No `make:`/`admin:` aliases; a core test fails if the old names reappear outside `docs/decisions.md`.
 
 ## Non-negotiables
 

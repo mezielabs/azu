@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import string from '@adonisjs/core/helpers/string'
 
 /**
- * Azu's pages, as `admin:publish` names them (FR-15): the server's page
+ * Azu's pages, as `azu:publish` names them (FR-15): the server's page
  * names without `azu/`.
  */
 export const PAGE_NAMES = [
@@ -51,7 +51,7 @@ const STAMP = /^\/\/ azu-publish: (\S+)@(\S+) sha256:([0-9a-f]{64})$/m
 /**
  * What a published page carries: which page it is, the
  * `@mezielabs/azu-react` version it came from, and a hash of the
- * original, so `admin:doctor` can tell when a newer version changes it.
+ * original, so `azu:doctor` can tell when a newer version changes it.
  */
 export type PublishStamp = { page: string; version: string; hash: string }
 
@@ -62,9 +62,9 @@ export type PublishStamp = { page: string; version: string; hash: string }
  */
 export function publishedSource(page: PageName, version: string, source: string): string {
   return [
-    `// Published from @mezielabs/azu-react ${version} by \`node ace admin:publish ${page}\`.`,
+    `// Published from @mezielabs/azu-react ${version} by \`node ace azu:publish ${page}\`.`,
     "// Azu renders this file instead of its own page, so it's yours to edit. After",
-    '// upgrading Azu, run `node ace admin:doctor` to see whether the original changed.',
+    '// upgrading Azu, run `node ace azu:doctor` to see whether the original changed.',
     `// azu-publish: ${page}@${version} sha256:${sourceHash(source)}`,
     source,
   ].join('\n')

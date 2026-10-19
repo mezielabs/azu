@@ -13,14 +13,14 @@ import {
 } from '../src/publish/pages.ts'
 
 /**
- * `node ace admin:publish [page]` (FR-15): copies one of Azu's pages
+ * `node ace azu:publish [page]` (FR-15): copies one of Azu's pages
  * into `inertia/admin/pages`, where the admin entry picks it up instead
  * of the package's. The copy starts with a stamp naming the
  * `@mezielabs/azu-react` version and a hash of the original, which
- * `admin:doctor` compares after an upgrade. Without a page, it lists them.
+ * `azu:doctor` compares after an upgrade. Without a page, it lists them.
  */
-export default class AdminPublish extends BaseCommand {
-  static commandName = 'admin:publish'
+export default class AzuPublish extends BaseCommand {
+  static commandName = 'azu:publish'
   static description = "Copy one of Azu's pages into inertia/admin/pages to edit it"
   static options: CommandOptions = {}
 
@@ -40,7 +40,7 @@ export default class AdminPublish extends BaseCommand {
         const published = existsSync(this.app.makePath(publishedPath(page)))
         this.logger.log(`  ${page}${published ? ' (published)' : ''}`)
       }
-      this.logger.log('Publish one with: node ace admin:publish resource/index')
+      this.logger.log('Publish one with: node ace azu:publish resource/index')
       return
     }
 
@@ -75,7 +75,7 @@ export default class AdminPublish extends BaseCommand {
     await writeFile(file, publishedSource(page, pkg.version, source))
     this.logger.success(`Published ${page} to ${target}`)
     this.logger.info(
-      'Azu renders your copy from now on. After upgrading, run node ace admin:doctor to see whether the original changed.'
+      'Azu renders your copy from now on. After upgrading, run node ace azu:doctor to see whether the original changed.'
     )
   }
 }

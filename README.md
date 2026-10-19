@@ -82,7 +82,7 @@ Note: Azu uses your app's existing auth guard. Guests are redirected to your log
 Generate a resource from an existing model (on a fresh starter kit, try `User`):
 
 ```sh
-node ace make:admin-resource Product --policy
+node ace azu:resource Product --policy
 ```
 
 Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`, plus a create and update validator derived from the model's columns. The validator goes in `app/validators/product.ts`, or `product_admin.ts` if you already have that file; pass `--no-validator` to skip it. `--policy` writes `app/policies/product_policy.ts` if Product doesn't have a policy yet. It lets everyone who can open the admin panel list, view, create and update products, and it has no delete method; narrow it to your roles. Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
@@ -347,7 +347,7 @@ The handler runs in a transaction, with its records bound to it. Run your other 
 
 `.fields()` asks for input in the action's dialog. The input goes through the validator you pass, like a form's, and the handler gets the validator's output as `input`. `.destructive()` styles the action like Delete. Return `{ message }` for a toast, or `{ redirect }` to go somewhere else.
 
-To share an action between resources, generate it with `node ace make:admin-action Archive`, import it from `#admin/actions/archive` and add it to each resource's `actions`. Every resource that uses it needs the ability on its policy; `tsc` checks.
+To share an action between resources, generate it with `node ace azu:action Archive`, import it from `#admin/actions/archive` and add it to each resource's `actions`. Every resource that uses it needs the ability on its policy; `tsc` checks.
 
 When the policy has a `delete` method, every resource gets a Delete row and bulk action, with a confirmation. It runs `beforeDelete` for each record, and deletes their stored files after the transaction commits.
 
@@ -431,12 +431,12 @@ The slots are `header` (under the page title, on every page of the resource), `t
 **3. Publish a page.** Copy any page into your app and edit it however you like:
 
 ```sh
-node ace admin:publish resource/index
+node ace azu:publish resource/index
 ```
 
-This copies the page to `inertia/admin/pages/resource/index.tsx`, with a comment at the top recording the Azu version it came from. Page names are snake_case paths, like your app's own Inertia pages; the older `Resource/Index` spelling works too. Run `node ace admin:publish` without a page to list them. It won't replace a page you've already published unless you pass `--force`.
+This copies the page to `inertia/admin/pages/resource/index.tsx`, with a comment at the top recording the Azu version it came from. Page names are snake_case paths, like your app's own Inertia pages; the older `Resource/Index` spelling works too. Run `node ace azu:publish` without a page to list them. It won't replace a page you've already published unless you pass `--force`.
 
-Azu renders your copy from then on. It's the most flexible option, but you now own that page through upgrades. Run `node ace admin:doctor` after upgrading to see which published files drifted from the new version.
+Azu renders your copy from then on. It's the most flexible option, but you now own that page through upgrades. Run `node ace azu:doctor` after upgrading to see which published files drifted from the new version.
 
 ## Theming
 
@@ -471,10 +471,10 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 | Command | What it does |
 | --- | --- |
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
-| `node ace make:admin-resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
-| `node ace make:admin-action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
-| `node ace admin:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
-| `node ace admin:doctor` | Checks config, missing policy methods, validators that miss form fields, component names with no file, and published pages that drifted. Exits with 1 on an error |
+| `node ace azu:resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
+| `node ace azu:action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
+| `node ace azu:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
+| `node ace azu:doctor` | Checks config, missing policy methods, validators that miss form fields, component names with no file, and published pages that drifted. Exits with 1 on an error |
 
 ## Azu Pro
 

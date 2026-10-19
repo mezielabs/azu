@@ -14,7 +14,7 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 | 1. Add Bouncer | `node ace add @adonisjs/bouncer` | 11 s |
 | 2. Add Azu | `node ace add @mezielabs/azu` (see note) | 29 s to 60 s: install 24 to 55 s, configure 4.6 s |
 | 3. Let yourself in | edit `accessAdmin` in `app/abilities/main.ts` | about 30 s by hand |
-| 4. Generate a resource | `node ace make:admin-resource User --policy` | 1.5 s |
+| 4. Generate a resource | `node ace azu:resource User --policy` | 1.5 s |
 | 5. Start the dev server | `npm run dev` | ready in 3.2 s |
 | 6. Sign up, open `/admin` | the starter kit's `/signup`, then `/admin/resources/users` | about 30 s by hand |
 
@@ -53,7 +53,7 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 4. **A resource.** The starter kit's only model is User:
 
    ```sh
-   node ace make:admin-resource User --policy
+   node ace azu:resource User --policy
    ```
 
    It writes `app/admin/resources/user_resource.ts`, `app/policies/user_policy.ts` and, since `app/validators/user.ts` is the kit's own, `app/validators/user_admin.ts`. It warns that `password` is required but not an admin field, so users can't be created from the panel: correct, and the kit's signup page creates them.
@@ -67,6 +67,16 @@ From a fresh app to signing in at `/admin` and editing a record took **about 2 m
 - **README: an access rule for a fresh app.** The README's `accessAdmin` example uses `user.role`, which the starter kit's User doesn't have. The Installation section now shows an email check to use while trying it out. It doesn't suggest letting every signed-in user in, since the kits' signup is public.
 - **README: try it with User.** The Quick start's `Product` model doesn't exist in a fresh app; the README now says to use `User` on one.
 - **Not Azu's:** `npm run typecheck` on a fresh app with Bouncer fails on `#generated/policies` until the dev server or `node ace codegen` has run once. That's Bouncer's generated index, created by AdonisJS's codegen.
+
+## Re-run with the `azu:` commands (2026-10-19)
+
+Run again after the commands moved to the `azu:` namespace, from freshly packed tarballs into a new React starter kit, same machine and Node:
+
+- **Times:** the app took 2 min 40 s to create; Bouncer 11 s; installing the tarballs 19 s; configure 4 s; `node ace azu:resource User --policy` 1 s.
+- **Commands:** `node ace list` shows an `azu` namespace with `azu:resource`, `azu:action`, `azu:publish` and `azu:doctor`, and nothing else from Azu. `azu:action Archive` wrote `app/admin/actions/archive.ts`. `azu:publish` listed the pages, and `azu:doctor` reported 0 errors and one expected warning (the generated `UserPolicy` has no `create`).
+- **Old names:** `node ace admin:doctor` and the other three old names say "Command … is not defined".
+- **The panel:** with `accessAdmin` checking the email, signing up at `/signup`, then opening `/admin/resources/users` and saving an edit, all worked. Guests at `/admin` are redirected to `/login`.
+- **Fixed on the way:** `azu:action`'s hint said "Add a archive(…) method"; it now picks "an" before a vowel.
 
 ## Not covered by this run
 

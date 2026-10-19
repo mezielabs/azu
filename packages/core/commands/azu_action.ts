@@ -4,13 +4,13 @@ import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { stubsRoot } from '../stubs/main.ts'
 
 /**
- * `node ace make:admin-action <name>` (spec §7): writes a reusable row
+ * `node ace azu:action <name>` (spec §7): writes a reusable row
  * action, or a bulk one with `--bulk`, to `app/admin/actions`. It has
  * an ability, a confirmation and a handler that uses the action's
  * transaction (FR-12).
  */
-export default class MakeAdminAction extends BaseCommand {
-  static commandName = 'make:admin-action'
+export default class AzuAction extends BaseCommand {
+  static commandName = 'azu:action'
   static description = 'Create a reusable admin action in app/admin/actions'
   static options: CommandOptions = {}
 
@@ -56,7 +56,7 @@ export default class MakeAdminAction extends BaseCommand {
         .filter((part) => part && part !== './')
         .join('/')
       this.logger.info(
-        `Add a ${name}(user, record) method to the policy of each resource that uses it, then import ${name} from '${importPath}' into its actions`
+        `Add ${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}(user, record) method to the policy of each resource that uses it, then import ${name} from '${importPath}' into its actions`
       )
     }
   }

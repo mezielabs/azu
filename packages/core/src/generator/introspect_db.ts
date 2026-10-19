@@ -248,5 +248,5 @@ export async function introspectTable(
   if (dialect === 'postgres') return postgres(client, table)
   if (dialect === 'mysql') return mysql(client, table)
   if (dialect.includes('sqlite')) return sqlite(client, table)
-  throw new Error(`make:admin-resource doesn't support the "${dialect}" dialect yet`)
+  throw new Error(`azu:resource doesn't support the "${dialect}" dialect yet`)
 }
