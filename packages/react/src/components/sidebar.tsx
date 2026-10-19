@@ -22,7 +22,7 @@ function isCurrent(url: string, href: string) {
 }
 
 /**
- * The brand from config/admin.ts: the logo, or a tile with the name's
+ * The brand from config/azu.ts: the logo, or a tile with the name's
  * first letter, then the name.
  */
 export function Brand({ azu }: { azu: Azu }) {
@@ -106,7 +106,7 @@ function UserCard({ azu }: { azu: Azu }) {
 
 /**
  * "View site", a full page load: the app's site isn't an admin page.
- * Hidden when `siteUrl` in config/admin.ts is `false`.
+ * Hidden when `siteUrl` in config/azu.ts is `false`.
  */
 function SiteLink({ azu }: { azu: Azu }) {
   if (!azu.siteUrl) return null

@@ -7,7 +7,7 @@ import { useComponent } from './registry.tsx'
  * component the resource names for it (`slots: { beforeTable:
  * 'LowStockNotice' }`), registered from `inertia/admin/components`, with
  * `SlotProps`. Nothing when the resource names none.
- * `node ace admin:doctor` reports a name with no registered component.
+ * `node ace azu:doctor` reports a name with no registered component.
  */
 export function Slot(props: SlotProps & { name: SlotName }) {
   const { name, ...slot } = props

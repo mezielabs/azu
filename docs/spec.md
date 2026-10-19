@@ -15,7 +15,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-01 | Install with `node ace add @mezielabs/azu` | On a fresh AdonisJS 7 Inertia + React starter, `/admin` loads with no manual file edits | P0 |
 | FR-02 | Access gate on the app's existing auth guard | Guests redirect to the app's login; signed-in users failing the `accessAdmin` ability get a 403 | P0 |
 | FR-03 | Resource classes in `app/admin/resources` | A resource declaring a model, columns, and fields appears in navigation with no registration step | P0 |
-| FR-04 | Generator `make:admin-resource` | Output for any Lucid model compiles, renders list and forms, and saves through the generated validator, with zero edits | P0 |
+| FR-04 | Generator `azu:resource` | Output for any Lucid model compiles, renders list and forms, and saves through the generated validator, with zero edits | P0 |
 | FR-05 | List screen: pagination, sorting, search | Server-side; page sizes 10/25/50/100; sort, search, and page survive reload via the URL | P0 |
 | FR-06 | Create, edit, and detail screens | Save redirects to detail with a success toast; unsaved-changes warning on navigate away | P0 |
 | FR-07 | Core field types | text, textarea, number, decimal, boolean, select, date, datetime, richText, file, image (via Drive) | P0 |
@@ -25,8 +25,8 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | FR-11 | Bouncer permissions | Every screen, field, and action checks the resource policy server-side; disallowed UI is hidden | P0 |
 | FR-12 | Row and bulk actions | Run on one or selected rows, with confirm dialog and result toast; failures roll back | P0 |
 | FR-13 | Filters | select, boolean, and dateRange filters plus custom query filters, all encoded in the URL | P0 |
-| FR-14 | Theming | Light and dark mode; brand colour, logo, and app name from `config/admin.ts` | P0 |
-| FR-15 | Component overrides | Any field or column component can be swapped per resource; named slots on resource pages; `node ace admin:publish` copies pages for editing, stamped with their version; `node ace admin:doctor` reports drift | P1 |
+| FR-14 | Theming | Light and dark mode; brand colour, logo, and app name from `config/azu.ts` | P0 |
+| FR-15 | Component overrides | Any field or column component can be swapped per resource; named slots on resource pages; `node ace azu:publish` copies pages for editing, stamped with their version; `node ace azu:doctor` reports drift | P1 |
 | FR-16 | Navigation groups | Resources grouped, ordered, and given icons from the resource definition | P1 |
 | FR-17 | Bulk action on all filtered rows | "Select all N matching" runs the action in chunks of 500 | P1 |
 | FR-18 | Soft deletes | Trashed filter and restore action when the model uses soft deletes | P2 |
@@ -46,7 +46,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | Compatibility | AdonisJS 7, Node 24.21+ (earlier 24.x releases crash loading some dependencies, see docs/decisions.md), Inertia with React 19, Lucid on Postgres, MySQL, and SQLite. Latest two versions of Chrome, Firefox, Safari, Edge. |
 | Type safety | Resource definitions typed against the model: a misspelled column or field name fails `tsc`. |
 | Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS), and ≤ 200 kB gz per optional-feature chunk (an `azu()` optional feature such as the Tiptap editor, loaded only when a form uses it; measured like a page, beyond the initial JS). |
-| Upgrades | Semver. Published components carry a version stamp; `admin:doctor` flags drift. |
+| Upgrades | Semver. Published components carry a version stamp; `azu:doctor` flags drift. |
 | i18n | All UI strings go through AdonisJS i18n; English only in v1. |
 | Mobile | Usable at 375 px: tables scroll horizontally, forms stack. |
 
@@ -135,7 +135,7 @@ Rules:
   - Explicit field hints such as `field.decimal('price').min(0)` override introspection, for the UI only. They never change validation.
 - **Decimals stay strings.** `column.decimal()` and `field.decimal()` take attributes typed `string`: decimal columns, as Lucid's schema generator types them on Postgres. Values stay exact strings from the database to the browser and back. They're formatted with `Intl.NumberFormat`, which formats numeric strings exactly, and never converted through `Number`. `column.number()` and `field.number()` take attributes typed `number`. Using the wrong one fails `tsc`.
 - **Validator metadata.** Azu passes `{ record }` as VineJS metadata: the record being edited on update, `undefined` on create. A resource can map it with `validators.meta: ({ record, ctx }) => ({ productId: record?.id })` when its validators expect a different shape.
-- **Discovery by convention.** Files in `resources.autoload` (default `app/admin/resources`) load at boot; each must export a resource as its default. With `resources: { autoload: false }`, `start/admin.ts` registers resources explicitly: `azu.register(resource)`, with `azu` from `@mezielabs/azu/services/main`. The installer writes `start/admin.ts`, registers it as a preload, and adds a `#admin/*` import alias. Two resources with the same URL name are an error at boot.
+- **Discovery by convention.** Files in `resources.autoload` (default `app/admin/resources`) load at boot; each must export a resource as its default. With `resources: { autoload: false }`, `start/azu.ts` registers resources explicitly: `azu.register(resource)`, with `azu` from `@mezielabs/azu/services/main`. The installer writes `start/azu.ts`, registers it as a preload, and adds a `#admin/*` import alias. Two resources with the same URL name are an error at boot.
 - **Names and labels.** A resource's URL name and labels come from the model: `OrderItem` → `order-items`, "Order items", "Order item". `label` and `singularLabel` override the labels.
 - **Builders fit their kind.** Kind-specific methods only compile on the kinds they belong to: `format()` on number and decimal columns, `colors()` on badges, `options()` on select fields, `min`/`max`/`step` on number and decimal fields, `disk`/`maxSize` on file and image fields, `searchable()` on relation fields. `filter.custom`'s query and an action's records are typed against the model, and a row action's handler gets one record.
 - **Hooks.** `beforeSave`, `afterSave`, `beforeDelete` receive the model instance and the HTTP context.
@@ -154,7 +154,7 @@ Rules:
 | `decimal` | Numeric input with min, max, step; the value stays a string. With a currency-formatted column of the same name, the input shows the currency code as a prefix (`number` too) | Exact, optional currency/percent format via `Intl.NumberFormat` | Decimal/numeric column (`string` attribute) |
 | `boolean` | Toggle | Check or cross icon | Boolean |
 | `select` | Dropdown, radios when 4 or fewer options | Badge with optional colours | String or enum |
-| `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/admin.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
+| `date`, `datetime` | Date picker in the admin timezone (`timezone` in `config/azu.ts`, default: the server process's). Dates submit as `YYYY-MM-DD`. Datetimes submit as the exact instant, and the server hands the validator `YYYY-MM-DD HH:mm:ss` in the server process's timezone, the formats `vine.date()` accepts by default | Formatted, relative on hover | Luxon `DateTime` |
 | `richText` | Tiptap editor (optional peer, lazy; a plain HTML textarea without it). Sanitised on the server with `sanitize-html` to Tiptap StarterKit's markup, before validation and again before display | Hidden by default | HTML in text column |
 | `file`, `image` | Drag-and-drop upload with preview. `maxSize()` (default 5mb image, 10mb file) and `accept()` (MIME types, wildcards allowed) checked on the server; the type comes from the file's signature where the format has one. Defaults: JPEG, PNG, WebP, GIF, AVIF for images, plus PDF, text, CSV, Office and ZIP for files; SVG and HTML only when accepted explicitly | File name or thumbnail | Drive disk (`disk()`, else `defaultDisk`, else Drive's default), key on the model |
 | `belongsTo` | Searchable async select. Submits the relation's foreign key (`category` → `categoryId`), which the validator checks and errors use. Optional relations get a Clear button | Related title, linked | Foreign key |
@@ -207,7 +207,7 @@ How an action runs (FR-12):
 
 ## 6. Auth, permissions, validation
 
-**Auth:** `config/admin.ts` names the guard (default: app default) and `loginUrl` (default `/login`). The installer adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`. If the app has no Bouncer yet, the installer doesn't install it (AdonisJS presets don't install their dependencies either); it explains how to add it, and the gate denies everyone until then.
+**Auth:** `config/azu.ts` names the guard (default: app default) and `loginUrl` (default `/login`). The installer adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`. If the app has no Bouncer yet, the installer doesn't install it (AdonisJS presets don't install their dependencies either); it explains how to add it, and the gate denies everyone until then.
 
 The access gate runs on every admin route, after the admin root view is set up:
 
@@ -257,11 +257,11 @@ Forms submit to their own URL: `POST /admin/resources/<name>/create` and `PUT /a
 
 | Command | Behaviour |
 | --- | --- |
-| `node ace add @mezielabs/azu` | Registers provider, writes `config/admin.ts` and `start/admin.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise; skipped when the app's package.json already lists it). Timed on a fresh starter kit in `docs/quickstart.md` |
-| `node ace make:admin-resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
-| `node ace make:admin-action <Name>` | Writes `app/admin/actions/<name>.ts` from a stub: a row action (`--bulk` for bulk) built with `action.row()`, named and with its ability in camelCase (`MarkAsPaid` → `markAsPaid`), a `confirm`, and a handler that saves through `trx`. Refuses `delete` and won't overwrite without `--force`. Exported as the file's default, so any resource can list it; `tsc` checks the ability against each resource's policy |
-| `node ace admin:publish [page]` | Copies one of Azu's pages from the installed `@mezielabs/azu-react` (which ships `src/pages`) into `inertia/admin/pages`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` and `azu/resource/index` are accepted too. The copy starts with a stamp: `// azu-publish: resource/index@<version> sha256:<hash of the original>`. It refuses to replace an existing file without `--force`. No argument lists the pages, marking published ones. Pages only: Azu's own components aren't resolved from the app, so a copied one would never render |
-| `node ace admin:doctor` | Boots the app and checks: config that points at missing things (the `guard` in config/auth.ts, upload disks in config/drive.ts, the Vite `entry`, the `azu()` plugin in vite.config.ts, the autoload directory, no resources); policy methods resources rely on (`viewList`, `view`, `create`/`update` with form fields, a field's `ability`; an action's ability is an error, since the action can never run); form fields whose input the create or update validator doesn't declare (errors, since VineJS drops them); component names from fields, columns and slots that no file in `inertia/admin/components` registers, and two files registering one name; and published pages whose original changed (a stamp hash that no longer matches the installed page), unstamped pages, and pages Azu doesn't have. Errors exit with 1; warnings and notes don't |
+| `node ace add @mezielabs/azu` | Registers provider, writes `config/azu.ts` and `start/azu.ts` (registered as a preload, with a `#admin/*` import alias), adds `accessAdmin` (when Bouncer is set up; otherwise explains how to add it), mounts routes at `/admin`, writes the admin Vite entry (`inertia/admin/app.tsx`) and adds the `azu()` plugin from `@mezielabs/azu/vite` to `vite.config.ts`, installs `@mezielabs/azu-react` (`--install`/`--no-install`, prompts otherwise; skipped when the app's package.json already lists it). Timed on a fresh starter kit in `docs/quickstart.md` |
+| `node ace azu:resource <Model>` | Introspects columns, casts, relations; writes `app/admin/resources/<model>_resource.ts` and, by default, a create/update validator in `app/validators/<model>.ts` derived from the model's columns (see below), named in the resource's `validators`. Flags: `--no-validator` (skip the validator), `--policy`, `--readonly` (no forms, so no validator) |
+| `node ace azu:action <Name>` | Writes `app/admin/actions/<name>.ts` from a stub: a row action (`--bulk` for bulk) built with `action.row()`, named and with its ability in camelCase (`MarkAsPaid` → `markAsPaid`), a `confirm`, and a handler that saves through `trx`. Refuses `delete` and won't overwrite without `--force`. Exported as the file's default, so any resource can list it; `tsc` checks the ability against each resource's policy |
+| `node ace azu:publish [page]` | Copies one of Azu's pages from the installed `@mezielabs/azu-react` (which ships `src/pages`) into `inertia/admin/pages`. Page names are snake_case (`resource/index` → `inertia/admin/pages/resource/index.tsx`); `Resource/Index` and `azu/resource/index` are accepted too. The copy starts with a stamp: `// azu-publish: resource/index@<version> sha256:<hash of the original>`. It refuses to replace an existing file without `--force`. No argument lists the pages, marking published ones. Pages only: Azu's own components aren't resolved from the app, so a copied one would never render |
+| `node ace azu:doctor` | Boots the app and checks: config that points at missing things (the `guard` in config/auth.ts, upload disks in config/drive.ts, the Vite `entry`, the `azu()` plugin in vite.config.ts, the autoload directory, no resources); policy methods resources rely on (`viewList`, `view`, `create`/`update` with form fields, a field's `ability`; an action's ability is an error, since the action can never run); form fields whose input the create or update validator doesn't declare (errors, since VineJS drops them); component names from fields, columns and slots that no file in `inertia/admin/components` registers, and two files registering one name; and published pages whose original changed (a stamp hash that no longer matches the installed page), unstamped pages, and pages Azu doesn't have. Errors exit with 1; warnings and notes don't |
 
 Generator mapping:
 
@@ -312,10 +312,10 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 
 **Overrides, smallest first:**
 
-1. **Config:** labels, icons, colours, page size in the resource or `config/admin.ts`.
+1. **Config:** labels, icons, colours, page size in the resource or `config/azu.ts`.
 2. **Component swap:** `field.text('sku').component('SkuInput')`, `.component()` on any column, or `column.custom('stock', 'StockBar')` resolves a React component from `inertia/admin/components`, registered by file name (`sku_input.tsx` → `SkuInput`, `componentName` in `@mezielabs/azu/shared`). Field components receive `value`, `onChange`, `field`, `errors`, `record` (`FieldProps<T>`); cells receive `value`, `record` (the row) and `column` (`CellProps<T>`). The contracts are defined in `@mezielabs/azu` and re-exported from `@mezielabs/azu-react`, so `import type { FieldProps } from '@mezielabs/azu-react'` works. A name with no registered component falls back to Azu's own control or cell.
    - **Loading:** the admin entry registers components with a lazy `import.meta.glob('./components/**/*.tsx')` (an eager glob still works). Each is its own chunk. The page resolver loads the components a page renders (`usedComponentNames`: the list's columns and action fields, the form's fields, the detail page's `hasMany` columns and action fields, and that page's slots) together with the page, so they're ready on first paint. Should one still be loading, a field shows its label over an input-sized placeholder, a cell a one-line placeholder, and a slot a one-line box.
-3. **Page publish:** `admin:publish resource/index` copies the page to `inertia/admin/pages/resource/index.tsx`; Azu renders the app's copy. `Resource/Index` is accepted too. Package pages import only from `@mezielabs/azu-react` and `@mezielabs/azu/*`, never by relative path, so the copy compiles in the app unchanged.
+3. **Page publish:** `azu:publish resource/index` copies the page to `inertia/admin/pages/resource/index.tsx`; Azu renders the app's copy. `Resource/Index` is accepted too. Package pages import only from `@mezielabs/azu-react` and `@mezielabs/azu/*`, never by relative path, so the copy compiles in the app unchanged.
 
 **Slots (FR-15)** cover cases between levels 2 and 3. A resource's `slots` option names a registered component for each slot: `slots: { toolbar: 'PrintOrder' }` (the demo's Orders, a Print button on the detail page). The schema carries all four (`header`, `toolbar`, `beforeTable`, `afterForm`), `null` when unset.
 
@@ -324,7 +324,7 @@ React 19 Inertia pages and headless components, served from a separate Vite entr
 - `beforeTable`: on the list, above the bulk toolbar and the table.
 - `afterForm`: under the create and edit forms.
 
-A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `edit`, `show`), `record` (`{ id, title }` on edit and detail, else `null`) and `path` (the resource's list URL). Unset, or naming no registered component, a slot renders nothing; `admin:doctor` reports the second case. `<Slot>` is exported, so published pages keep their slots. The dashboard and error pages have no slots; publish them instead.
+A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `edit`, `show`), `record` (`{ id, title }` on edit and detail, else `null`) and `path` (the resource's list URL). Unset, or naming no registered component, a slot renders nothing; `azu:doctor` reports the second case. `<Slot>` is exported, so published pages keep their slots. The dashboard and error pages have no slots; publish them instead.
 
 **Theming (FR-14):** CSS variables generated from one `brand.color`, with light and dark palettes. Dark mode follows the OS (System) until the user picks Light or Dark, which is remembered.
 
@@ -358,7 +358,7 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **`hasMany` tables** are cards below, their heading carrying the count ("Products · 12"), without the column that points back to this record (§5, `hasManyColumns()`).
 - **No fields:** when the user may see none of the resource's fields (Orders), the page gets `cells`, the record's column values as the list shows them (`belongsTo` columns loaded for it), and the Details card shows the columns, custom cell components included.
 
-**Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/admin.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
+**Navigation (FR-16):** built per request from the resources the user may `viewList`. Ungrouped resources come first. Groups follow `navigation.groups` in `config/azu.ts`, then any others by label. Within a group, resources follow `order` (lower first), then those without one, by label.
 
 - **Icons:** `icon` is a Lucide icon name in kebab case. `lucide-react` is an optional peer of `@mezielabs/azu-react`, and without it the navigation has no icons.
 - **Bundling:** `@mezielabs/azu-react/icons` is an empty map that the `azu()` Vite plugin replaces with a generated module. The plugin reads the resource files (`resources`, default `app/admin/resources`, plus its `icons` option) for `icon:` names, and imports one file per icon in use, so the bundle holds no others.
@@ -366,7 +366,7 @@ A slot component receives `SlotProps`: `resource`, `page` (`index`, `create`, `e
 - **Agnostic plugin:** the front-end package's manifest (`azu.icons`) names the icon package and file pattern, so `azu()` knows nothing of React or Lucide.
 - **Accessibility:** icons are decorative (`aria-hidden`); the link's label names it.
 
-**URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/admin.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
+**URL state:** search, sort, filters, page, and page size are query parameters: `search`, `sort` and `direction` (`asc`/`desc`), `page`, `perPage` (10, 25, 50 or 100; defaults to `perPage` in `config/azu.ts`), and one parameter per filter (§5). Defaults are left out of the URL. Invalid values fall back to defaults, sorting only accepts sortable columns, and a page past the end redirects to the last page. Parsing, URLs and cell formatting live in `@mezielabs/azu/shared`, plain TypeScript the server and front ends share (non-negotiable 11). Inertia partial reloads refresh only the `list` prop; the shared `azu` props are lazy, so a reload doesn't rebuild the navigation.
 
 **Form page (layout 4/4):** the create and edit pages keep the header and the form to a 760px reading width.
 
@@ -389,7 +389,7 @@ apps/
 ```
 
 ```ts
-// config/admin.ts
+// config/azu.ts
 import { defineConfig } from '@mezielabs/azu'
 
 export default defineConfig({
@@ -454,7 +454,7 @@ For each: what works, what doesn't, the recommended approach, and any spec chang
 1. **FR-16, navigation groups, icons and order.** The smallest of the four. `group` and `icon` are already on resources and in the navigation props; what's missing is an `order` (for groups and items) and rendering icons from a fixed set. It changes only the navigation. A quick, low-risk start that every admin sees.
 2. **FR-09, `manyToMany` picker.** Builds on what FR-08 and FR-13 settled: the async ComboBox, the policy-checked options endpoint and its `viewList` rule. New work: a multi-select control, and pivot writes (`sync`) in the save transaction, after validation, limited to the declared field. It also takes `manyToMany` out of the "left out of forms" note in §5.
 3. **FR-17, bulk actions on all filtered rows.** Needs FR-12's action runner and FR-13's `applyFilters`, both in place now. New work: "Select all N matching" in the bulk toolbar, then running the action over the filtered query in chunks of 500, a transaction per chunk, with the per-record policy check and skip report kept. It raises questions to settle first: how partial success across chunks is reported, and what happens to rows that change between chunks. (Settled in `docs/decisions.md`, 2026-10-16.)
-4. **FR-15, component overrides and `admin:publish`.** (Built 2026-10-16.) Last, because publishing a page freezes its contract in the app's copy: the later the pages settle (after FR-09's and FR-17's UI changes), the less drift `admin:doctor` has to report. Field component swaps (`component()`) already work; this adds column and page overrides, the publish command and drift detection.
+4. **FR-15, component overrides and `azu:publish`.** (Built 2026-10-16.) Last, because publishing a page freezes its contract in the app's copy: the later the pages settle (after FR-09's and FR-17's UI changes), the less drift `azu:doctor` has to report. Field component swaps (`component()`) already work; this adds column and page overrides, the publish command and drift detection.
 
 ## 12. Open technical questions
 

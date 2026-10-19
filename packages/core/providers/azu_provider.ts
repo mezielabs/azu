@@ -22,10 +22,10 @@ export default class AzuProvider {
   constructor(protected app: ApplicationService) {}
 
   /**
-   * `config/admin.ts` is optional; without it Azu uses the defaults.
+   * `config/azu.ts` is optional; without it Azu uses the defaults.
    */
   protected getConfig(): AzuConfig {
-    return this.app.config.get<AzuConfig>('admin', defineConfig())
+    return this.app.config.get<AzuConfig>('azu', defineConfig())
   }
 
   register() {
@@ -66,7 +66,7 @@ export default class AzuProvider {
 
   /**
    * Autoloads resources from `resources.autoload`, then mounts the
-   * routes. Resources registered in `start/admin.ts` join the same
+   * routes. Resources registered in `start/azu.ts` join the same
    * registry.
    */
   async start() {

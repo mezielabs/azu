@@ -65,8 +65,8 @@ test.group('README "Customising" examples (FR-15)', (group) => {
     }
   })
 
-  test('admin:doctor finds nothing wrong with the demo', async ({ assert }) => {
-    const command = await run('admin:doctor')
+  test('azu:doctor finds nothing wrong with the demo', async ({ assert }) => {
+    const command = await run('azu:doctor')
 
     command.assertSucceeded()
     const logs = command.logger.getLogs().map((log) => log.message)
@@ -78,7 +78,7 @@ test.group('README "Customising" examples (FR-15)', (group) => {
     )
   })
 
-  test('admin:publish resource/index copies the page; doctor reports when it drifts', async ({
+  test('azu:publish resource/index copies the page; doctor reports when it drifts', async ({
     assert,
     cleanup,
   }) => {
@@ -87,7 +87,7 @@ test.group('README "Customising" examples (FR-15)', (group) => {
       rm(app.makePath('inertia/admin/pages/resource'), { recursive: true, force: true })
     )
 
-    const published = await run('admin:publish', ['resource/index'])
+    const published = await run('azu:publish', ['resource/index'])
     published.assertSucceeded()
     const source = await readFile(
       app.makePath('node_modules/@mezielabs/azu-react/src/pages/resource/index.tsx'),
@@ -96,18 +96,18 @@ test.group('README "Customising" examples (FR-15)', (group) => {
     const content = await readFile(copy, 'utf8')
     assert.match(
       content,
-      /^\/\/ Published from @mezielabs\/azu-react \S+ by `node ace admin:publish resource\/index`\./
+      /^\/\/ Published from @mezielabs\/azu-react \S+ by `node ace azu:publish resource\/index`\./
     )
     assert.isTrue(content.endsWith(source))
 
     // The older spelling names the same page
-    const again = await run('admin:publish', ['Resource/Index', '--force'])
+    const again = await run('azu:publish', ['Resource/Index', '--force'])
     again.assertSucceeded()
     assert.equal(await readFile(copy, 'utf8'), content)
 
     // As if a newer Azu changed the original after this copy was published
     await writeFile(copy, content.replace(/sha256:[0-9a-f]{64}/, `sha256:${'0'.repeat(64)}`))
-    const doctor = await run('admin:doctor')
+    const doctor = await run('azu:doctor')
     doctor.assertSucceeded()
     doctor.assertLogMatches(/inertia\/admin\/pages\/resource\/index\.tsx drifted/)
   })

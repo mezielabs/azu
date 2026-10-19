@@ -1,9 +1,6 @@
-{{{
-  exports({ to: app.configPath('admin.ts') })
-}}}
 import { defineConfig } from '@mezielabs/azu'
 
-const adminConfig = defineConfig({
+const azuConfig = defineConfig({
   /**
    * URL prefix the admin panel is mounted at
    */
@@ -22,7 +19,7 @@ const adminConfig = defineConfig({
 
   /**
    * Resources in this directory load automatically. Set autoload to
-   * false to register them in start/admin.ts instead.
+   * false to register them in start/azu.ts instead.
    */
   resources: { autoload: 'app/admin/resources' },
 
@@ -32,7 +29,12 @@ const adminConfig = defineConfig({
    * readable. The theme follows the OS until the user picks Light or
    * Dark from the account menu.
    */
-  brand: { name: 'Admin', color: '#2563eb' },
+  brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
+
+  /**
+   * Navigation group order. Groups not listed follow, by label.
+   */
+  navigation: { groups: ['Sales', 'Catalog'] },
 })
 
-export default adminConfig
+export default azuConfig

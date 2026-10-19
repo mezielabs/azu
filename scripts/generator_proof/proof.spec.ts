@@ -1,7 +1,7 @@
 /**
  * The generator proof (FR-04). scripts/prove_generator.mjs copies the
  * demo, removes its admin resources, policies and tests, runs
- * `node ace make:admin-resource <Model> --policy` for every model, then
+ * `node ace azu:resource <Model> --policy` for every model, then
  * runs this file there. With zero hand edits, every generated resource
  * must list, create, show and edit through the real HTTP stack.
  *

@@ -3,7 +3,7 @@ import { textOn, withContrast } from './color.ts'
 /**
  * Azu's light and dark palettes (FR-14), as the CSS variables its
  * stylesheet uses (non-negotiable 9). The brand colour from
- * `config/admin.ts` drives the brand tokens; neutrals, danger, success
+ * `config/azu.ts` drives the brand tokens; neutrals, danger, success
  * and badge colours are fixed per theme. Every text pair reaches WCAG
  * AA's 4.5:1, and `palette.spec.ts` checks it for many brand colours.
  */

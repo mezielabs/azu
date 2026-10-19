@@ -25,7 +25,7 @@ function byOrder(a: Resource<any, any>, b: Resource<any, any>) {
  *
  * - Ungrouped resources come first.
  * - Groups follow in the order of `navigation.groups` in
- *   config/admin.ts, then any others by label.
+ *   config/azu.ts, then any others by label.
  * - Within a group, resources follow their `order`, then their label.
  */
 export async function buildNavigation(

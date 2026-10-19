@@ -33,20 +33,20 @@ async function filesIn(dir: string, pattern: RegExp): Promise<string[]> {
 }
 
 /**
- * `node ace admin:doctor` (FR-15): checks the app's Azu setup and
+ * `node ace azu:doctor` (FR-15): checks the app's Azu setup and
  * reports what won't work as written. Config that points at missing
  * guards, disks or files; policy methods resources rely on; form fields
  * their validators don't declare; component names no file registers;
  * and published pages whose original changed in a newer
  * `@mezielabs/azu-react`. Exits with 1 when it finds an error.
  */
-export default class AdminDoctor extends BaseCommand {
-  static commandName = 'admin:doctor'
+export default class AzuDoctor extends BaseCommand {
+  static commandName = 'azu:doctor'
   static description = 'Check config, policies, validators, components and published pages'
   static options: CommandOptions = { startApp: true }
 
   async run() {
-    const config = this.app.config.get<AzuConfig>('admin', defineConfig())
+    const config = this.app.config.get<AzuConfig>('azu', defineConfig())
     const azu = await this.app.container.make('azu')
     const resources = azu.resources.all()
     const root = fileURLToPath(this.app.appRoot)

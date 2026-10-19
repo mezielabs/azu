@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import { IgnitorFactory } from '@adonisjs/core/factories'
 import type { FileSystem } from '@japa/file-system'
-import MakeAdminAction from '../commands/make_admin_action.ts'
+import AzuAction from '../commands/azu_action.ts'
 
 async function createAce(fs: FileSystem) {
   await fs.createJson('tsconfig.json', {})
@@ -21,7 +21,7 @@ async function createAce(fs: FileSystem) {
   return ace
 }
 
-test.group('make:admin-action', (group) => {
+test.group('azu:action', (group) => {
   group.each.timeout(30_000)
 
   test('writes a row action with an ability, a confirmation and a trx handler', async ({
@@ -29,7 +29,7 @@ test.group('make:admin-action', (group) => {
     fs,
   }) => {
     const ace = await createAce(fs)
-    const command = await ace.create(MakeAdminAction, ['MarkAsPaid'])
+    const command = await ace.create(AzuAction, ['MarkAsPaid'])
     await command.exec()
     command.assertSucceeded()
 
@@ -62,7 +62,7 @@ test.group('make:admin-action', (group) => {
 
   test('--bulk writes a bulk action over the selected records', async ({ assert, fs }) => {
     const ace = await createAce(fs)
-    const command = await ace.create(MakeAdminAction, ['orders/archive', '--bulk'])
+    const command = await ace.create(AzuAction, ['orders/archive', '--bulk'])
     await command.exec()
     command.assertSucceeded()
 
@@ -79,11 +79,11 @@ test.group('make:admin-action', (group) => {
     const ace = await createAce(fs)
     await fs.create('app/admin/actions/archive.ts', '// mine')
 
-    const command = await ace.create(MakeAdminAction, ['Archive'])
+    const command = await ace.create(AzuAction, ['Archive'])
     await command.exec()
     assert.equal(await fs.contents('app/admin/actions/archive.ts'), '// mine')
 
-    const forced = await ace.create(MakeAdminAction, ['Archive', '--force'])
+    const forced = await ace.create(AzuAction, ['Archive', '--force'])
     await forced.exec()
     await assert.fileContains('app/admin/actions/archive.ts', `.row('archive')`)
   })
@@ -94,7 +94,7 @@ test.group('make:admin-action', (group) => {
   }) => {
     const ace = await createAce(fs)
     for (const name of ['Delete', '2fa']) {
-      const command = await ace.create(MakeAdminAction, [name])
+      const command = await ace.create(AzuAction, [name])
       await command.exec()
       command.assertFailed()
     }

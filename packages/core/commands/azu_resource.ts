@@ -18,12 +18,12 @@ import {
 import type { AzuConfig } from '../src/types.ts'
 
 /**
- * `node ace make:admin-resource <Model>` (FR-04, spec §7): writes an admin
+ * `node ace azu:resource <Model>` (FR-04, spec §7): writes an admin
  * resource for a Lucid model, read from the model and its database
  * table, plus create and update validators unless `--no-validator`.
  */
-export default class MakeAdminResource extends BaseCommand {
-  static commandName = 'make:admin-resource'
+export default class AzuResource extends BaseCommand {
+  static commandName = 'azu:resource'
   static description =
     'Generate an admin resource for a Lucid model, with create and update validators'
   static options: CommandOptions = { startApp: true }
@@ -87,7 +87,7 @@ export default class MakeAdminResource extends BaseCommand {
       return
     }
 
-    const config = this.app.config.get<AzuConfig>('admin', {} as AzuConfig)
+    const config = this.app.config.get<AzuConfig>('azu', {} as AzuConfig)
     const autoload = config.resources?.autoload
     const resourcesDir = this.app.makePath(
       autoload === false || !autoload ? 'app/admin/resources' : autoload
@@ -134,7 +134,7 @@ export default class MakeAdminResource extends BaseCommand {
       createValidator: generators.validatorActionName(name, 'create'),
       updateValidator: generators.validatorActionName(name, 'update'),
       validatorImport: `#validators/${validatorFile}`,
-      command: `node ace make:admin-resource ${name}${flagsUsed ? ` ${flagsUsed}` : ''}`,
+      command: `node ace azu:resource ${name}${flagsUsed ? ` ${flagsUsed}` : ''}`,
     }
 
     if (!existsSync(policyPath)) {
@@ -170,7 +170,7 @@ export default class MakeAdminResource extends BaseCommand {
       )
     }
     if (autoload === false) {
-      this.logger.info(`Register it in start/admin.ts: azu.register(${name}Resource)`)
+      this.logger.info(`Register it in start/azu.ts: azu.register(${name}Resource)`)
     }
   }
 }

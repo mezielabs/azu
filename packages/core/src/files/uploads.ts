@@ -53,7 +53,7 @@ export async function driveManager(ctx: HttpContext): Promise<DriveManager> {
 
 /**
  * The disk a field stores on: its own `disk()`, else `defaultDisk` in
- * config/admin.ts, else Drive's default.
+ * config/azu.ts, else Drive's default.
  */
 export function diskFor(field: Pick<FieldSchema, 'disk'>, defaultDisk: string | undefined) {
   return field.disk ?? defaultDisk ?? undefined

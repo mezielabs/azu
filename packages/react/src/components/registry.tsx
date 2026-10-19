@@ -19,7 +19,7 @@ type Entry = {
 
 /**
  * The app's components by registered name (`componentName`, shared with
- * `admin:doctor`): `./components/sku_input.tsx` → `SkuInput`. A lazy
+ * `azu:doctor`): `./components/sku_input.tsx` → `SkuInput`. A lazy
  * component loads the first time a page uses it; `preload` loads a
  * page's before it renders.
  */

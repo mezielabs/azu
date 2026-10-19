@@ -4,7 +4,7 @@ import { createUser } from '../functional/admin/helpers.ts'
 
 /**
  * Navigation icons and order (FR-16): each resource's Lucide icon,
- * decorative, in the order config/admin.ts and the resources set.
+ * decorative, in the order config/azu.ts and the resources set.
  */
 test.group('Navigation (FR-16)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())

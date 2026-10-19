@@ -9,8 +9,8 @@ export class Azu {
   readonly resources = new ResourceRegistry()
 
   /**
-   * Registers resources explicitly, from `start/admin.ts`. Use it when
-   * `resources.autoload` is `false` in `config/admin.ts`.
+   * Registers resources explicitly, from `start/azu.ts`. Use it when
+   * `resources.autoload` is `false` in `config/azu.ts`.
    */
   register(...resources: Resource<any, any>[]): this {
     this.resources.register(...resources)

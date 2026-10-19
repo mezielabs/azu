@@ -25,7 +25,7 @@ export type ListState = {
 }
 
 export type ListStateOptions = {
-  /** The page size when the URL has none, from `config/admin.ts` */
+  /** The page size when the URL has none, from `config/azu.ts` */
   defaultPerPage: PageSize
   /** Column names the user may sort by. Anything else is ignored. */
   sortable: readonly string[]

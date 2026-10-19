@@ -62,7 +62,7 @@ export function signOut(azu: Azu) {
 /**
  * The account button at the bottom of the sidebar, and its menu, which
  * opens upward: the user's name and email, the theme (Light, Dark or
- * System), View site (`siteUrl` in config/admin.ts) and Sign out.
+ * System), View site (`siteUrl` in config/azu.ts) and Sign out.
  */
 export function AccountMenu({ azu }: { azu: Azu }) {
   const [setting, setTheme] = useThemeSetting()

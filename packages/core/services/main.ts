@@ -4,7 +4,7 @@ import type { Azu } from '../src/azu.ts'
 let azu: Azu
 
 /**
- * The Azu service, for `start/admin.ts`:
+ * The Azu service, for `start/azu.ts`:
  *
  * @example
  * ```ts

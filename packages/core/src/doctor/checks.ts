@@ -6,7 +6,7 @@ import { SLOT_NAMES } from '../shared/slots.ts'
 import type { AzuConfig } from '../types.ts'
 
 /**
- * One thing `admin:doctor` found (FR-15). Errors mean configuration that
+ * One thing `azu:doctor` found (FR-15). Errors mean configuration that
  * can't work as written; warnings, something that works but probably
  * isn't what was meant; notes, what doctor couldn't check.
  */
@@ -188,7 +188,7 @@ export function checkPublished(
     }
     const stamp = readStamp(file.content)
     if (!stamp) {
-      add('note', `${path} has no admin:publish stamp, so it can't be checked for drift`)
+      add('note', `${path} has no azu:publish stamp, so it can't be checked for drift`)
       continue
     }
     if (stamp.page !== file.page) {
@@ -209,7 +209,7 @@ export function checkPublished(
         `${path} drifted: Azu's original changed since it was published from @mezielabs/azu-react ` +
           `${stamp.version} (installed: ${pkg.version}). Compare it with ` +
           `node_modules/@mezielabs/azu-react/src/pages/${file.page}.tsx, then merge the changes or ` +
-          `run node ace admin:publish ${file.page} --force`
+          `run node ace azu:publish ${file.page} --force`
       )
     }
   }
@@ -237,7 +237,7 @@ export type ConfigFacts = {
 }
 
 /**
- * Settings in config/admin.ts that point at things the app doesn't have.
+ * Settings in config/azu.ts that point at things the app doesn't have.
  * Values `defineConfig` validates (perPage, timezone, brand.color) fail
  * at boot, before doctor runs.
  */

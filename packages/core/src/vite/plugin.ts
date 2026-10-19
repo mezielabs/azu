@@ -13,7 +13,7 @@ const ICONS_MODULE = '\0azu:icons'
 export type AzuVitePluginOptions = {
   /**
    * The admin entry, relative to the app root. Must match `entry` in
-   * `config/admin.ts`.
+   * `config/azu.ts`.
    *
    * @default 'inertia/admin/app.tsx'
    */
@@ -29,7 +29,7 @@ export type AzuVitePluginOptions = {
   /**
    * Where the app's resources are, relative to the app root. The plugin
    * reads their `icon:` names to bundle those icons and no others. Must
-   * match `resources.autoload` in `config/admin.ts`.
+   * match `resources.autoload` in `config/azu.ts`.
    *
    * @default 'app/admin/resources'
    */

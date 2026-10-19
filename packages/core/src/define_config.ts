@@ -33,7 +33,7 @@ function isTimezone(name: string) {
 }
 
 /**
- * Defines Azu's configuration in `config/admin.ts`.
+ * Defines Azu's configuration in `config/azu.ts`.
  *
  * @example
  * ```ts
@@ -44,16 +44,16 @@ function isTimezone(name: string) {
  */
 export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
   if (config.perPage !== undefined && !isPageSize(config.perPage)) {
-    throw new Error(`"perPage" in config/admin.ts must be 10, 25, 50 or 100, not ${config.perPage}`)
+    throw new Error(`"perPage" in config/azu.ts must be 10, 25, 50 or 100, not ${config.perPage}`)
   }
   if (config.timezone !== undefined && !isTimezone(config.timezone)) {
     throw new Error(
-      `"timezone" in config/admin.ts must be an IANA timezone such as "Africa/Lagos", not "${config.timezone}"`
+      `"timezone" in config/azu.ts must be an IANA timezone such as "Africa/Lagos", not "${config.timezone}"`
     )
   }
   if (config.brand?.color !== undefined && !isHexColor(config.brand.color)) {
     throw new Error(
-      `"brand.color" in config/admin.ts must be a hex colour such as "#2563eb", not "${config.brand.color}"`
+      `"brand.color" in config/azu.ts must be a hex colour such as "#2563eb", not "${config.brand.color}"`
     )
   }
   if (
@@ -61,15 +61,15 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     config.siteUrl !== false &&
     (typeof config.siteUrl !== 'string' || config.siteUrl.trim() === '')
   ) {
-    throw new Error('"siteUrl" in config/admin.ts must be a path or URL such as "/", or false')
+    throw new Error('"siteUrl" in config/azu.ts must be a path or URL such as "/", or false')
   }
   const groups = config.navigation?.groups ?? []
   if (!Array.isArray(groups) || !groups.every((group) => typeof group === 'string')) {
-    throw new Error('"navigation.groups" in config/admin.ts must be a list of group labels')
+    throw new Error('"navigation.groups" in config/azu.ts must be a list of group labels')
   }
   const path = `/${(config.path ?? defaults.path).replace(/^\/+|\/+$/g, '')}`
   if (path === '/') {
-    throw new Error('Azu can\'t be mounted at "/". Set "path" in config/admin.ts, e.g. "/admin"')
+    throw new Error('Azu can\'t be mounted at "/". Set "path" in config/azu.ts, e.g. "/admin"')
   }
   return {
     path,

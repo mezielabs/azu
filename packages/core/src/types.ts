@@ -25,7 +25,7 @@ export type * from './schema.ts'
 export type { SlotName } from './shared/slots.ts'
 
 /**
- * Options accepted by `defineConfig` in `config/admin.ts`.
+ * Options accepted by `defineConfig` in `config/azu.ts`.
  */
 export type AzuConfigInput = {
   /**
@@ -67,7 +67,7 @@ export type AzuConfigInput = {
 
   /**
    * Resource discovery. Files in `autoload` load at boot; set it to
-   * `false` and register resources in `start/admin.ts` instead.
+   * `false` and register resources in `start/azu.ts` instead.
    *
    * @default { autoload: 'app/admin/resources' }
    */
@@ -166,13 +166,13 @@ export type AzuSharedProps = {
     path: string
     /** Resources the user may list, grouped */
     navigation: NavigationGroup[]
-    /** The admin's timezone (`timezone` in config/admin.ts), for dates */
+    /** The admin's timezone (`timezone` in config/azu.ts), for dates */
     timezone: string
-    /** The admin's name and logo (`brand` in config/admin.ts) */
+    /** The admin's name and logo (`brand` in config/azu.ts) */
     brand: { name: string; logo: string | null }
     /** The signed-in user; `null` when there's none */
     user: AzuUser | null
-    /** The "View site" link (`siteUrl` in config/admin.ts); `null` hides it */
+    /** The "View site" link (`siteUrl` in config/azu.ts); `null` hides it */
     siteUrl: string | null
   }
 }

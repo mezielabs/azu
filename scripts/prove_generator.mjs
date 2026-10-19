@@ -5,7 +5,7 @@
  * 1. Copies the demo to apps/demo/tmp/generator-proof (git-ignored), and
  *    removes its admin resources, policies and tests. Its own validators
  *    stay, so the generator meets name clashes (app/validators/user.ts).
- * 2. Runs `node ace make:admin-resource <Model> --policy` for every model.
+ * 2. Runs `node ace azu:resource <Model> --policy` for every model.
  * 3. Type-checks the copy: the generated files must compile.
  * 4. Runs scripts/generator_proof/proof.spec.ts there: every generated
  *    resource must list, create, show and edit.
@@ -75,7 +75,7 @@ run('node', ['ace', 'codegen'])
 // The generator reads the database, so migrate the test database first
 run('node', ['ace', 'migration:run', '--force'], { NODE_ENV: 'test' })
 for (const model of models) {
-  run('node', ['ace', 'make:admin-resource', model, '--policy'], { NODE_ENV: 'test' })
+  run('node', ['ace', 'azu:resource', model, '--policy'], { NODE_ENV: 'test' })
 }
 // No rollback: on Postgres it would regenerate database/schema.ts from an
 // empty database. The test run rolls back when it ends.

@@ -35,12 +35,12 @@ function payload(code: string, expiresAt: string | null) {
 
 /**
  * The server process runs in UTC (`TZ=UTC` in .env.test) while the
- * admin's timezone (`timezone` in config/admin.ts) is something else.
+ * admin's timezone (`timezone` in config/azu.ts) is something else.
  * A datetime the user enters in the admin's timezone must be stored as
  * that exact instant.
  */
 test.group('Admin / datetimes in the app timezone (FR-06)', (group) => {
-  const config = app.config.get<AzuConfig>('admin')
+  const config = app.config.get<AzuConfig>('azu')
   const original = config.timezone
 
   group.each.setup(() => testUtils.db().withGlobalTransaction())

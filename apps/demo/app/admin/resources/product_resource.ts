@@ -88,7 +88,7 @@ export default defineResource(Product, {
         await product.save()
         return { message: `${product.name} now has ${product.stock} in stock` }
       }),
-    // A reusable action from make:admin-action
+    // A reusable action from azu:action
     feature,
   ],
 })

@@ -1,6 +1,6 @@
-// Published from @mezielabs/azu-react 0.0.0 by `node ace admin:publish dashboard`.
+// Published from @mezielabs/azu-react 0.0.0 by `node ace azu:publish dashboard`.
 // Azu renders this file instead of its own page, so it's yours to edit. After
-// upgrading Azu, run `node ace admin:doctor` to see whether the original changed.
+// upgrading Azu, run `node ace azu:doctor` to see whether the original changed.
 // azu-publish: dashboard@0.0.0 sha256:65b17365621ce8bc49a5052b1ccd28494e66622d85d19dc2342d0295d62f153d
 import { AdminLayout, Head, Link, PageHeader, type DashboardPageProps } from '@mezielabs/azu-react'
 

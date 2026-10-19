@@ -21,7 +21,7 @@ async function bootApp(fs: FileSystem, admin: AzuConfigInput) {
     .withCoreProviders()
     .withCoreConfig()
     .merge({
-      config: { admin: defineConfig(admin) },
+      config: { azu: defineConfig(admin) },
       rcFileContents: {
         providers: [() => import('../providers/azu_provider.ts')],
       },
@@ -55,7 +55,7 @@ test.group('AzuProvider resource discovery (FR-03)', (group) => {
     const { app, azu } = await bootApp(fs, { resources: { autoload: false } })
     assert.deepEqual(azu.resources.all(), [])
 
-    // What start/admin.ts does, through the public service
+    // What start/azu.ts does, through the public service
     const { default: service } = await import('../services/main.ts')
     const { defineResource } = await import('../src/resources/define_resource.ts')
     service.register(
