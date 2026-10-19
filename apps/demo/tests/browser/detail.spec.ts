@@ -95,6 +95,9 @@ test.group('Detail page', (group) => {
     const count = await table.locator('.azu-panel-count').innerText()
     assert.equal(count.trim(), '· 1')
     await table.getByRole('link', { name: 'Lagos Noir' }).waitFor()
+    // Every row's category is this one: no Category column
+    await table.getByRole('columnheader', { name: 'Name' }).waitFor()
+    assert.equal(await table.getByRole('columnheader', { name: 'Category' }).count(), 0)
   })
 
   test('with no fields (Orders), the columns show instead', async ({
