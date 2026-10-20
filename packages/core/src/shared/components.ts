@@ -30,7 +30,7 @@ const PAGE_SLOTS: Record<string, readonly SlotName[]> = {
  * The app component names a page renders, from its name (`azu/` or not)
  * and props: the list's columns, the form's fields, the columns of a
  * detail page's `hasMany` tables, action dialog fields on the list and
- * detail pages, and the page's slots. The admin app loads these before
+ * detail pages, the page's slots, and a custom screen's component. The admin app loads these before
  * it renders the page, so lazily registered components are ready on
  * first paint, and a page loads only the components it shows.
  */
@@ -40,6 +40,11 @@ export function usedComponentNames(name: string, props: unknown): Set<string> {
     resource?: Partial<Pick<ResourceSchema, 'columns' | 'actions' | 'slots'>>
     form?: { fields?: Pick<FormFieldSchema, 'component'>[] }
     relations?: Pick<RelationTable, 'columns'>[]
+    screen?: { component?: string }
+  }
+  // A custom screen's component (FR-20)
+  if (page === 'screen') {
+    return new Set(typeof data.screen?.component === 'string' ? [data.screen.component] : [])
   }
   const resource = data.resource ?? {}
   const actionFields = (resource.actions ?? []).flatMap((action) => action.fields ?? [])

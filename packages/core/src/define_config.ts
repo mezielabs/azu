@@ -11,9 +11,11 @@ export const defaults: Omit<AzuConfig, 'timezone' | 'defaultDisk'> = {
   loginUrl: '/login',
   siteUrl: '/',
   resources: { autoload: 'app/admin/resources' },
+  screens: { autoload: 'app/admin/screens' },
+  home: null,
   perPage: 25,
   brand: { name: 'Admin', logo: null, color: '#2563eb' },
-  navigation: { groups: [] },
+  navigation: { groups: [], links: [] },
 }
 
 /**
@@ -63,6 +65,32 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
   ) {
     throw new Error('"siteUrl" in config/azu.ts must be a path or URL such as "/", or false')
   }
+  const links = config.navigation?.links ?? []
+  if (!Array.isArray(links)) {
+    throw new Error('"navigation.links" in config/azu.ts must be a list of links')
+  }
+  for (const [index, link] of links.entries()) {
+    const where = `"navigation.links[${index}]" in config/azu.ts`
+    if (!link || typeof link.label !== 'string' || link.label.trim() === '') {
+      throw new Error(`${where} needs a label`)
+    }
+    if (typeof link.url !== 'string' || link.url.trim() === '') {
+      throw new Error(`${where} ("${link.label}") needs a url`)
+    }
+    if (link.ability !== undefined && typeof link.ability?.execute !== 'function') {
+      throw new Error(
+        `${where} ("${link.label}"): "ability" must be a Bouncer ability object, such as one from #abilities/main`
+      )
+    }
+  }
+  const home = config.home
+  if (
+    home !== undefined &&
+    !(typeof home === 'string' && home !== '') &&
+    !(typeof home === 'object' && home !== null && typeof home.resource === 'string')
+  ) {
+    throw new Error('"home" in config/azu.ts must be a screen name, or { resource: \'name\' }')
+  }
   const groups = config.navigation?.groups ?? []
   if (!Array.isArray(groups) || !groups.every((group) => typeof group === 'string')) {
     throw new Error('"navigation.groups" in config/azu.ts must be a list of group labels')
@@ -80,7 +108,14 @@ export function defineConfig(config: AzuConfigInput = {}): AzuConfig {
     siteUrl: config.siteUrl === undefined ? defaults.siteUrl : config.siteUrl,
     perPage: config.perPage ?? defaults.perPage,
     timezone: config.timezone ?? processTimezone(),
-    navigation: { groups: [...groups] },
+    navigation: { groups: [...groups], links: links.map((link) => ({ ...link })) },
+    home: home ?? null,
+    screens: {
+      autoload:
+        config.screens?.autoload === undefined
+          ? defaults.screens.autoload
+          : config.screens.autoload,
+    },
     brand: {
       name: config.brand?.name?.trim() || defaults.brand.name,
       logo: config.brand?.logo || null,

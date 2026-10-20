@@ -147,7 +147,9 @@ export default class MainSeeder extends BaseSeeder {
         number: `AZU-${String(1000 + i)}`,
         status: statuses[i % statuses.length],
         total: toDecimal(lines.reduce((sum, line) => sum + line.priceMinor, 0)),
-        placedAt: DateTime.utc(2026, 10, 1).plus({ hours: i * 5 }),
+        // Over the last three weeks, newest first, so the Overview and the
+        // Sales report have something to show
+        placedAt: DateTime.now().minus({ hours: 2 + (i - 1) * 27 }),
       })
       await order.related('items').createMany(
         lines.map((line) => ({

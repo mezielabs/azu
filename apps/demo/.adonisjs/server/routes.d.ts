@@ -6,6 +6,7 @@ export type ScannedRoutes = {
   ALL: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.screens.show': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
@@ -27,6 +28,7 @@ export type ScannedRoutes = {
   GET: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.screens.show': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }
@@ -41,6 +43,7 @@ export type ScannedRoutes = {
   HEAD: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
+    'azu.screens.show': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.fields.options': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'field': ParamValue} }

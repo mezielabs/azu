@@ -15,4 +15,5 @@ export const packagePages: Record<string, () => Promise<PageModule>> = {
   'resource/show': () => import('./resource/show.tsx'),
   'errors/forbidden': () => import('./errors/forbidden.tsx'),
   'errors/not_found': () => import('./errors/not_found.tsx'),
+  'screen': () => import('./screen.tsx'),
 }

@@ -1,11 +1,15 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
-import { createUser } from './helpers.ts'
+import { createUser, withHome } from './helpers.ts'
 
 test.group('Admin / dashboard (FR-01)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('renders the azu/dashboard page under /admin', async ({ client }) => {
+  test('without a home, renders the azu/dashboard page under /admin', async ({
+    client,
+    cleanup,
+  }) => {
+    withHome(null, cleanup)
     const admin = await createUser('admin')
     const response = await client.get('/admin').loginAs(admin).withInertia()
 

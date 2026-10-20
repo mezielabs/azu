@@ -259,29 +259,49 @@ test.group('Navigation', () => {
       {
         label: null,
         items: [
-          { name: 'settings', label: 'Settings', icon: null, href: '/admin/resources/settings' },
+          {
+            kind: 'resource',
+            name: 'settings',
+            label: 'Settings',
+            icon: null,
+            href: '/admin/resources/settings',
+            external: false,
+          },
         ],
       },
       {
         label: 'Catalog',
         items: [
           {
+            kind: 'resource',
             name: 'categories',
             label: 'Categories',
             icon: null,
             href: '/admin/resources/categories',
+            external: false,
           },
           {
+            kind: 'resource',
             name: 'products',
             label: 'Products',
             icon: 'package',
             href: '/admin/resources/products',
+            external: false,
           },
         ],
       },
       {
         label: 'Sales',
-        items: [{ name: 'orders', label: 'Orders', icon: null, href: '/admin/resources/orders' }],
+        items: [
+          {
+            kind: 'resource',
+            name: 'orders',
+            label: 'Orders',
+            icon: null,
+            href: '/admin/resources/orders',
+            external: false,
+          },
+        ],
       },
     ])
   })

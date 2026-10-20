@@ -117,7 +117,8 @@
       "./commands/azu_resource.ts",
       "./commands/azu_action.ts",
       "./commands/azu_publish.ts",
-      "./commands/azu_doctor.ts"
+      "./commands/azu_doctor.ts",
+      "./commands/azu_screen.ts"
     ],
     "outDir": "./build",
     "clean": true,

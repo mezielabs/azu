@@ -2,32 +2,65 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { createUser } from './helpers.ts'
 
+const navResource = (name: string, label: string, icon: string) => ({
+  kind: 'resource',
+  name,
+  label,
+  icon,
+  href: `/admin/resources/${name}`,
+  external: false,
+})
+
 // Products before Categories, by `order` (FR-16)
 const CATALOG = {
   label: 'Catalog',
   items: [
-    { name: 'products', label: 'Products', icon: 'package', href: '/admin/resources/products' },
-    {
-      name: 'categories',
-      label: 'Categories',
-      icon: 'folder',
-      href: '/admin/resources/categories',
-    },
-    { name: 'tags', label: 'Tags', icon: 'tag', href: '/admin/resources/tags' },
+    navResource('products', 'Products', 'package'),
+    navResource('categories', 'Categories', 'folder'),
+    navResource('tags', 'Tags', 'tag'),
   ],
 }
-const COUPONS = {
-  name: 'coupons',
-  label: 'Coupons',
-  icon: 'ticket',
-  href: '/admin/resources/coupons',
+const COUPONS = navResource('coupons', 'Coupons', 'ticket')
+// A link (FR-21), with order 2 like Coupons: then by label
+const AWAITING = {
+  kind: 'link',
+  name: 'link-0',
+  label: 'Awaiting shipping',
+  icon: 'truck',
+  href: '/admin/resources/orders?status=paid',
+  external: false,
 }
-// Orders before Coupons, by `order`
+// Orders before the rest, by `order`
 const SALES = {
   label: 'Sales',
+  items: [navResource('orders', 'Orders', 'receipt'), AWAITING, COUPONS],
+}
+// A screen (FR-20), admins only
+const REPORTS = {
+  label: 'Reports',
   items: [
-    { name: 'orders', label: 'Orders', icon: 'receipt', href: '/admin/resources/orders' },
-    COUPONS,
+    {
+      kind: 'screen',
+      name: 'sales-report',
+      label: 'Sales report',
+      icon: 'chart-column',
+      href: '/admin/screens/sales-report',
+      external: false,
+    },
+  ],
+}
+// An external link: a new tab
+const HELP = {
+  label: 'Help',
+  items: [
+    {
+      kind: 'link',
+      name: 'link-1',
+      label: 'Azu documentation',
+      icon: 'book-open',
+      href: 'https://github.com/mezielabs/azu#readme',
+      external: true,
+    },
   ],
 }
 
@@ -46,8 +79,13 @@ test.group('Admin / resources (FR-03)', (group) => {
     const response = await client.get('/admin').loginAs(admin).withInertia()
 
     response.assertStatus(200)
-    // Sales before Catalog: navigation.groups in config/azu.ts (FR-16)
-    assert.deepEqual(response.body().props.azu.navigation, [SALES, CATALOG])
+    // In navigation.groups' order (FR-16); the Overview home screen is the first link, not listed
+    assert.deepEqual(response.body().props.azu.navigation, [SALES, CATALOG, REPORTS, HELP])
+    assert.deepEqual(response.body().props.azu.home, {
+      name: 'overview',
+      label: 'Overview',
+      icon: 'layout-dashboard',
+    })
   })
 
   test('staff do not see resources their policies hide (CategoryPolicy, OrderPolicy)', async ({
@@ -59,10 +97,12 @@ test.group('Admin / resources (FR-03)', (group) => {
     response.assertStatus(200)
     response.assertInertiaPropsContains({
       azu: {
-        // CategoryPolicy and OrderPolicy are admin-only
+        // CategoryPolicy and OrderPolicy are admin-only, and so are viewOrders
+        // (the Awaiting shipping link) and viewReports (the Sales report)
         navigation: [
           { label: 'Sales', items: [COUPONS] },
           { label: 'Catalog', items: [CATALOG.items[0]] },
+          HELP,
         ],
       },
     })

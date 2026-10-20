@@ -1,0 +1,17 @@
+{{{
+  exports({ to: path })
+}}}
+import type { ScreenProps } from '@mezielabs/azu-react'
+import type screen from '#admin/screens/{{ file }}'
+
+/**
+ * The {{{ label }}} screen (app/admin/screens/{{ file }}.ts). \`data\` is
+ * what the screen's data function returned, typed from it.
+ */
+export default function {{ component }}({ data }: ScreenProps<typeof screen>) {
+  return (
+    <section className="azu-panel">
+      <p>Generated at {new Date(data.generatedAt).toLocaleString()}.</p>
+    </section>
+  )
+}

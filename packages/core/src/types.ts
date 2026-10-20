@@ -16,10 +16,12 @@ import type {
   RelationTable,
   ListRow,
   NavigationGroup,
+  ScreenSchema,
   RecordData,
   ResourceSchema,
 } from './schema.ts'
 import type { ListState, PageSize } from './shared/list_state.ts'
+import type { Screen, ScreenAbility } from './screens/define_screen.ts'
 
 export type * from './schema.ts'
 export type { SlotName } from './shared/slots.ts'
@@ -74,6 +76,30 @@ export type AzuConfigInput = {
   resources?: { autoload?: string | false }
 
   /**
+   * Screen discovery (FR-20). Files in `autoload` load at boot, each a
+   * `defineScreen()` default export named after its file; set it to
+   * `false` and call `azu.registerScreen()` in `start/azu.ts` instead.
+   *
+   * @default { autoload: 'app/admin/screens' }
+   */
+  screens?: { autoload?: string | false }
+
+  /**
+   * What `<path>/` shows (FR-22): a screen, by name, rendered there
+   * with the URL unchanged, or `{ resource }`, which redirects to that
+   * resource's list. A user who fails the screen's ability gets the
+   * welcome page. Naming no screen or resource is a boot error. Without
+   * it, `<path>/` is the welcome page.
+   *
+   * @example
+   * ```ts
+   * home: 'overview'
+   * home: { resource: 'orders' }
+   * ```
+   */
+  home?: string | { resource: string }
+
+  /**
    * Rows per list page when the URL doesn't say: 10, 25, 50 or 100.
    *
    * @default 25
@@ -108,7 +134,21 @@ export type AzuConfigInput = {
    * ```
    * @default { groups: [] }
    */
-  navigation?: { groups?: string[] }
+  navigation?: {
+    groups?: string[]
+    /**
+     * Links in the navigation (FR-21), to any URL: a filtered list, a
+     * page of the app, another site. `ability` only hides the link from
+     * users who fail it; the page it opens must check access itself.
+     * An absolute `http(s)` URL opens in a new tab.
+     *
+     * @example
+     * ```ts
+     * links: [{ label: 'Awaiting shipping', url: '/admin/resources/orders?status=paid', group: 'Sales' }]
+     * ```
+     */
+    links?: NavigationLinkInput[]
+  }
 
   /**
    * The admin's name, logo and colour (FR-14). `color` is a hex colour;
@@ -132,6 +172,22 @@ export type AzuConfigInput = {
 }
 
 /**
+ * A navigation link (FR-21), as `navigation.links` takes it.
+ */
+export type NavigationLinkInput = {
+  label: string
+  /** A path (`/admin/resources/orders?status=paid`) or an absolute URL */
+  url: string
+  group?: string
+  /** Lucide icon name */
+  icon?: string
+  /** Position within its group: lower first, then by label */
+  order?: number
+  /** A Bouncer ability object. Hides the link from users who fail it; it doesn't protect the target */
+  ability?: ScreenAbility
+}
+
+/**
  * The brand with defaults applied.
  */
 export type AzuBrand = { name: string; logo: string | null; color: string }
@@ -141,9 +197,15 @@ export type AzuBrand = { name: string; logo: string | null; color: string }
  * `guard` stays undefined to mean the app's default guard.
  */
 export type AzuConfig = Required<
-  Omit<AzuConfigInput, 'guard' | 'resources' | 'defaultDisk' | 'brand' | 'navigation'>
+  Omit<
+    AzuConfigInput,
+    'guard' | 'resources' | 'screens' | 'home' | 'defaultDisk' | 'brand' | 'navigation'
+  >
 > & {
-  navigation: { groups: string[] }
+  navigation: { groups: string[]; links: NavigationLinkInput[] }
+  screens: { autoload: string | false }
+  /** `null` means the welcome page */
+  home: string | { resource: string } | null
   guard?: string
   /** `undefined` means Drive's default disk */
   defaultDisk?: string
@@ -174,6 +236,12 @@ export type AzuSharedProps = {
     user: AzuUser | null
     /** The "View site" link (`siteUrl` in config/azu.ts); `null` hides it */
     siteUrl: string | null
+    /**
+     * The home screen (`home` in config/azu.ts, FR-22), when the user
+     * may open it: the navigation's first link takes its label and icon.
+     * `null` means the welcome page, "Dashboard".
+     */
+    home: { name: string; label: string; icon: string | null } | null
   }
 }
 
@@ -285,6 +353,32 @@ export type RelationOptionsResponse = { options: RelationOption[] }
 export type NotFoundPageProps = AzuSharedProps
 
 /**
+ * Props for the `azu/screen` page (FR-20): the screen, and what its
+ * `data` function returned (`null` without one).
+ */
+export type ScreenPageProps = AzuSharedProps & {
+  screen: ScreenSchema
+  data: unknown
+}
+
+/**
+ * Props a screen's component receives (FR-20): its `data`, typed from
+ * the screen's `data` function, and the screen.
+ *
+ * @example
+ * ```tsx
+ * import type { ScreenProps } from '@mezielabs/azu-react'
+ * import type salesReport from '#admin/screens/sales_report'
+ *
+ * export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {}
+ * ```
+ */
+export type ScreenProps<S extends Screen<any> = Screen<unknown>> = {
+  data: S['__data']
+  screen: ScreenSchema
+}
+
+/**
  * Every page Azu renders, keyed by its Inertia page name. Names are
  * snake_case paths under `azu/`, like AdonisJS's own pages.
  */
@@ -296,6 +390,7 @@ export interface AzuPages {
   'azu/resource/show': ResourceShowPageProps
   'azu/errors/forbidden': ForbiddenPageProps
   'azu/errors/not_found': NotFoundPageProps
+  'azu/screen': ScreenPageProps
 }
 
 /**

@@ -18,3 +18,19 @@ import type User from '#models/user'
 export const accessAdmin = Bouncer.ability((user: User) => {
   return user.role === 'admin' || user.role === 'staff'
 })
+
+/**
+ * Who can see the Reports screens (FR-20): admins, not staff.
+ */
+export const viewReports = Bouncer.ability((user: User) => {
+  return user.role === 'admin'
+})
+
+/**
+ * Who sees the "Awaiting shipping" link (FR-21): admins, as
+ * OrderPolicy's viewList. It only hides the link; OrderPolicy still
+ * guards the list it opens.
+ */
+export const viewOrders = Bouncer.ability((user: User) => {
+  return user.role === 'admin'
+})

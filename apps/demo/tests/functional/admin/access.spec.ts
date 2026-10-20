@@ -46,7 +46,8 @@ test.group('Admin / access gate (FR-02)', (group) => {
     const response = await client.get('/admin').loginAs(staff).withInertia()
 
     response.assertStatus(200)
-    response.assertInertiaComponent('azu/dashboard')
+    // The demo's home screen (FR-22)
+    response.assertInertiaComponent('azu/screen')
   })
 
   test('lets admins in', async ({ client }) => {
@@ -54,6 +55,6 @@ test.group('Admin / access gate (FR-02)', (group) => {
     const response = await client.get('/admin').loginAs(admin).withInertia()
 
     response.assertStatus(200)
-    response.assertInertiaComponent('azu/dashboard')
+    response.assertInertiaComponent('azu/screen')
   })
 })

@@ -1,0 +1,24 @@
+{{{
+  exports({ to: path })
+}}}
+import { defineScreen } from '@mezielabs/azu'
+import { accessAdmin } from '#abilities/main'
+
+/**
+ * {{{ label }}}: a custom admin screen, at /admin/screens/{{ name }}
+ * (under your config/azu.ts \`path\`). Its component is
+ * inertia/admin/components/{{ file }}.tsx.
+ *
+ * Who may open it: \`ability\`, a Bouncer ability checked on every
+ * request. accessAdmin lets in everyone who can open the panel; add a
+ * narrower ability to app/abilities/main.ts for anything sensitive.
+ */
+export default defineScreen({
+  label: '{{{ label }}}',
+  ability: accessAdmin,
+  component: '{{ component }}',
+  // Runs on the server for each request; return plain, JSON-serialisable values
+  data: async () => {
+    return { generatedAt: new Date().toISOString() }
+  },
+})

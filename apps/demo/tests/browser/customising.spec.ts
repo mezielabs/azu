@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import Category from '#models/category'
 import Order from '#models/order'
 import Product from '#models/product'
-import { createUser } from '../functional/admin/helpers.ts'
+import { createUser, withHome } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
 
 /**
@@ -120,7 +120,10 @@ test.group('Customising (FR-15)', (group) => {
   test('the published dashboard renders instead of the package page', async ({
     visit,
     browserContext,
+    cleanup,
   }) => {
+    // The welcome page, without the demo's home screen
+    withHome(null, cleanup)
     await browserContext.loginAs(await createUser('admin'))
 
     const page = await visit('/admin')
@@ -131,7 +134,9 @@ test.group('Customising (FR-15)', (group) => {
     visit,
     browserContext,
     assert,
+    cleanup,
   }) => {
+    withHome(null, cleanup)
     await browserContext.loginAs(await createUser('admin'))
     const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-custom-lazy' })
     await Product.create({

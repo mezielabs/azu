@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react'
-import type { AzuSharedProps, NavigationGroup } from '@mezielabs/azu/types'
-import { initials } from '@mezielabs/azu/shared'
+import type { AzuSharedProps, NavigationGroup, NavigationItem } from '@mezielabs/azu/types'
+import { currentNavigationItem, initials, navigationKey } from '@mezielabs/azu/shared'
 import icons from '@mezielabs/azu-react/icons'
 import { AccountMenu, signOut, ThemeRadios } from './account_menu.tsx'
 import { DashboardIcon, ExternalIcon, SignOutIcon } from './shell_icons.tsx'
@@ -15,10 +15,6 @@ type Azu = AzuSharedProps['azu']
 function NavIcon({ name }: { name: string | null }) {
   const Icon = name ? icons[name] : undefined
   return Icon ? <Icon className="azu-nav-icon" aria-hidden /> : null
-}
-
-function isCurrent(url: string, href: string) {
-  return url === href || url.startsWith(`${href}/`) || url.startsWith(`${href}?`)
 }
 
 /**
@@ -42,23 +38,61 @@ export function Brand({ azu }: { azu: Azu }) {
 }
 
 /**
- * The dashboard, then the resources the user may list, in groups. The
- * server builds the list, checking each resource's policy.
+ * One navigation item: an Inertia link for an admin page, a plain link
+ * for another page of the app, and for an absolute URL a link that opens
+ * in a new tab, with an external-link icon (FR-21).
+ */
+function NavItemLink({ azu, item, current }: { azu: Azu; item: NavigationItem; current: boolean }) {
+  const content = (
+    <>
+      <NavIcon name={item.icon} />
+      <span className="azu-nav-label">{item.label}</span>
+    </>
+  )
+  if (item.external) {
+    return (
+      <a
+        href={item.href}
+        className="azu-nav-link"
+        target="_blank"
+        rel="noopener"
+        data-azu-external
+        data-azu-icon={item.icon ?? undefined}
+      >
+        {content}
+        <ExternalIcon />
+        <span className="azu-visually-hidden"> (opens in a new tab)</span>
+      </a>
+    )
+  }
+  const inAdmin = item.href === azu.path || item.href.startsWith(`${azu.path}/`)
+  const props = {
+    'href': item.href,
+    'className': 'azu-nav-link',
+    'aria-current': current ? ('page' as const) : undefined,
+    'data-azu-icon': item.icon ?? undefined,
+  }
+  return inAdmin ? <Link {...props}>{content}</Link> : <a {...props}>{content}</a>
+}
+
+/**
+ * The home link (the home screen, else the welcome page), then the
+ * resources, screens and links the user may see, in groups. The server
+ * builds the list, checking each policy and ability.
  */
 function Navigation({ azu }: { azu: Azu }) {
   const { url } = usePage()
-  const path = url.split('?')[0]
+  const path = url.split('?')[0].replace(/\/+$/, '')
+  const current = currentNavigationItem(url, azu.navigation)
+  const homeScreen = azu.home ? `${azu.path}/screens/${azu.home.name}` : null
+  const atHome = path === azu.path || (homeScreen !== null && path === homeScreen)
   return (
     <nav className="azu-nav" aria-label="Admin">
       <ul className="azu-nav-list">
         <li>
-          <Link
-            href={azu.path}
-            className="azu-nav-link"
-            aria-current={path === azu.path || path === `${azu.path}/` ? 'page' : undefined}
-          >
-            <DashboardIcon />
-            Dashboard
+          <Link href={azu.path} className="azu-nav-link" aria-current={atHome ? 'page' : undefined}>
+            {azu.home?.icon ? <NavIcon name={azu.home.icon} /> : <DashboardIcon />}
+            {azu.home?.label ?? 'Dashboard'}
           </Link>
         </li>
       </ul>
@@ -67,16 +101,8 @@ function Navigation({ azu }: { azu: Azu }) {
           {group.label && <p className="azu-nav-heading">{group.label}</p>}
           <ul className="azu-nav-list">
             {group.items.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className="azu-nav-link"
-                  aria-current={isCurrent(url, item.href) ? 'page' : undefined}
-                  data-azu-icon={item.icon ?? undefined}
-                >
-                  <NavIcon name={item.icon} />
-                  {item.label}
-                </Link>
+              <li key={navigationKey(item)}>
+                <NavItemLink azu={azu} item={item} current={current === navigationKey(item)} />
               </li>
             ))}
           </ul>

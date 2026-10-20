@@ -31,6 +31,18 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'azu.screens.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/screens/:screen'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { screen: ParamValue }
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'azu.resources.index': {
     methods: ["GET","HEAD"]
     pattern: '/admin/resources/:resource'

@@ -44,6 +44,7 @@ jobs:
           tar -tzf /tmp/azu-pack/mezielabs-azu-*.tgz > /tmp/azu-pack/files
           for file in build/stubs/config/azu.stub build/stubs/start/azu.stub \
             build/stubs/inertia/admin/app.stub build/stubs/make/admin_action.stub \
+            build/stubs/make/screen.stub build/stubs/make/screen_component.stub \
             build/resources/views/admin.edge \
             build/commands/main.js build/commands/commands.json; do
             grep -qx "package/$file" /tmp/azu-pack/files || { echo "Missing $file"; exit 1; }

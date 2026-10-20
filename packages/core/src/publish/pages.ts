@@ -16,6 +16,7 @@ export const PAGE_NAMES = [
   'resource/show',
   'errors/forbidden',
   'errors/not_found',
+  'screen',
 ] as const
 
 export type PageName = (typeof PAGE_NAMES)[number]

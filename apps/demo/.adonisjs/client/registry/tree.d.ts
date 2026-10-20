@@ -9,6 +9,9 @@ export interface ApiDefinition {
   }
   azu: {
     dashboard: typeof routes['azu.dashboard']
+    screens: {
+      show: typeof routes['azu.screens.show']
+    }
     resources: {
       index: typeof routes['azu.resources.index']
       create: typeof routes['azu.resources.create']

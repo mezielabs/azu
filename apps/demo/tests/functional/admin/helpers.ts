@@ -1,3 +1,5 @@
+import app from '@adonisjs/core/services/app'
+import type { AzuConfig } from '@mezielabs/azu/types'
 import { randomUUID } from 'node:crypto'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
@@ -39,4 +41,17 @@ export async function insertProducts(category: Category, count: number, name = '
     }))
     await db.table('products').multiInsert(rows)
   }
+}
+
+/**
+ * Sets `home` in the demo's config/azu.ts for one test (FR-22): `null`
+ * for the welcome page.
+ */
+export function withHome(home: AzuConfig['home'], cleanup: (callback: () => void) => void) {
+  const config = app.config.get<AzuConfig>('azu')
+  const before = config.home
+  config.home = home
+  cleanup(() => {
+    config.home = before
+  })
 }
