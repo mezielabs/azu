@@ -1,4 +1,4 @@
-import type { ResourceSchema } from '../schema.ts'
+import type { ResourceSchema, ScreenSchema } from '../schema.ts'
 
 export type BreadcrumbItem = { label: string; href?: string }
 
@@ -17,4 +17,13 @@ export function resourceBreadcrumbs(
     ...(options.list === false ? [] : [{ label: resource.label, href: listUrl }]),
     ...(options.trail ?? []),
   ]
+}
+
+/**
+ * A screen's breadcrumb (FR-20): its group (not a link), then its
+ * label. A screen without a group has none, since the label alone would
+ * only repeat the page's title.
+ */
+export function screenBreadcrumbs(screen: Pick<ScreenSchema, 'group' | 'label'>): BreadcrumbItem[] {
+  return screen.group ? [{ label: screen.group }, { label: screen.label }] : []
 }

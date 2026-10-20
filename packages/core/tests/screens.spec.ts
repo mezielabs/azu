@@ -12,7 +12,7 @@ import { defineScreen, Screen } from '../src/screens/define_screen.ts'
 import { assertHome } from '../src/screens/home.ts'
 import { loadScreens, screenName } from '../src/screens/loader.ts'
 import { ScreenRegistry } from '../src/screens/registry.ts'
-import { currentNavigationItem, usedComponentNames } from '../shared.ts'
+import { currentNavigationItem, screenBreadcrumbs, usedComponentNames } from '../shared.ts'
 
 const everyone = Bouncer.ability(() => true)
 const admins = Bouncer.ability(() => true)
@@ -141,6 +141,15 @@ export default defineScreen({ label: 'Sales report', ability: { execute() {} } a
       ['SalesReport']
     )
     assert.deepEqual([...usedComponentNames('azu/screen', {})], [])
+  })
+
+  test('a grouped screen has a breadcrumb; an ungrouped one has none', ({ assert }) => {
+    assert.deepEqual(screenBreadcrumbs({ group: 'Reports', label: 'Sales report' }), [
+      { label: 'Reports' },
+      { label: 'Sales report' },
+    ])
+    // The label alone would repeat the page's title
+    assert.deepEqual(screenBreadcrumbs({ group: null, label: 'Overview' }), [])
   })
 })
 

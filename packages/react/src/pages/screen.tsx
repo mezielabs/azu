@@ -7,11 +7,12 @@ import {
   useComponent,
   type ScreenPageProps,
 } from '@mezielabs/azu-react'
+import { screenBreadcrumbs } from '@mezielabs/azu/shared'
 
 /**
  * A custom screen (FR-20): the shell, a breadcrumb (its group, then its
- * label), a header with the label, then the app's component with
- * `{ data, screen }`. A component no file registers shows an error that
+ * label; none without a group), a header with the label, then the app's
+ * component with `{ data, screen }`. A component no file registers shows an error that
  * names it, rather than a blank page.
  *
  * A form screen (FR-23) renders Azu's form instead, laid out as the
@@ -20,7 +21,7 @@ import {
  */
 export default function ScreenPage({ azu, screen, data, form, errors }: ScreenPageProps) {
   const Component = useComponent(screen.component ?? undefined)
-  const breadcrumbs = [...(screen.group ? [{ label: screen.group }] : []), { label: screen.label }]
+  const breadcrumbs = screenBreadcrumbs(screen)
 
   if (form) {
     return (

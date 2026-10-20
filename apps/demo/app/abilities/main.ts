@@ -10,6 +10,7 @@
 
 import { Bouncer } from '@adonisjs/bouncer'
 import type User from '#models/user'
+import { policies } from '#generated/policies'
 
 /**
  * Who can open the admin panel. Azu's installer will add this ability
@@ -27,12 +28,15 @@ export const viewReports = Bouncer.ability((user: User) => {
 })
 
 /**
- * Who sees the "Awaiting shipping" link (FR-21): admins, as
- * OrderPolicy's viewList. It only hides the link; OrderPolicy still
- * guards the list it opens.
+ * Who sees the "Awaiting shipping" link (FR-21): whoever OrderPolicy
+ * lets list orders. It asks the policy rather than restating its rule,
+ * through Bouncer, so the policy's before and after hooks apply too. The
+ * policy comes from the app's lazy registry, as in the Bouncer
+ * middleware, so this file loads without importing it. It only hides
+ * the link; OrderPolicy still guards the list it opens.
  */
 export const viewOrders = Bouncer.ability((user: User) => {
-  return user.role === 'admin'
+  return new Bouncer(user, {}, policies).with('OrderPolicy').allows('viewList')
 })
 
 /**

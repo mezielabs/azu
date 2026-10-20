@@ -37,6 +37,8 @@ test.group('Screens', (group) => {
 
     // The home screen, at /admin, first in the navigation
     await page.getByRole('heading', { level: 1, name: 'Overview' }).waitFor()
+    // Ungrouped: no breadcrumb repeating the title
+    assert.equal(await page.getByRole('navigation', { name: 'Breadcrumb' }).count(), 0)
     assert.match(page.url(), /\/admin$/)
     const sidebar = page.locator('.azu-sidebar')
     assert.equal(

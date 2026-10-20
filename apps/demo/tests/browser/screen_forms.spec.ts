@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import Setting from '#models/setting'
 import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
+import { toastAgainstSaveBar } from './overlap.ts'
 
 const SETTINGS = '/admin/screens/store-settings'
 
@@ -72,11 +73,13 @@ test.group('Screen forms', (group) => {
 
     // The form shows the stored values again, with nothing unsaved
     assert.equal(await storeName.inputValue(), 'Iya Basira Stores')
+    // Typed as 12.5, stored and shown with two places
+    assert.equal(await page.getByRole('textbox', { name: /VAT rate/ }).inputValue(), '12.50')
     assert.equal(await page.locator('.azu-save-status').getAttribute('data-azu-state'), 'clean')
     const stored = await Setting.values(['storeName', 'vatRate', 'maintenanceMode'])
     assert.deepEqual(stored, {
       storeName: 'Iya Basira Stores',
-      vatRate: '12.5',
+      vatRate: '12.50',
       maintenanceMode: true,
     })
   })
@@ -121,6 +124,24 @@ test.group('Screen forms', (group) => {
     await page.waitForURL('**/admin/resources/products')
     const { storeName } = await Setting.values(['storeName'])
     assert.equal(storeName, 'Azu Store')
+  })
+
+  test('on a phone the toast sits above the save bar, clear of Save changes', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await seedSettings()
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit(SETTINGS)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.locator('.azu-save-bar').waitFor()
+    await page.getByRole('textbox', { name: /Store name/ }).fill('Azu Store Abuja')
+    await page.locator('.azu-save-bar').getByRole('button', { name: 'Save changes' }).click()
+    assert.deepEqual(await toastAgainstSaveBar(page, 'Store settings saved'), {
+      covered: [],
+      overBar: false,
+    })
   })
 
   test('staff see no Settings group', async ({ visit, browserContext, assert }) => {

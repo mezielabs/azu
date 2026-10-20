@@ -467,7 +467,7 @@ home: 'overview',
 home: { resource: 'orders' },
 ```
 
-The home screen replaces "Dashboard" at the top of the navigation. A user who fails its ability gets the welcome page, not a 403. A `home` that names no screen or resource stops the app from booting.
+The home screen replaces "Dashboard" at the top of the navigation. A user who fails its ability gets the welcome page, not a 403. With `{ resource }`, only users who may list that resource are redirected; everyone else gets the welcome page. A `home` that names no screen or resource stops the app from booting.
 
 ## Customising
 

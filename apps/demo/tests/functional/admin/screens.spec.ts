@@ -7,6 +7,7 @@ import app from '@adonisjs/core/services/app'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { Bouncer } from '@adonisjs/bouncer'
 import { defineScreen } from '@mezielabs/azu'
+import type { AzuConfig } from '@mezielabs/azu/types'
 import { DateTime } from 'luxon'
 import Category from '#models/category'
 import Order from '#models/order'
@@ -218,6 +219,24 @@ test.group('Admin / screens (FR-20, FR-21, FR-22)', (group) => {
     response.assertStatus(200)
     response.assertInertiaComponent('azu/dashboard')
     response.assertInertiaPropsContains({ azu: { home: null } })
+  })
+
+  test("home: a user who can't list the home resource gets the welcome page, not a redirect", async ({
+    client,
+    cleanup,
+  }) => {
+    // OrderPolicy's viewList is admins only
+    withHome({ resource: 'orders' }, cleanup)
+    const staff = await createUser('staff')
+    const response = await client.get('/admin').loginAs(staff).withInertia().redirects(0)
+    response.assertStatus(200)
+    response.assertInertiaComponent('azu/dashboard')
+
+    // A resource staff may list still redirects (withHome's cleanup restores home)
+    app.config.get<AzuConfig>('azu').home = { resource: 'products' }
+    const products = await client.get('/admin').loginAs(staff).redirects(0)
+    products.assertStatus(302)
+    products.assertHeader('location', '/admin/resources/products')
   })
 })
 
