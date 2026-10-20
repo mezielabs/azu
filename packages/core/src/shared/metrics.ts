@@ -55,6 +55,14 @@ export const PERIODS = ['day', 'week', 'month', 'quarter', 'year'] as const
 export type Period = (typeof PERIODS)[number]
 
 /**
+ * The buckets a trend widget (FR-25) can count in: hours, days, weeks
+ * (from Monday) or months, in the admin's timezone.
+ */
+export const BUCKET_UNITS = ['hour', 'day', 'week', 'month'] as const
+
+export type BucketUnit = (typeof BUCKET_UNITS)[number]
+
+/**
  * A screen's current range, as the page gets it: its name, and the
  * days it and its comparison period cover, as `YYYY-MM-DD` dates in
  * `timezone`.

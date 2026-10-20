@@ -6,7 +6,7 @@ import { columnName, listRecords } from '../list/list_records.ts'
 import { databaseDateTime } from '../list/filters.ts'
 import { allows } from '../resources/abilities.ts'
 import { humanize } from '../resources/labels.ts'
-import type { PartitionRow, WidgetData, WidgetSchema } from '../schema.ts'
+import type { PartitionRow, TrendBucket, WidgetData, WidgetSchema } from '../schema.ts'
 import { abilityAllows } from '../screens/abilities.ts'
 import { parseFilterValue } from '../shared/list_filters.ts'
 import { compareValues, type RangeInfo, type RangeName } from '../shared/metrics.ts'
@@ -14,6 +14,7 @@ import type { PageSize } from '../shared/list_state.ts'
 import { addDecimals, decimalResult } from './decimals.ts'
 import type { AnyResource, LinkFilters, ScreenWidget, Widget, WidgetState } from './metrics.ts'
 import { periodBounds, type Bounds, type RangeBounds } from './ranges.ts'
+import { TooManyBuckets, bucketBounds, bucketFor, type Bucket } from './buckets.ts'
 
 /** What computing a widget needs from the panel */
 export type WidgetContext = { path: string; timezone: string; defaultDisk?: string }
@@ -52,6 +53,7 @@ const WIDTHS: Record<WidgetState['kind'], WidgetSchema['width']> = {
   progress: 1,
   partition: 1,
   table: 2,
+  trend: 4,
 }
 
 /**
@@ -68,7 +70,9 @@ export function widgetSchema(key: string, widget: Widget): WidgetSchema {
     format: state.format,
     // Progress has its own period; a table without date() just lists
     note: !ranged && (state.kind === 'value' || state.kind === 'partition') ? 'All time' : null,
-    compares: state.kind === 'value' && ranged && state.compare,
+    compares:
+      (state.kind === 'value' && ranged && state.compare) ||
+      (state.kind === 'trend' && state.compare),
     better: state.better,
   }
 }
@@ -95,8 +99,17 @@ export async function widgetData(
         return await partitionData(context, widget.state, range)
       case 'table':
         return await tableData(ctx, context, widget.state, range)
+      case 'trend':
+        return await trendData(context, widget.state, range)
     }
   } catch (error) {
+    // Too many buckets is the screen's ranges, not a fault: say why
+    if (error instanceof TooManyBuckets) {
+      ctx.logger.warn(
+        `Azu's "${widget.state.label}" trend on the "${screen}" screen has too many buckets for this range`
+      )
+      return { status: 'error', message: error.message }
+    }
     ctx.logger.error(
       { err: error },
       `Azu couldn't load the "${widget.state.label}" widget on the "${screen}" screen`
@@ -494,5 +507,120 @@ async function tableData(
     href: state.link
       ? listHref(context.path, resource, linkFilters(state, state.dateColumn ? range.info : null))
       : null,
+  }
+}
+
+/**
+ * The unit a trend counts in: its own `by()`, else the range's. A date
+ * column has no hours, so it counts days instead.
+ */
+export function trendUnit(state: WidgetState, range: RangeName) {
+  const unit = state.bucket ?? bucketFor(range)
+  return unit === 'hour' && isDateOnly(state.resource!.model, state.dateColumn!) ? 'day' : unit
+}
+
+/**
+ * Each bucket's aggregate (FR-25), in one query: a CASE maps the date
+ * column to its bucket's index by the boundaries Luxon worked out in the
+ * admin's timezone, and the query groups by that index. No dialect date
+ * functions or timezone tables: the boundaries are plain values, in the
+ * form the column stores them, so Postgres, MySQL and SQLite agree, and
+ * clock changes are already in them. Empty buckets come back as 0.
+ */
+async function bucketValues(
+  state: WidgetState,
+  buckets: Bucket[],
+  bounds: Bounds
+): Promise<string[]> {
+  const model = state.resource!.model
+  const column = qualified(model, state.dateColumn!)
+  const dateOnly = isDateOnly(model, state.dateColumn!)
+  const query = baseQuery(state)
+  // Only the range: the first bucket may start before it (a week), the
+  // last end after it (now)
+  withinBounds(query, state, bounds)
+  const format = query.client.dialect.dateTimeFormat
+  const boundary = (value: DateTime) =>
+    dateOnly ? value.toISODate()! : databaseDateTime(value.toMillis(), format)
+
+  query.clearSelect().clearOrder()
+  if (buckets.length > 1) {
+    const whens = buckets.slice(1).map((_, index) => `WHEN ?? < ? THEN ${index}`)
+    const bindings = buckets.slice(1).flatMap((bucket) => [column, boundary(bucket.start)])
+    query.select(
+      query.client.raw(
+        `CASE ${whens.join(' ')} ELSE ${buckets.length - 1} END as bucket_index`,
+        bindings
+      )
+    )
+  }
+  if (state.aggregate === 'count') query.count('* as value')
+  else query[state.aggregate!](`${qualified(model, state.column!)} as value`)
+  if (buckets.length > 1) query.groupByRaw('1')
+
+  const scale = await resultScale(state)
+  const values = buckets.map(() => decimalResult(0, scale))
+  const rows = await query.pojo<{ bucket_index?: unknown; value: unknown }>()
+  for (const row of rows) {
+    const index = buckets.length > 1 ? Number(row.bucket_index) : 0
+    if (index >= 0 && index < values.length) values[index] = decimalResult(row.value, scale)
+  }
+  return values
+}
+
+async function trendData(
+  context: WidgetContext,
+  state: WidgetState,
+  range: { name: RangeName; bounds: RangeBounds; info: RangeInfo }
+): Promise<WidgetData> {
+  const resource = state.resource!
+  const unit = trendUnit(state, range.name)
+  const buckets = bucketBounds(unit, range.bounds, context.timezone)
+  const [values, previous] = await Promise.all([
+    bucketValues(state, buckets, range.bounds),
+    state.compare
+      ? bucketValues(
+          state,
+          bucketBounds(unit, range.bounds.previous, context.timezone),
+          range.bounds.previous
+        )
+      : Promise.resolve(null),
+  ])
+
+  // Days, weeks and months link to the list filtered to them, when the
+  // resource can filter the column by date; never past the range
+  const dateRange = resource
+    .filters()
+    .find((item) => item.kind === 'dateRange' && item.name === state.dateColumn)
+  const filters = linkFilters({ ...state, dateColumn: null }, null)
+  const days = (bucket: Bucket) => {
+    const from = bucket.start < range.bounds.start ? range.bounds.start : bucket.start
+    const last = bucket.end.minus({ days: 1 })
+    const to = last > range.bounds.end ? range.bounds.end : last
+    return `${from.toISODate()}..${to.toISODate()}`
+  }
+
+  // A previous period with fewer buckets: the rest are empty, at the same scale
+  const zero = decimalResult(0, values[0]?.split('.')[1]?.length ?? null)
+  const rows: TrendBucket[] = buckets.map((bucket, index) => ({
+    start: bucket.start.toISO()!,
+    end: bucket.end.toISO()!,
+    value: values[index],
+    // Aligned by position: the nth bucket of each period
+    previous: previous ? (previous[index] ?? zero) : null,
+    href:
+      dateRange && unit !== 'hour'
+        ? listHref(context.path, resource, { ...filters, [dateRange.name]: days(bucket) })
+        : null,
+  }))
+  return {
+    status: 'ok',
+    kind: 'trend',
+    unit,
+    chart: state.chart,
+    buckets: rows,
+    total: addDecimals(values),
+    previousTotal: previous ? addDecimals(previous.slice(0, buckets.length)) : null,
+    noun: resource.label.toLowerCase(),
   }
 }

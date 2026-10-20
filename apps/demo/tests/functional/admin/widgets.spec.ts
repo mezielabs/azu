@@ -18,11 +18,12 @@ const KEYS = {
   orders: 'widget1',
   average: 'widget2',
   customers: 'widget3',
-  cancelled: 'widget4',
-  goal: 'widget5',
-  status: 'widget6',
-  recent: 'widget7',
-  lowStock: 'widget8',
+  trend: 'widget4',
+  cancelled: 'widget5',
+  goal: 'widget6',
+  status: 'widget7',
+  recent: 'widget8',
+  lowStock: 'widget9',
 }
 
 let sequence = 0
@@ -93,14 +94,15 @@ test.group('Admin / widgets (FR-24)', (group) => {
         ['widget1', 'value', 1],
         ['widget2', 'value', 1],
         ['widget3', 'value', 1],
-        ['widget4', 'value', 1],
-        ['widget5', 'progress', 1],
-        ['widget6', 'partition', 2],
-        ['widget7', 'table', 2],
+        ['widget4', 'trend', 4],
+        ['widget5', 'value', 1],
+        ['widget6', 'progress', 1],
+        ['widget7', 'partition', 2],
         ['widget8', 'table', 2],
+        ['widget9', 'table', 2],
       ]
     )
-    assert.deepEqual(props.ranges, ['30d', 'today', '7d', 'month'])
+    assert.deepEqual(props.ranges, ['30d', 'today', '7d', '90d', 'month', 'year'])
     assert.equal(props.range.name, '30d')
     // Deferred: none of the widgets' data is in the first response, and
     // each is in its own group, so each loads in its own request
@@ -384,7 +386,7 @@ test.group('Admin / widgets (FR-24)', (group) => {
     assert.equal(await range('?range=7d'), '7d')
     assert.equal(await range('?range=month'), 'month')
     // Not offered on this screen, or not a range at all
-    assert.equal(await range('?range=90d'), '30d')
+    assert.equal(await range('?range=quarter'), '30d')
     assert.equal(await range('?range=bogus'), '30d')
   })
 

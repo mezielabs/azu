@@ -1,4 +1,5 @@
-import { RANGE_NAMES, isRangeName } from '../shared/metrics.ts'
+import { DEFAULT_RANGES, RANGE_NAMES, isRangeName, type RangeName } from '../shared/metrics.ts'
+import { MAX_BUCKETS, bucketCounts } from './buckets.ts'
 import { linkFilterValue } from './compute.ts'
 import { Widget, type WidgetState } from './metrics.ts'
 
@@ -51,6 +52,17 @@ export function widgetProblems(state: WidgetState): string[] {
     if (!state.dateColumn) problems.push(`${name} needs date(): the column its period applies to`)
     if (state.goal === null) problems.push(`${name} needs goal()`)
   }
+  if (state.kind === 'trend') {
+    if (!state.dateColumn) problems.push(`${name} needs date(): the column its buckets count along`)
+    else if (
+      state.bucket === 'hour' &&
+      (model.$getColumn(state.dateColumn)?.meta as { type?: string } | undefined)?.type === 'date'
+    ) {
+      problems.push(
+        `${name} counts by('hour') on "${state.dateColumn}", a date column with no time`
+      )
+    }
+  }
   if (state.limit !== null && (!Number.isInteger(state.limit) || state.limit < 1)) {
     problems.push(`${name}'s limit() must be a whole number of rows, 1 or more`)
   }
@@ -93,4 +105,35 @@ export function assertWidgets(
       )
     }
   }
+  const offered = (options.ranges as RangeName[] | undefined)?.length
+    ? (options.ranges as RangeName[])
+    : DEFAULT_RANGES
+  for (const item of options.widgets as Widget[]) {
+    const [problem] = bucketProblems(item.state, offered, true)
+    if (problem) throw new Error(`The "${label}" screen: ${problem}`)
+  }
+}
+
+/**
+ * A trend's `by()` against the screen's ranges (FR-25): the ranges where
+ * it needs more than `MAX_BUCKETS`. With `always`, only ranges where it
+ * always does (boot refuses those); otherwise ranges where it can
+ * (`azu:doctor` reports those). A trend without `by()` follows the range
+ * and never needs too many.
+ */
+export function bucketProblems(
+  state: WidgetState,
+  ranges: readonly RangeName[],
+  always: boolean
+): string[] {
+  if (state.kind !== 'trend' || !state.bucket) return []
+  const unit = state.bucket
+  const over = ranges.filter((range) => {
+    const counts = bucketCounts(unit, range)
+    return (always ? counts.min : counts.max) > MAX_BUCKETS
+  })
+  if (over.length === 0) return []
+  return [
+    `the "${state.label}" trend counts by('${unit}'), which ${always ? 'needs' : 'can need'} more than ${MAX_BUCKETS} buckets for ${over.join(', ')}: use a longer unit, or leave by() out to follow the range`,
+  ]
 }

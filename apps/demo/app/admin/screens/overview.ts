@@ -12,15 +12,16 @@ const SOLD = ['paid', 'shipped']
  * users who may list its resource. Staff, who can't list orders, see
  * Low stock alone.
  *
- * On a 4-column grid: the four values; Cancelled orders and the goal
- * beside Orders by status (2 columns); then the two tables. No row ends
- * with a gap, at 4 columns or 2.
+ * On a 4-column grid: the four values; the revenue trend across the
+ * grid; Cancelled orders and the goal beside Orders by status (2
+ * columns); then the two tables. No row ends with a gap, at 4 columns
+ * or 2.
  */
 export default defineScreen({
   label: 'Overview',
   icon: 'layout-dashboard',
   ability: accessAdmin,
-  ranges: ['30d', 'today', '7d', 'month'],
+  ranges: ['30d', 'today', '7d', '90d', 'month', 'year'],
   widgets: [
     metric
       .value('Revenue')
@@ -52,6 +53,15 @@ export default defineScreen({
         return Number(row.total)
       })
       .ability(viewReports),
+    // A trend (FR-25), full width: days for 30 days, hours today, months
+    // for the year, against the period before
+    metric
+      .trend('Revenue over time')
+      .sum(orders, 'total')
+      .where((query) => query.whereIn('status', SOLD))
+      .date('placedAt')
+      .format('currency', 'NGN')
+      .compare(),
     // Down is good: fewer cancellations read as better
     metric
       .value('Cancelled orders')
