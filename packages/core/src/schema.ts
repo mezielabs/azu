@@ -4,6 +4,8 @@
  * package render from the same contract. Absent values are `null`,
  * never `undefined`, so the schema survives serialisation unchanged.
  */
+import type { NumberFormat } from './shared/format.ts'
+import type { Comparison } from './shared/metrics.ts'
 import type { SlotName } from './shared/slots.ts'
 
 export type ColumnKind =
@@ -184,11 +186,99 @@ export type ScreenSchema = {
   label: string
   group: string | null
   icon: string | null
-  /** The registered component that renders it; `null` for a form screen */
+  /** The registered component that renders it; `null` for a form or widgets screen */
   component: string | null
   /** A form Azu renders (FR-23), instead of a component */
   form: boolean
+  /** Widgets Azu renders (FR-24), instead of a component */
+  widgets: boolean
 }
+
+/**
+ * A widget on a widgets screen (FR-24), as the page lists it before
+ * its data loads. Only the widgets the user may see are listed.
+ */
+export type WidgetSchema = {
+  /** The page prop its data arrives in, `widget0` */
+  key: string
+  kind: 'value' | 'progress' | 'partition' | 'table'
+  label: string
+  /** Grid columns it spans, of 4 */
+  width: 1 | 2 | 3 | 4
+  format: NumberFormat
+  /** Said under the label: "All time" for a widget without a date column */
+  note: string | null
+  /** Whether it's compared with the previous period */
+  compares: boolean
+  /** Which way is good: `lower` for cancellations, refunds, response times */
+  better: 'higher' | 'lower'
+}
+
+/** A partition widget's row */
+export type PartitionRow = {
+  /** The grouped value; `null` for "Other" and for empty values */
+  key: string | null
+  label: string
+  /** A count or total, as an exact decimal string */
+  value: string
+  /** Of the largest row, 0 to 1, for the bar */
+  share: number
+  /** Of all rows, 0 to 1 */
+  percent: number
+  /** The filtered list, when the resource has a select filter on the column */
+  href: string | null
+}
+
+/**
+ * A widget's data, in its own page prop. `error` when it couldn't load:
+ * the error is logged on the server and the card says so.
+ */
+export type WidgetData =
+  | { status: 'error' }
+  | {
+      status: 'ok'
+      kind: 'value'
+      /** An exact decimal string */
+      value: string
+      previous: string | null
+      comparison: Comparison | null
+      href: string | null
+    }
+  | {
+      status: 'ok'
+      kind: 'progress'
+      value: string
+      goal: string
+      /** Of the goal, from 0; above 1 once it's passed */
+      share: number
+      /** How far through the period now is, 0 to 1 */
+      pace: number
+      /** The period's name: "October 2026", "Q4 2026", "Week of Oct 19" */
+      period: string
+      /** Milliseconds until the period ends */
+      remaining: number
+    }
+  | {
+      status: 'ok'
+      kind: 'partition'
+      rows: PartitionRow[]
+      /** All rows together, as an exact decimal string */
+      total: string
+      /** What's counted, for "386 orders"; `null` for a total */
+      unit: { one: string; other: string } | null
+    }
+  | {
+      status: 'ok'
+      kind: 'table'
+      /** The resource's URL name, for row links */
+      resource: string
+      columns: ColumnSchema[]
+      titleColumn: string | null
+      rows: ListRow[]
+      /** How many records match, for "View all 6" */
+      total: number
+      href: string | null
+    }
 
 export type NavigationGroup = {
   /** `null` for items without a group */

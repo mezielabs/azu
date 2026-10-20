@@ -22,6 +22,8 @@ export { AccountMenu, ThemeRadios } from './components/account_menu.tsx'
 export { Pagination } from './components/list/pagination.tsx'
 export { ResourceForm } from './components/form/resource_form.tsx'
 export { ScreenForm } from './components/form/screen_form.tsx'
+export { ScreenWidgets } from './components/widgets/screen_widgets.tsx'
+export { RangeSwitch } from './components/widgets/range_switch.tsx'
 export { FormField } from './components/form/form_field.tsx'
 export { UnsavedChanges } from './components/form/unsaved_changes.tsx'
 export { FieldValueView } from './components/detail/field_value.tsx'
@@ -49,6 +51,10 @@ export type {
   ResourceShowPageProps,
   ScreenPageProps,
   ScreenFormData,
+  WidgetSchema,
+  WidgetData,
+  WidgetProps,
+  PartitionRow,
   ScreenProps,
   ScreenSchema,
   ResourceFormData,

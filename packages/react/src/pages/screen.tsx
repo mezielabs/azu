@@ -3,11 +3,13 @@ import {
   AdminLayout,
   Head,
   PageHeader,
+  RangeSwitch,
   ScreenForm,
+  ScreenWidgets,
   useComponent,
   type ScreenPageProps,
 } from '@mezielabs/azu-react'
-import { screenBreadcrumbs } from '@mezielabs/azu/shared'
+import { rangeSummary, screenBreadcrumbs } from '@mezielabs/azu/shared'
 
 /**
  * A custom screen (FR-20): the shell, a breadcrumb (its group, then its
@@ -18,10 +20,47 @@ import { screenBreadcrumbs } from '@mezielabs/azu/shared'
  * A form screen (FR-23) renders Azu's form instead, laid out as the
  * resource forms are, with a single "Save changes" button. It submits
  * to the screen's own URL.
+ *
+ * A widgets screen (FR-24) renders its widgets, with the range under
+ * the title and the range switch beside it.
  */
-export default function ScreenPage({ azu, screen, data, form, errors }: ScreenPageProps) {
+export default function ScreenPage({
+  azu,
+  screen,
+  data,
+  form,
+  errors,
+  widgets,
+  range,
+  ranges,
+}: ScreenPageProps) {
   const Component = useComponent(screen.component ?? undefined)
   const breadcrumbs = screenBreadcrumbs(screen)
+
+  if (widgets && range) {
+    return (
+      <AdminLayout azu={azu} title={screen.label}>
+        <Head title={screen.label} />
+        <PageHeader
+          page="screen"
+          resource={screen.name}
+          title={screen.label}
+          breadcrumbs={breadcrumbs}
+          description={rangeSummary(range, {
+            compared: widgets.some((widget) => widget.compares),
+          })}
+          actions={
+            <RangeSwitch
+              ranges={ranges}
+              current={range.name}
+              widgets={widgets.map((widget) => widget.key)}
+            />
+          }
+        />
+        <ScreenWidgets azu={azu} screen={screen} widgets={widgets} />
+      </AdminLayout>
+    )
+  }
 
   if (form) {
     return (

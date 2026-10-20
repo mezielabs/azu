@@ -45,10 +45,9 @@ test.group('Screens', (group) => {
       await sidebar.getByRole('link', { name: 'Overview' }).getAttribute('aria-current'),
       'page'
     )
-    const counts = page.getByRole('list', { name: 'Store at a glance' })
-    await counts.getByText('Orders today', { exact: true }).waitFor()
-    // Each count links to the list it counts
-    await counts.getByRole('link', { name: /See them\s*: orders today/ }).click()
+    // Its widgets (FR-24): the Orders figure opens the orders it counts
+    await page.locator('[data-azu-widget] .azu-widget-figure').first().waitFor()
+    await page.locator('.azu-widgets').getByRole('link', { name: 'Orders', exact: true }).click()
     await page.waitForURL(/\/admin\/resources\/orders\?placedAt=/)
     await page.goBack()
 
@@ -94,7 +93,7 @@ test.group('Screens', (group) => {
     assert.equal(text.replace(/\s+/g, ' ').trim(), 'Azu documentation (opens in a new tab)')
   })
 
-  test('Overview and the Sales report pass axe in both themes, desktop and phone', async ({
+  test('the Sales report passes axe in both themes, desktop and phone', async ({
     visit,
     browserContext,
     assert,
@@ -107,7 +106,8 @@ test.group('Screens', (group) => {
       [390, 844],
     ]) {
       await page.setViewportSize({ width, height })
-      for (const url of ['/admin', '/admin/screens/sales-report']) {
+      // The Overview's widgets have their own scans (widgets.spec.ts)
+      for (const url of ['/admin/screens/sales-report']) {
         await page.goto(url)
         await page.locator('.azu-screen').waitFor()
         for (const colorScheme of ['light', 'dark'] as const) {

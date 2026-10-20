@@ -3,7 +3,8 @@
  * edits:
  *
  * 1. Copies the demo to apps/demo/tmp/generator-proof (git-ignored), and
- *    removes its admin resources, policies and tests. Its own validators
+ *    removes its admin resources, policies and tests, and the Overview
+ *    screen, whose widgets read those resources. Its own validators
  *    stay, so the generator meets name clashes (app/validators/user.ts).
  * 2. Runs `node ace azu:resource <Model> --policy` for every model.
  * 3. Type-checks the copy: the generated files must compile.
@@ -14,7 +15,15 @@
  * like `pnpm test`. Run `pnpm build` first.
  */
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
@@ -49,6 +58,11 @@ for (const entry of readdirSync(demo)) {
 for (const dir of ['app/admin/resources', 'app/policies']) {
   for (const file of readdirSync(join(proof, dir))) rmSync(join(proof, dir, file))
 }
+// The Overview's widgets (FR-24) read the hand-written resources, and the
+// config makes it the home screen: neither exists in the copy
+rmSync(join(proof, 'app/admin/screens/overview.ts'))
+const config = join(proof, 'config/azu.ts')
+writeFileSync(config, readFileSync(config, 'utf8').replace(/^\s*home: 'overview',\n/m, ''))
 rmSync(join(proof, 'tests/functional'), { recursive: true, force: true })
 rmSync(join(proof, 'tests/types'), { recursive: true, force: true })
 // The browser suite (axe checks) uses the hand-written resources too

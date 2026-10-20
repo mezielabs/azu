@@ -1944,3 +1944,328 @@
     }
   }
 }
+
+/*
+ * Widgets on screens (FR-24): a 4-column grid of cards, after the
+ * "Overview — widgets exploration" board. Two columns on mid-size
+ * screens, one on phones.
+ */
+@layer components {
+  .azu-page-description {
+    @apply m-0 text-[13px];
+    color: var(--azu-muted);
+  }
+
+  /* The range switch sits beside the title, and below it when there's no room */
+  .azu-page-header:has(.azu-range-switch) {
+    @apply flex-wrap;
+  }
+
+  /* The title keeps its width; the switch moves below it first */
+  .azu-page-header:has(.azu-range-switch) .azu-page-heading {
+    flex-basis: 16rem;
+  }
+
+  .azu-range-switch {
+    @apply inline-flex gap-0.5 rounded-[10px] border p-[3px];
+    border-color: var(--azu-border);
+    background: var(--azu-subtle);
+  }
+
+  .azu-range-option {
+    @apply h-8 rounded-[7px] border-0 bg-transparent px-3 text-[13px] whitespace-nowrap;
+    color: var(--azu-text);
+    cursor: pointer;
+  }
+
+  .azu-range-option[aria-pressed='true'] {
+    @apply font-semibold shadow-sm;
+    background: var(--azu-surface);
+  }
+
+  .azu-range-option:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 1px;
+  }
+
+  .azu-widgets {
+    @apply grid gap-4;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .azu-widget {
+    @apply relative flex min-w-0 flex-col gap-1.5 rounded-xl border px-[18px] py-4;
+    grid-column: span 1;
+    border-color: var(--azu-border);
+    background: var(--azu-surface);
+  }
+
+  .azu-widget[data-azu-width='2'] {
+    grid-column: span 2;
+  }
+
+  .azu-widget[data-azu-width='3'] {
+    grid-column: span 3;
+  }
+
+  .azu-widget[data-azu-width='4'] {
+    grid-column: span 4;
+  }
+
+  .azu-widget:has(.azu-widget-link):hover {
+    border-color: var(--azu-muted);
+  }
+
+  /* The aside ("12 days left") drops under the label when the card is narrow */
+  .azu-widget-header {
+    @apply flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5;
+  }
+
+  .azu-widget-label {
+    @apply m-0 text-[13px] font-medium;
+    color: var(--azu-muted);
+  }
+
+  .azu-widget[data-azu-widget='progress'] .azu-widget-label,
+  .azu-widget[data-azu-widget='partition'] .azu-widget-label,
+  .azu-widget[data-azu-widget='table'] .azu-widget-label {
+    @apply text-[15px] font-semibold;
+    color: var(--azu-text);
+  }
+
+  /* The whole card opens the list */
+  .azu-widget-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .azu-widget-link::after {
+    @apply absolute inset-0 rounded-xl;
+    content: '';
+  }
+
+  .azu-widget-link:focus-visible {
+    outline: none;
+  }
+
+  .azu-widget-link:focus-visible::after {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 2px;
+  }
+
+  .azu-widget-aside,
+  .azu-widget-note,
+  .azu-widget-empty {
+    @apply m-0 text-[13px];
+    color: var(--azu-muted);
+  }
+
+  .azu-widget-more {
+    @apply text-[13px] font-medium whitespace-nowrap;
+    color: var(--azu-brand);
+  }
+
+  .azu-widget-figure {
+    @apply m-0 text-[28px] leading-tight font-semibold tracking-tight;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-widget-delta {
+    @apply m-0 text-[13px];
+    color: var(--azu-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-widget-change {
+    @apply font-semibold;
+  }
+
+  /* By outcome: with lowerIsBetter(), a decrease is the good one */
+  .azu-widget-delta[data-azu-outcome='better'] .azu-widget-change {
+    color: var(--azu-badge-green-text);
+  }
+
+  .azu-widget-delta[data-azu-outcome='worse'] .azu-widget-change {
+    color: var(--azu-badge-red-text);
+  }
+
+  .azu-widget-error {
+    @apply flex flex-wrap items-center justify-between gap-2 text-sm;
+  }
+
+  .azu-widget-error p {
+    @apply m-0;
+    color: var(--azu-danger);
+  }
+
+  .azu-widget-placeholder {
+    @apply h-14 rounded-md;
+    background: var(--azu-subtle);
+    animation: azu-pulse 1.4s ease-in-out infinite;
+  }
+
+  .azu-widget-placeholder[data-azu-kind='partition'],
+  .azu-widget-placeholder[data-azu-kind='table'] {
+    @apply h-40;
+  }
+
+  .azu-widget[data-azu-state='loading'] > :not(.azu-widget-header):not(.azu-widget-placeholder) {
+    opacity: 0.55;
+    transition: opacity 120ms;
+  }
+
+  @keyframes azu-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .azu-widget-placeholder {
+      animation: none;
+    }
+  }
+
+  .azu-widget-progress-figures {
+    @apply m-0 text-[13px];
+    color: var(--azu-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-widget-progress-value {
+    @apply text-[22px] font-semibold;
+    color: var(--azu-text);
+  }
+
+  .azu-progress {
+    @apply relative my-1 h-2.5 rounded-full;
+    background: var(--azu-subtle);
+  }
+
+  .azu-progress-fill {
+    @apply absolute inset-y-0 left-0 rounded-full;
+    background: var(--azu-brand-solid);
+  }
+
+  .azu-progress-pace {
+    @apply absolute -top-1 -bottom-1 w-0.5 rounded-sm;
+    background: var(--azu-text);
+    transform: translateX(-1px);
+  }
+
+  .azu-widget-progress-text {
+    @apply m-0 text-[13px];
+    color: var(--azu-text);
+  }
+
+  .azu-widget-period {
+    color: var(--azu-muted);
+  }
+
+  .azu-partition {
+    @apply -mx-1.5 m-0 flex list-none flex-col p-0;
+  }
+
+  .azu-partition-row {
+    @apply grid items-center gap-2.5 rounded-lg p-1.5 text-[13px];
+    grid-template-columns: minmax(4.5rem, 6rem) minmax(0, 1fr) auto;
+    color: var(--azu-text);
+    text-decoration: none;
+  }
+
+  a.azu-partition-row:hover {
+    background: var(--azu-subtle);
+  }
+
+  a.azu-partition-row:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: -2px;
+  }
+
+  .azu-partition-label {
+    @apply truncate;
+  }
+
+  .azu-partition-bar {
+    @apply h-2 overflow-hidden rounded-full;
+    background: var(--azu-subtle);
+  }
+
+  .azu-partition-bar > span {
+    @apply block h-full rounded-full;
+    background: var(--azu-brand-solid);
+  }
+
+  .azu-partition-value {
+    @apply text-right whitespace-nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-partition-value strong {
+    @apply font-semibold;
+  }
+
+  .azu-partition-value span {
+    color: var(--azu-muted);
+  }
+
+  .azu-widget[data-azu-widget='table'] {
+    @apply px-0 pb-0;
+  }
+
+  .azu-widget[data-azu-widget='table'] > .azu-widget-header,
+  .azu-widget[data-azu-widget='table'] > .azu-widget-note,
+  .azu-widget[data-azu-widget='table'] > .azu-widget-error,
+  .azu-widget[data-azu-widget='table'] > .azu-widget-placeholder {
+    @apply mx-[18px];
+  }
+
+  .azu-widget[data-azu-widget='table'] > .azu-widget-placeholder {
+    @apply mb-4;
+  }
+
+  /* The list table's own container scrolls sideways inside the card */
+  .azu-widget-table {
+    @apply min-w-0;
+  }
+
+  .azu-widget-table .azu-table-container {
+    @apply rounded-none border-x-0 border-b-0;
+  }
+
+  .azu-widget-table .azu-widget-empty {
+    @apply px-[18px] pb-4;
+  }
+
+  /* Columns follow the grid's own width, so the sidebar is accounted for */
+  .azu-widgets-area {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 56rem) {
+    .azu-widgets {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .azu-widget[data-azu-width='3'],
+    .azu-widget[data-azu-width='4'] {
+      grid-column: span 2;
+    }
+  }
+
+  @container (max-width: 30rem) {
+    .azu-widgets {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .azu-widget[data-azu-width] {
+      grid-column: span 1;
+    }
+  }
+
+  /* Short tables scroll sideways rather than wrapping every cell */
+  .azu-widget-table :is(th, td) {
+    white-space: nowrap;
+  }
+}

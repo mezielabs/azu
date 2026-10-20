@@ -12,6 +12,7 @@ import {
   checkPolicies,
   checkPublished,
   checkScreenValidators,
+  checkWidgets,
   checkValidators,
   type Finding,
 } from '../src/doctor/checks.ts'
@@ -43,7 +44,7 @@ async function filesIn(dir: string, pattern: RegExp): Promise<string[]> {
  */
 export default class AzuDoctor extends BaseCommand {
   static commandName = 'azu:doctor'
-  static description = 'Check config, policies, validators, components and published pages'
+  static description = 'Check config, policies, validators, components, widgets and published pages'
   static options: CommandOptions = { startApp: true }
 
   async run() {
@@ -101,6 +102,7 @@ export default class AzuDoctor extends BaseCommand {
       ...checkPolicies(resources),
       ...checkValidators(resources),
       ...checkScreenValidators(azu.screens.all()),
+      ...checkWidgets(azu.screens.all()),
       ...checkComponents(resources, registered, azu.screens.all()),
       ...checkPublished(published, pkg && { version: pkg.version, sources }),
     ]
@@ -120,7 +122,14 @@ export default class AzuDoctor extends BaseCommand {
   }
 
   protected report(findings: Finding[], counts: { resources: number; published: number }) {
-    const areas = ['config', 'policies', 'validators', 'components', 'published pages'] as const
+    const areas = [
+      'config',
+      'policies',
+      'validators',
+      'components',
+      'widgets',
+      'published pages',
+    ] as const
     for (const area of areas) {
       const found = findings.filter((finding) => finding.area === area)
       if (found.length === 0) {

@@ -4,6 +4,9 @@ import type { DateTime } from 'luxon'
 import type { FieldKind, FieldSchema, ScreenSchema } from '../schema.ts'
 import type { ValidatorLike } from '../resources/define_resource.ts'
 import { Field } from '../resources/fields.ts'
+import { DEFAULT_RANGES, type RangeName } from '../shared/metrics.ts'
+import type { ScreenWidget } from '../widgets/metrics.ts'
+import { assertWidgets } from '../widgets/validate.ts'
 
 /**
  * A Bouncer ability, as `Bouncer.ability()` returns it. A screen needs
@@ -43,6 +46,8 @@ export type ComponentScreenOptions<Data> = ScreenBase & {
    */
   data?: (ctx: HttpContext) => Data | Promise<Data>
   form?: never
+  widgets?: never
+  ranges?: never
 }
 
 /** The field kinds a screen form takes (FR-23); files and relations wait */
@@ -106,14 +111,34 @@ export type FormScreenOptions<Values, Validator extends ValidatorLike> = ScreenB
   form: ScreenForm<Values, Validator>
   component?: never
   data?: never
+  widgets?: never
+  ranges?: never
+}
+
+/**
+ * A screen of widgets Azu renders (FR-24): figures, goals, breakdowns
+ * and short tables, from `metric` builders.
+ */
+export type WidgetsScreenOptions = ScreenBase & {
+  /** The widgets, in grid order */
+  widgets: ScreenWidget[]
+  /**
+   * The ranges the range switch offers; the first is the default.
+   * Default: `['30d']`, with no switch.
+   */
+  ranges?: RangeName[]
+  component?: never
+  data?: never
+  form?: never
 }
 
 /**
  * Options for `defineScreen`: `component` (your component, with
- * optional `data`), or `form` (a form Azu renders). Exactly one.
+ * optional `data`), `form` (a form Azu renders) or `widgets` (widgets
+ * Azu renders). Exactly one.
  */
 export type ScreenOptions<Data> =
-  ComponentScreenOptions<Data> | FormScreenOptions<any, ValidatorLike>
+  ComponentScreenOptions<Data> | FormScreenOptions<any, ValidatorLike> | WidgetsScreenOptions
 
 const SCREEN = Symbol.for('azu.screen')
 
@@ -133,6 +158,16 @@ export class Screen<Data = null> {
     return this.options.form
   }
 
+  /** The screen's widgets (FR-24); `undefined` for other screens */
+  get widgets(): readonly ScreenWidget[] | undefined {
+    return this.options.widgets
+  }
+
+  /** The ranges a widgets screen offers, the default first */
+  get ranges(): readonly RangeName[] {
+    return this.options.ranges?.length ? this.options.ranges : DEFAULT_RANGES
+  }
+
   static isScreen(value: unknown): value is Screen<unknown> {
     return typeof value === 'object' && value !== null && SCREEN in value
   }
@@ -146,6 +181,7 @@ export class Screen<Data = null> {
       icon: this.options.icon ?? null,
       component: this.options.component ?? null,
       form: this.options.form !== undefined,
+      widgets: this.options.widgets !== undefined,
     }
   }
 }
@@ -173,7 +209,10 @@ export function defineScreen<
   Data = null,
   Values = never,
   Validator extends ValidatorLike = ValidatorLike,
->(options: ComponentScreenOptions<Data> | FormScreenOptions<Values, Validator>): Screen<Data>
+>(
+  options:
+    ComponentScreenOptions<Data> | FormScreenOptions<Values, Validator> | WidgetsScreenOptions
+): Screen<Data>
 export function defineScreen(options: ScreenOptions<unknown>): Screen<unknown> {
   if (!options || typeof options.label !== 'string' || options.label.trim() === '') {
     throw new Error('defineScreen() needs a label')
@@ -189,16 +228,22 @@ export function defineScreen(options: ScreenOptions<unknown>): Screen<unknown> {
   }
   const hasComponent = options.component !== undefined
   const hasForm = options.form !== undefined
-  if (hasComponent === hasForm) {
+  const hasWidgets = options.widgets !== undefined
+  const bodies = [hasComponent, hasForm, hasWidgets].filter(Boolean).length
+  if (bodies !== 1) {
     throw new Error(
-      `The "${label}" screen needs exactly one of "component" (your component) or "form" (a form Azu renders)` +
-        (hasForm ? ', not both' : '')
+      `The "${label}" screen needs exactly one of "component" (your component), "form" (a form Azu renders) or "widgets" (widgets Azu renders)` +
+        (bodies > 1 ? ', not more than one' : '')
     )
+  }
+  if (options.ranges !== undefined && !hasWidgets) {
+    throw new Error(`The "${label}" screen has "ranges", which only a widgets screen uses`)
   }
   if (hasComponent && (typeof options.component !== 'string' || options.component === '')) {
     throw new Error(`The "${label}" screen needs a component name`)
   }
   if (hasForm) assertForm(label, options as FormScreenOptions<unknown, ValidatorLike>)
+  if (hasWidgets) assertWidgets(label, options as WidgetsScreenOptions)
   return new Screen(options)
 }
 

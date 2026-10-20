@@ -23,7 +23,11 @@ type Hook<M extends LucidModel> = (record: Row<M>, ctx: HttpContext) => unknown
  * Options for `defineResource`. Every name is checked against `M`, and
  * every ability against `P`.
  */
-export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
+export type ResourceOptions<
+  M extends LucidModel,
+  P extends PolicyClass,
+  C extends ColumnFor<M> = ColumnFor<M>,
+> = {
   /** Navigation and page title. Defaults to the plural model name. */
   label?: string
   /** Defaults to the model name, in sentence case. */
@@ -59,7 +63,7 @@ export type ResourceOptions<M extends LucidModel, P extends PolicyClass> = {
   }
   /** Scopes every query, e.g. to preload relations shown in columns. */
   query?: (query: ModelQueryBuilderContract<M>) => unknown
-  columns?: ColumnFor<M>[]
+  columns?: C[]
   fields?: FieldFor<M, P>[]
   filters?: FilterFor<M>[]
   actions?: ActionFor<M, P>[]
@@ -112,8 +116,14 @@ const RESOURCE = Symbol.for('mezielabs.azu.resource')
  * An admin resource: a Lucid model plus how Azu shows and edits it.
  * Create one with `defineResource`.
  */
-export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass = PolicyClass> {
+export class Resource<
+  M extends LucidModel = LucidModel,
+  P extends PolicyClass = PolicyClass,
+  C = unknown,
+> {
   readonly [RESOURCE] = true
+  /** Type-only: the resource's columns, so metrics know its decimal ones (FR-24) */
+  declare readonly __columns: C
 
   /** URL name: `Product` → `products`, `OrderItem` → `order-items` */
   readonly name: string
@@ -240,9 +250,17 @@ export class Resource<M extends LucidModel = LucidModel, P extends PolicyClass =
  * })
  * ```
  */
-export function defineResource<Model extends LucidModel, Policy extends PolicyClass>(
+export function defineResource<
+  Model extends LucidModel,
+  Policy extends PolicyClass,
+  Columns extends ColumnFor<NoInfer<Model>> = ColumnFor<NoInfer<Model>>,
+>(
   model: Model,
-  options: ResourceOptions<NoInfer<Model>, Policy>
-): Resource<Model, Policy> {
-  return new Resource(model, options as ResourceOptions<Model, Policy>)
+  options: ResourceOptions<NoInfer<Model>, Policy, Columns>
+): Resource<Model, Policy, Columns> {
+  return new Resource(model, options as ResourceOptions<Model, Policy>) as Resource<
+    Model,
+    Policy,
+    Columns
+  >
 }

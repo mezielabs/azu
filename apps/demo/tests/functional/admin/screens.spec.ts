@@ -9,9 +9,7 @@ import { Bouncer } from '@adonisjs/bouncer'
 import { defineScreen } from '@mezielabs/azu'
 import type { AzuConfig } from '@mezielabs/azu/types'
 import { DateTime } from 'luxon'
-import Category from '#models/category'
 import Order from '#models/order'
-import Product from '#models/product'
 import { createUser, withHome, withScreen } from './helpers.ts'
 
 const REPORT = '/admin/screens/sales-report'
@@ -51,6 +49,7 @@ test.group('Admin / screens (FR-20, FR-21, FR-22)', (group) => {
       icon: 'chart-column',
       component: 'SalesReport',
       form: false,
+      widgets: false,
     })
     assert.equal(data.days, 7)
     assert.lengthOf(data.rows, 7)
@@ -62,52 +61,6 @@ test.group('Admin / screens (FR-20, FR-21, FR-22)', (group) => {
     assert.lengthOf(month.body().props.data.rows, 30)
     const forged = await client.get(`${REPORT}?days=9999`).loginAs(admin).withInertia()
     assert.equal(forged.body().props.data.days, 7)
-  })
-
-  test("Overview counts today's orders, this month's revenue and low stock, with links", async ({
-    client,
-    assert,
-  }) => {
-    const customer = await createUser('customer')
-    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-overview' })
-    await Product.create({
-      categoryId: category.id,
-      name: 'Clay pot',
-      sku: 'OVERVIEW-1',
-      price: '5.00',
-      stock: 2,
-      status: 'draft',
-      isFeatured: false,
-    })
-    await Order.createMany([
-      {
-        userId: customer.id,
-        number: 'AZU-OVERVIEW-1',
-        status: 'paid',
-        total: '1250.50',
-        placedAt: DateTime.now().minus({ minutes: 5 }),
-      },
-      // Cancelled orders aren't revenue
-      {
-        userId: customer.id,
-        number: 'AZU-OVERVIEW-2',
-        status: 'cancelled',
-        total: '999.00',
-        placedAt: DateTime.now().minus({ minutes: 5 }),
-      },
-    ])
-
-    const response = await client
-      .get('/admin')
-      .loginAs(await createUser('admin'))
-      .withInertia()
-    const { data } = response.body().props
-    const today = DateTime.now().toISODate()
-    assert.equal(data.ordersToday.count, 2)
-    assert.equal(data.ordersToday.href, `/admin/resources/orders?placedAt=${today}..${today}`)
-    assert.equal(data.revenueThisMonth.total, '1250.50')
-    assert.equal(data.lowStock.count, 1)
-    assert.equal(data.lowStock.href, '/admin/resources/products?low-stock=1')
   })
 
   test('a user who fails the ability gets a 403, and no link to it', async ({ client, assert }) => {
