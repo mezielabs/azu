@@ -113,19 +113,33 @@ function toNumber(value: string | number | null): number {
 }
 
 /**
+ * Which way is good for a value widget (FR-24): `higher` (revenue,
+ * orders) or `lower` (cancellations, refunds, response times).
+ */
+export type Better = 'higher' | 'lower'
+
+/**
  * A value against the previous period's:
  *
- * - `change`: up or down, by a percentage with one decimal ("12.4%")
+ * - `change`: up or down, by a percentage with one decimal ("12.4%"),
+ *   and whether that's `better` or `worse`, given which way is good
  * - `new`: the previous value was 0 and this one isn't
  * - `same`: both are 0, or they're equal
  *
- * Front ends show the direction as an arrow and text, never by colour
- * alone.
+ * `direction` is always the real one (a decrease is down, whichever way
+ * is good); front ends colour by `outcome`, and never by colour alone.
+ * `new` and `same` are neutral.
  */
 export type Comparison =
-  { kind: 'change'; direction: 'up' | 'down'; percent: string } | { kind: 'new' } | { kind: 'same' }
+  | { kind: 'change'; direction: 'up' | 'down'; percent: string; outcome: 'better' | 'worse' }
+  | { kind: 'new' }
+  | { kind: 'same' }
 
-export function compareValues(current: string | number, previous: string | number): Comparison {
+export function compareValues(
+  current: string | number,
+  previous: string | number,
+  better: Better = 'higher'
+): Comparison {
   const now = toNumber(current)
   const before = toNumber(previous)
   if (now === before) return { kind: 'same' }
@@ -133,17 +147,20 @@ export function compareValues(current: string | number, previous: string | numbe
   const change = ((now - before) / Math.abs(before)) * 100
   // One decimal, and never "0.0%" for a real change
   const percent = Math.abs(change) < 0.05 ? '<0.1%' : `${Math.abs(change).toFixed(1)}%`
-  return { kind: 'change', direction: change > 0 ? 'up' : 'down', percent }
+  const direction = change > 0 ? 'up' : 'down'
+  const improved = better === 'higher' ? direction === 'up' : direction === 'down'
+  return { kind: 'change', direction, percent, outcome: improved ? 'better' : 'worse' }
 }
 
 /**
  * The comparison as words, for a screen reader or a tooltip: "Up 12.4%
- * from ₦4,281,750", "New", "No change".
+ * from ₦4,281,750, better", "New", "No change".
  */
 export function comparisonText(comparison: Comparison, previous: string): string {
   if (comparison.kind === 'new') return 'New'
   if (comparison.kind === 'same') return 'No change'
-  return `${comparison.direction === 'up' ? 'Up' : 'Down'} ${comparison.percent} from ${previous}`
+  const direction = comparison.direction === 'up' ? 'Up' : 'Down'
+  return `${direction} ${comparison.percent} from ${previous}, ${comparison.outcome}`
 }
 
 /**

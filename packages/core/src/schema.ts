@@ -210,6 +210,8 @@ export type WidgetSchema = {
   note: string | null
   /** Whether it's compared with the previous period */
   compares: boolean
+  /** Which way is good: `lower` for cancellations, refunds, response times */
+  better: 'higher' | 'lower'
 }
 
 /** A partition widget's row */

@@ -11,6 +11,10 @@ const SOLD = ['paid', 'shipped']
  * The demo's home screen (FR-22): widgets (FR-24), each shown only to
  * users who may list its resource. Staff, who can't list orders, see
  * Low stock alone.
+ *
+ * On a 4-column grid: the four values; Cancelled orders and the goal
+ * beside Orders by status (2 columns); then the two tables. No row ends
+ * with a gap, at 4 columns or 2.
  */
 export default defineScreen({
   label: 'Overview',
@@ -24,7 +28,9 @@ export default defineScreen({
       .where((query) => query.whereIn('status', SOLD))
       .date('placedAt')
       .format('currency', 'NGN')
-      .link({ status: 'paid' }),
+      // The range only: no list filter means "paid or shipped", so the
+      // link shows every order in the range rather than a different total
+      .link(),
     metric.value('Orders').count(orders).date('placedAt').link(),
     metric
       .value('Average order')
@@ -46,6 +52,14 @@ export default defineScreen({
         return Number(row.total)
       })
       .ability(viewReports),
+    // Down is good: fewer cancellations read as better
+    metric
+      .value('Cancelled orders')
+      .count(orders)
+      .where((query) => query.where('status', 'cancelled'))
+      .date('placedAt')
+      .lowerIsBetter()
+      .link({ status: 'cancelled' }),
     metric
       .progress('Monthly revenue goal')
       .sum(orders, 'total')
@@ -53,10 +67,15 @@ export default defineScreen({
       .date('placedAt')
       .period('month')
       .goal(750_000)
-      .format('currency', 'NGN')
-      .width(2),
+      .format('currency', 'NGN'),
     metric.partition('Orders by status').count(orders).groupBy('status').date('placedAt').width(2),
-    metric.table('Recent orders').resource(orders).latest('placedAt').limit(5).link(),
+    metric
+      .table('Recent orders')
+      .resource(orders)
+      .columns(['number', 'status', 'total', 'placedAt'])
+      .latest('placedAt')
+      .limit(5)
+      .link(),
     metric
       .table('Low stock')
       .resource(products)

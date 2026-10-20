@@ -171,23 +171,61 @@ test.group('Widget ranges (FR-24)', () => {
 })
 
 test.group('Widget values (FR-24)', () => {
-  test('comparisons: a change, new, no change', ({ assert }) => {
+  test('comparisons: a change, new, no change, with higher better', ({ assert }) => {
     assert.deepEqual(compareValues('4812500.00', '4281750.00'), {
       kind: 'change',
       direction: 'up',
       percent: '12.4%',
+      outcome: 'better',
     })
-    assert.deepEqual(compareValues(57, 61), { kind: 'change', direction: 'down', percent: '6.6%' })
+    assert.deepEqual(compareValues(57, 61), {
+      kind: 'change',
+      direction: 'down',
+      percent: '6.6%',
+      outcome: 'worse',
+    })
+    // 0 → n is new, n → 0 a 100% fall, both 0 no change
     assert.deepEqual(compareValues('10', '0'), { kind: 'new' })
-    assert.deepEqual(compareValues('0', '0'), { kind: 'same' })
     assert.deepEqual(compareValues('0', '5'), {
       kind: 'change',
       direction: 'down',
       percent: '100.0%',
+      outcome: 'worse',
     })
-    assert.equal(comparisonText(compareValues('112', '100'), '₦100'), 'Up 12.0% from ₦100')
+    assert.deepEqual(compareValues('0', '0'), { kind: 'same' })
+    assert.equal(comparisonText(compareValues('112', '100'), '₦100'), 'Up 12.0% from ₦100, better')
     assert.equal(comparisonText({ kind: 'new' }, '0'), 'New')
     assert.equal(comparisonText({ kind: 'same' }, '0'), 'No change')
+  })
+
+  test('comparisons with lower better: the direction stays real, the outcome flips', ({
+    assert,
+  }) => {
+    assert.deepEqual(compareValues(3, 8, 'lower'), {
+      kind: 'change',
+      direction: 'down',
+      percent: '62.5%',
+      outcome: 'better',
+    })
+    assert.deepEqual(compareValues(8, 7, 'lower'), {
+      kind: 'change',
+      direction: 'up',
+      percent: '14.3%',
+      outcome: 'worse',
+    })
+    // n → 0 is better, 0 → n stays neutral "new", and no change is neutral
+    assert.deepEqual(compareValues(0, 4, 'lower'), {
+      kind: 'change',
+      direction: 'down',
+      percent: '100.0%',
+      outcome: 'better',
+    })
+    assert.deepEqual(compareValues(4, 0, 'lower'), { kind: 'new' })
+    assert.deepEqual(compareValues(0, 0, 'lower'), { kind: 'same' })
+    assert.equal(comparisonText(compareValues(3, 8, 'lower'), '8'), 'Down 62.5% from 8, better')
+  })
+
+  test('shares and time left', ({ assert }) => {
     assert.equal(percentOf(0.5432), '54%')
     assert.equal(timeLeft(12 * 86_400_000 - 1), '12 days left')
     assert.equal(timeLeft(3 * 3_600_000), '3 hours left')
@@ -312,7 +350,26 @@ test.group('Widgets screens (FR-24)', () => {
       width: 1,
       note: 'All time',
       compares: false,
+      better: 'higher',
     })
+    assert.deepInclude(
+      widgetSchema(
+        'widget5',
+        metric.value('Refunds').count(orders).date('placedAt').lowerIsBetter()
+      ),
+      { better: 'lower', compares: true }
+    )
+    assert.deepInclude(
+      widgetSchema(
+        'widget6',
+        metric
+          .value('Mine')
+          .using(() => 1)
+          .ability(admins)
+          .lowerIsBetter()
+      ),
+      { better: 'lower' }
+    )
     assert.deepInclude(
       widgetSchema('widget1', metric.value('Ranged').count(orders).date('placedAt')),
       { note: null, compares: true }
@@ -435,7 +492,7 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
       kind: 'value',
       value: '300.30',
       previous: '50.00',
-      comparison: { kind: 'change', direction: 'up', percent: '500.6%' },
+      comparison: { kind: 'change', direction: 'up', percent: '500.6%', outcome: 'better' },
     })
     const info = range().info
     assert.equal(
@@ -526,6 +583,46 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
     )
     assert.equal(data.rows[0].percent, 0.8)
     assert.deepEqual(data.unit, { one: 'order', other: 'orders' })
+  })
+
+  test("ties keep the options' order, then the label's", async ({ assert }) => {
+    const { ctx } = request()
+    const now = DateTime.now()
+    // 4 paid and 4 pending
+    for (let index = 0; index < 3; index++) {
+      await Order.create({
+        status: 'pending',
+        total: '1.00',
+        quantity: 1,
+        userId: 3,
+        placedAt: now,
+      })
+    }
+    // Options listed pending first: that order wins over the labels'
+    const pendingFirst = defineResource(Order, {
+      policy: OrderPolicy,
+      filters: [filter.select('status', { pending: 'Pending', paid: 'Paid' })],
+    })
+    const noOptions = defineResource(Order, { policy: OrderPolicy })
+    for (const [resource, expected] of [
+      [pendingFirst, ['Pending', 'Paid']],
+      [orders, ['Paid', 'Pending']],
+      [noOptions, ['Paid', 'Pending']],
+    ] as const) {
+      for (let run = 0; run < 3; run++) {
+        const data = (await widgetData(
+          ctx,
+          context,
+          'overview',
+          metric.partition('By status').count(resource).groupBy('status'),
+          range()
+        )) as Extract<Awaited<ReturnType<typeof widgetData>>, { kind: 'partition' }>
+        assert.deepEqual(
+          data.rows.map((row) => row.label),
+          expected
+        )
+      }
+    }
   })
 
   test('progress against a goal, over its own period', async ({ assert }) => {

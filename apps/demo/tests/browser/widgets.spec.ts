@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import app from '@adonisjs/core/services/app'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { DateTime } from 'luxon'
 import Category from '#models/category'
@@ -37,13 +38,13 @@ async function store() {
   }
 }
 
-/** Every widget's card, once its data is in */
+/** Every widget's card, once its data is in (or it failed) */
 async function loaded(page: any) {
   await page.waitForFunction(
     () => {
       const doc = (globalThis as any).document
       const cards = [...doc.querySelectorAll('.azu-widget')]
-      return cards.length > 0 && cards.every((card: any) => card.dataset.azuState === 'ready')
+      return cards.length > 0 && cards.every((card: any) => card.dataset.azuState !== 'loading')
     },
     undefined,
     { timeout: 15_000 }
@@ -72,6 +73,7 @@ test.group('Widgets', (group) => {
       'Orders',
       'Average order',
       'New customers',
+      'Cancelled orders',
       'Monthly revenue goal',
       'Orders by status',
       'Recent orders',
@@ -117,6 +119,128 @@ test.group('Widgets', (group) => {
       /\/admin\/resources\/orders\?placedAt=\d{4}-\d\d-\d\d\.\.\d{4}-\d\d-\d\d&status=paid/
     )
     await page.getByRole('heading', { level: 1, name: 'Orders' }).waitFor()
+  })
+
+  test('table widgets scroll inside their card rather than overflowing it', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await store()
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    for (const [width, height] of [
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height })
+      await page.goto('/admin')
+      await loaded(page)
+      const tables = await page.locator('[data-azu-widget="table"]').evaluateAll((cards: any[]) =>
+        cards.map((card) => {
+          const scroller = card.querySelector('.azu-table-container')
+          const right = (element: any) => element.getBoundingClientRect().right
+          return {
+            label: card.querySelector('.azu-widget-label').textContent,
+            // Nothing sticks out of the card, and the page doesn't scroll sideways
+            overflows: card.scrollWidth > card.clientWidth || right(scroller) > right(card) + 0.5,
+            scrolls: (globalThis as any).getComputedStyle(scroller).overflowX === 'auto',
+            pageOverflows:
+              (globalThis as any).document.documentElement.scrollWidth >
+              (globalThis as any).innerWidth,
+          }
+        })
+      )
+      assert.lengthOf(tables, 2)
+      for (const table of tables) {
+        assert.isFalse(table.overflows, `${table.label} at ${width}px`)
+        assert.isTrue(table.scrolls, `${table.label} at ${width}px`)
+        assert.isFalse(table.pageOverflows, `the page at ${width}px`)
+      }
+    }
+  })
+
+  test('a widget that failed to load tries again on its own', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await store()
+    // Average order fails its first load only
+    const azu = await app.container.make('azu')
+    const average = azu.screens.get('overview')!.widgets![2]
+    const where = average.state.where!
+    let calls = 0
+    average.state.where = (query) => {
+      calls++
+      if (calls === 1) throw new Error('Test: the first load fails')
+      return where(query)
+    }
+    cleanup(() => {
+      average.state.where = where
+    })
+
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await loaded(page)
+    const card = page.locator('[data-azu-widget="value"]').nth(2)
+    await card.getByText("Couldn't load this").waitFor()
+    assert.equal(await card.locator('.azu-widget-figure').count(), 0)
+
+    const reloads: string[] = []
+    page.on('request', (request: any) => {
+      const key = request.headers()['x-inertia-partial-data']
+      if (key) reloads.push(key)
+    })
+    await card.getByRole('button', { name: /Try again/ }).click()
+    await card.locator('.azu-widget-figure').waitFor()
+    assert.match(await card.locator('.azu-widget-figure').innerText(), /^NGN/)
+    // Only that widget's prop was asked for again
+    assert.deepEqual(reloads, ['widget2'])
+  })
+
+  test('with lowerIsBetter(), a decrease is styled and announced as better', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    const customer = await createUser('customer')
+    const now = DateTime.now()
+    // 1 cancelled in the last 30 days, 3 in the 30 days before
+    for (const [index, days] of [1, 35, 40, 45].entries()) {
+      await Order.create({
+        userId: customer.id,
+        number: `AZU-CXL-${index}`,
+        status: 'cancelled',
+        total: '100.00',
+        placedAt: now.minus({ days }),
+      })
+    }
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await loaded(page)
+    const card = page.locator('.azu-widget', { hasText: 'Cancelled orders' })
+    const delta = card.locator('.azu-widget-delta')
+    assert.equal(await delta.getAttribute('data-azu-direction'), 'down')
+    assert.equal(await delta.getAttribute('data-azu-outcome'), 'better')
+    // The arrow shows the real direction; the words say it's better
+    assert.equal(await delta.locator('[aria-hidden="true"]').innerText(), '▼')
+    const words = await delta.innerText()
+    assert.equal(words.replace(/\s+/g, ' ').trim(), '▼ Down 66.7% , better from 3')
+    // Styled as better: the same colour as a rise in revenue
+    const colour = await delta
+      .locator('.azu-widget-change')
+      .evaluate((element: any) => (globalThis as any).getComputedStyle(element).color)
+    const green = await page.evaluate(() => {
+      const probe = (globalThis as any).document.createElement('span')
+      probe.style.color = 'var(--azu-badge-green-text)'
+      ;(globalThis as any).document.body.append(probe)
+      const value = (globalThis as any).getComputedStyle(probe).color
+      probe.remove()
+      return value
+    })
+    assert.equal(colour, green)
   })
 
   test('staff see only the widgets they may', async ({ visit, browserContext, assert }) => {

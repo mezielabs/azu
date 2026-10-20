@@ -69,6 +69,7 @@ export function widgetSchema(key: string, widget: Widget): WidgetSchema {
     // Progress has its own period; a table without date() just lists
     note: !ranged && (state.kind === 'value' || state.kind === 'partition') ? 'All time' : null,
     compares: state.kind === 'value' && ranged && state.compare,
+    better: state.better,
   }
 }
 
@@ -275,7 +276,7 @@ async function valueData(
       kind: 'value',
       value,
       previous,
-      comparison: previous === null ? null : compareValues(value, previous),
+      comparison: previous === null ? null : compareValues(value, previous, state.better),
       href: null,
     }
   }
@@ -290,7 +291,7 @@ async function valueData(
     kind: 'value',
     value,
     previous,
-    comparison: previous === null ? null : compareValues(value, previous),
+    comparison: previous === null ? null : compareValues(value, previous, state.better),
     href: state.link
       ? listHref(context.path, state.resource!, linkFilters(state, ranged ? range.info : null))
       : null,
@@ -336,17 +337,23 @@ async function progressData(
 }
 
 /**
- * Labels for a column's values: the resource's select field, then its
- * column's labels (a select field's or select filter's), else the
- * value in sentence case
+ * Labels for a column's values, in their order: the resource's select
+ * field options, else its column's labels (a select field's or select
+ * filter's), else the select filter's options
  */
-function valueLabel(resource: AnyResource, column: string, key: string | null): string {
-  if (key === null || key === '') return 'None'
+function valueOptions(resource: AnyResource, column: string): Record<string, string> | null {
   const schema = resource.toSchema()
-  const options =
+  return (
     schema.fields.find((field) => field.name === column && field.kind === 'select')?.options ??
     schema.columns.find((item) => item.name === column)?.labels ??
-    schema.filters.find((item) => item.name === column && item.kind === 'select')?.options
+    schema.filters.find((item) => item.name === column && item.kind === 'select')?.options ??
+    null
+  )
+}
+
+/** A value's label: its option's, else the value in sentence case */
+function valueLabel(options: Record<string, string> | null, key: string | null): string {
+  if (key === null || key === '') return 'None'
   return options?.[key] ?? humanize(key)
 }
 
@@ -372,9 +379,25 @@ async function partitionData(
   else query[state.aggregate!](`${qualified(model, state.column!)} as value`)
   const scale = await resultScale(state)
   const results = await query.pojo<{ group_key: unknown; value: unknown }>()
+  // Largest first; ties in the options' order, then by label, so the
+  // rows never swap places between loads or databases
+  const options = valueOptions(resource, state.groupBy!)
+  const order = Object.keys(options ?? {})
+  const rank = (key: string | null) => {
+    const index = key === null ? -1 : order.indexOf(key)
+    return index === -1 ? order.length : index
+  }
   const groups = results
-    .map((row) => ({ key: groupKey(row.group_key), value: decimalResult(row.value, scale) }))
-    .sort((a, b) => Number(b.value) - Number(a.value))
+    .map((row) => {
+      const key = groupKey(row.group_key)
+      return { key, label: valueLabel(options, key), value: decimalResult(row.value, scale) }
+    })
+    .sort(
+      (a, b) =>
+        Number(b.value) - Number(a.value) ||
+        rank(a.key) - rank(b.key) ||
+        a.label.localeCompare(b.label, 'en')
+    )
 
   const limit = state.limit ?? DEFAULT_LIMIT
   const shown = groups.slice(0, limit)
@@ -408,9 +431,7 @@ async function partitionData(
         : null,
   })
 
-  const rows = shown.map((group) =>
-    row(group.key, valueLabel(resource, state.groupBy!, group.key), group.value, true)
-  )
+  const rows = shown.map((group) => row(group.key, group.label, group.value, true))
   if (rest.length > 0) {
     rows.push(row(null, 'Other', addDecimals(rest.map((group) => group.value)), false))
   }

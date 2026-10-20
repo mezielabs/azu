@@ -2017,8 +2017,9 @@
     border-color: var(--azu-muted);
   }
 
+  /* The aside ("12 days left") drops under the label when the card is narrow */
   .azu-widget-header {
-    @apply flex items-baseline justify-between gap-2;
+    @apply flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5;
   }
 
   .azu-widget-label {
@@ -2080,16 +2081,21 @@
     @apply font-semibold;
   }
 
-  .azu-widget-delta[data-azu-direction='up'] .azu-widget-change {
+  /* By outcome: with lowerIsBetter(), a decrease is the good one */
+  .azu-widget-delta[data-azu-outcome='better'] .azu-widget-change {
     color: var(--azu-badge-green-text);
   }
 
-  .azu-widget-delta[data-azu-direction='down'] .azu-widget-change {
+  .azu-widget-delta[data-azu-outcome='worse'] .azu-widget-change {
     color: var(--azu-badge-red-text);
   }
 
   .azu-widget-error {
-    @apply m-0 text-sm;
+    @apply flex flex-wrap items-center justify-between gap-2 text-sm;
+  }
+
+  .azu-widget-error p {
+    @apply m-0;
     color: var(--azu-danger);
   }
 
@@ -2219,8 +2225,13 @@
     @apply mb-4;
   }
 
+  /* The list table's own container scrolls sideways inside the card */
   .azu-widget-table {
-    @apply overflow-x-auto;
+    @apply min-w-0;
+  }
+
+  .azu-widget-table .azu-table-container {
+    @apply rounded-none border-x-0 border-b-0;
   }
 
   .azu-widget-table .azu-widget-empty {

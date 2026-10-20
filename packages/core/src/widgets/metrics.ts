@@ -6,7 +6,7 @@ import type { Column } from '../resources/columns.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import type { ColumnName, DateColumn, NumberColumn } from '../resources/model_types.ts'
 import type { NumberFormat } from '../shared/format.ts'
-import type { Period, RangeName } from '../shared/metrics.ts'
+import type { Better, Period, RangeName } from '../shared/metrics.ts'
 
 /** Any resource, with its model, policy and columns */
 export type AnyResource = Resource<any, any, any>
@@ -79,6 +79,8 @@ export type WidgetState = {
   format: NumberFormat
   link: LinkFilters | null
   compare: boolean
+  /** Which way a value widget's comparison is good */
+  better: Better
   width: WidgetWidth | null
   using: MetricFn | null
   ability: BouncerAbility<any> | null
@@ -113,6 +115,7 @@ export class Widget<Kind extends WidgetKind = WidgetKind, R = AnyResource> {
       format: null,
       link: null,
       compare: true,
+      better: 'higher',
       width: null,
       using: null,
       ability: null,
@@ -193,6 +196,15 @@ export class ValueWidget<R> extends ResourceWidget<'value', R> {
   compare(enabled: boolean): this {
     return this.set('compare', enabled)
   }
+
+  /**
+   * For figures where down is good (cancellations, refunds, response
+   * times): a decrease reads as better. The arrow still shows the real
+   * direction.
+   */
+  lowerIsBetter(): this {
+    return this.set('better', 'lower')
+  }
 }
 
 /**
@@ -218,6 +230,11 @@ export class CustomValueWidget<HasAbility extends boolean = false> extends Widge
    */
   compare(enabled: boolean): this {
     return this.set('compare', enabled)
+  }
+
+  /** For figures where down is good: a decrease reads as better */
+  lowerIsBetter(): this {
+    return this.set('better', 'lower')
   }
 }
 

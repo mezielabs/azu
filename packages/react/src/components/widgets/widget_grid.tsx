@@ -1,4 +1,4 @@
-import { Deferred, Link, usePage } from '@inertiajs/react'
+import { Deferred, Link, router, usePage } from '@inertiajs/react'
 import {
   comparisonText,
   formatDecimal,
@@ -108,9 +108,19 @@ function WidgetCard(props: {
       </div>
       {widget.note && <p className="azu-widget-note">{widget.note}</p>}
       {data?.status === 'error' ? (
-        <p className="azu-widget-error" role="status">
-          Couldn't load this
-        </p>
+        <div className="azu-widget-error" role="status">
+          <p>Couldn't load this</p>
+          {/* This widget's prop only: the others keep what they have */}
+          <button
+            type="button"
+            className="azu-button"
+            disabled={props.loading}
+            onClick={() => router.reload({ only: [widget.key] })}
+          >
+            Try again
+            <span className="azu-visually-hidden">: {widget.label}</span>
+          </button>
+        </div>
       ) : data === undefined ? (
         <div className="azu-widget-placeholder" aria-hidden="true" data-azu-kind={widget.kind} />
       ) : (
@@ -175,6 +185,8 @@ function ValueBody(props: { widget: WidgetSchema; data: Ok<'value'> }) {
         <p
           className="azu-widget-delta"
           data-azu-direction={comparison.kind === 'change' ? comparison.direction : 'none'}
+          // The colour follows whether it's better, not which way it went
+          data-azu-outcome={comparison.kind === 'change' ? comparison.outcome : 'none'}
         >
           {comparison.kind === 'change' ? (
             <>
@@ -184,6 +196,7 @@ function ValueBody(props: { widget: WidgetSchema; data: Ok<'value'> }) {
                   {comparison.direction === 'up' ? 'Up' : 'Down'}
                 </span>{' '}
                 {comparison.percent}
+                <span className="azu-visually-hidden">, {comparison.outcome}</span>
               </span>{' '}
               from {previous}
             </>

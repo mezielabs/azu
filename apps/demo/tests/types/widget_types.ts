@@ -28,6 +28,13 @@ export const valid = defineScreen({
       .value('Custom')
       .using(async (_ctx, range) => range.start.day)
       .ability(accessAdmin),
+    // Down is good: value widgets only
+    metric.value('Cancelled').count(orders).date('placedAt').lowerIsBetter(),
+    metric
+      .value('Refunds')
+      .using(() => 1)
+      .ability(accessAdmin)
+      .lowerIsBetter(),
   ],
 })
 
@@ -57,6 +64,12 @@ export const wrongKind = [
   metric.progress('Goal').count(orders).date('placedAt').period('fortnight'),
   // @ts-expect-error widths are 1 to 4
   metric.value('Orders').count(orders).width(5),
+  // @ts-expect-error lowerIsBetter() is for value widgets: a goal has its own direction
+  metric.progress('Goal').count(orders).date('placedAt').goal(1).lowerIsBetter(),
+  // @ts-expect-error nor partitions
+  metric.partition('By status').count(orders).groupBy('status').lowerIsBetter(),
+  // @ts-expect-error nor tables
+  metric.table('Recent').resource(orders).lowerIsBetter(),
 ]
 
 export const noAbility = defineScreen({

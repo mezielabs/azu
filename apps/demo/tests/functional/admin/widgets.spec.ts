@@ -18,10 +18,11 @@ const KEYS = {
   orders: 'widget1',
   average: 'widget2',
   customers: 'widget3',
-  goal: 'widget4',
-  status: 'widget5',
-  recent: 'widget6',
-  lowStock: 'widget7',
+  cancelled: 'widget4',
+  goal: 'widget5',
+  status: 'widget6',
+  recent: 'widget7',
+  lowStock: 'widget8',
 }
 
 let sequence = 0
@@ -92,10 +93,11 @@ test.group('Admin / widgets (FR-24)', (group) => {
         ['widget1', 'value', 1],
         ['widget2', 'value', 1],
         ['widget3', 'value', 1],
-        ['widget4', 'progress', 2],
-        ['widget5', 'partition', 2],
-        ['widget6', 'table', 2],
+        ['widget4', 'value', 1],
+        ['widget5', 'progress', 1],
+        ['widget6', 'partition', 2],
         ['widget7', 'table', 2],
+        ['widget8', 'table', 2],
       ]
     )
     assert.deepEqual(props.ranges, ['30d', 'today', '7d', 'month'])
@@ -128,9 +130,9 @@ test.group('Admin / widgets (FR-24)', (group) => {
       kind: 'value',
       value: '4000.00',
       previous: '999.99',
-      comparison: { kind: 'change', direction: 'up', percent: '300.0%' },
-      // The resource's own filters: the range on placedAt, then link()'s
-      href: `/admin/resources/orders?placedAt=${range.from}..${range.to}&status=paid`,
+      comparison: { kind: 'change', direction: 'up', percent: '300.0%', outcome: 'better' },
+      // The range only: no list filter says "paid or shipped" (the where())
+      href: `/admin/resources/orders?placedAt=${range.from}..${range.to}`,
     })
 
     const count = await widget(client, admin, KEYS.orders)
@@ -148,6 +150,15 @@ test.group('Admin / widgets (FR-24)', (group) => {
     const customers = await widget(client, admin, KEYS.customers)
     assert.include(customers[KEYS.customers], { value: '1', previous: '0' })
     assert.deepEqual(customers[KEYS.customers].comparison, { kind: 'new' })
+
+    // Lower is better: 1 cancelled now against 0 before is still just "New"
+    const cancelled = await widgetOf(client, admin, KEYS.cancelled)
+    assert.include(cancelled, { value: '1', previous: '0' })
+    assert.deepEqual(cancelled.comparison, { kind: 'new' })
+    assert.equal(
+      cancelled.href,
+      `/admin/resources/orders?placedAt=${range.from}..${range.to}&status=cancelled`
+    )
   })
 
   test('progress against its goal, month to date, whatever the range', async ({
@@ -209,6 +220,55 @@ test.group('Admin / widgets (FR-24)', (group) => {
     )
   })
 
+  test('cancellations: fewer than before is better, more is worse', async ({ client, assert }) => {
+    const admin = await createUser('admin')
+    const customer = await createUser('customer')
+    const now = DateTime.now()
+    // 1 in the last 30 days, 3 in the 30 days before
+    await placeOrder(customer.id, 'cancelled', '10.00', now.minus({ days: 1 }))
+    for (const days of [35, 40, 45]) {
+      await placeOrder(customer.id, 'cancelled', '10.00', now.minus({ days }))
+    }
+    const page = await pageProps(client, admin, '/admin')
+    const schema = page.widgets.find((item: { key: string }) => item.key === KEYS.cancelled)
+    assert.include(schema, { label: 'Cancelled orders', better: 'lower', compares: true })
+    const fewer = await widgetOf(client, admin, KEYS.cancelled)
+    assert.deepEqual(fewer.comparison, {
+      kind: 'change',
+      direction: 'down',
+      percent: '66.7%',
+      outcome: 'better',
+    })
+    // Revenue on the same page is higher-is-better
+    assert.equal(
+      page.widgets.find((item: { key: string }) => item.key === KEYS.revenue).better,
+      'higher'
+    )
+  })
+
+  test("partition ties keep the select options' order, on every database", async ({
+    client,
+    assert,
+  }) => {
+    const admin = await createUser('admin')
+    const customer = await createUser('customer')
+    const now = DateTime.now()
+    // Two of each: a four-way tie
+    for (const status of ['cancelled', 'shipped', 'paid', 'pending'] as const) {
+      for (let index = 0; index < 2; index++) {
+        await placeOrder(customer.id, status, '10.00', now.minus({ hours: index + 1 }))
+      }
+    }
+    // The orders resource's status filter lists pending, paid, shipped, cancelled
+    for (let run = 0; run < 3; run++) {
+      const data = await widgetOf(client, admin, KEYS.status)
+      assert.deepEqual(
+        data.rows.map((row: { label: string; value: string }) => `${row.label} ${row.value}`),
+        ['Pending 2', 'Paid 2', 'Shipped 2', 'Cancelled 2']
+      )
+    }
+  })
+
   test("tables use the resource's columns, preloads and per-row view checks", async ({
     client,
     assert,
@@ -224,11 +284,13 @@ test.group('Admin / widgets (FR-24)', (group) => {
     assert.lengthOf(recent.rows, 5)
     assert.equal(recent.total, 7)
     assert.equal(recent.href, '/admin/resources/orders')
+    // The demo's subset of the resource's columns
     assert.deepEqual(
       recent.columns.map((item: { name: string }) => item.name),
-      ['number', 'user', 'status', 'total', 'placedAt']
+      ['number', 'status', 'total', 'placedAt']
     )
-    // Newest first, with the preloaded customer, and a view check per row
+    // Newest first, through the resource's query hook and its preloads,
+    // and a view check per row
     assert.equal(recent.rows[0].cells.user.title, customer.email)
     assert.isTrue(recent.rows.every((row: { abilities: { view: boolean } }) => row.abilities.view))
 
