@@ -49,7 +49,12 @@ export default defineScreen({
       .where('placedAt', '>=', from.toLocal().toFormat(format))
       .whereNot('status', 'cancelled')
 
-    // One row per day, in the admin timezone, including days with none
+    // One row per day, in the admin timezone, including days with none.
+    // This totals the range's orders in memory, which keeps the demo
+    // readable and the same on all three databases. A large orders table
+    // should aggregate in SQL instead: group by the day of placed_at in the
+    // admin timezone (Postgres: AT TIME ZONE; MySQL: CONVERT_TZ) and sum
+    // there, so only one row per day comes back.
     const totals = new Map<string, { orders: number; minor: number }>()
     for (let day = 0; day < days; day++) {
       totals.set(from.plus({ days: day }).toISODate()!, { orders: 0, minor: 0 })

@@ -138,6 +138,30 @@ test.group('Admin / screen forms (FR-23)', (group) => {
     assert.equal(form.successMessage, 'Store settings saved')
   })
 
+  test('the VAT rate keeps two places, before a save and after one', async ({ client, assert }) => {
+    await seedSettings()
+    const admin = await createUser('admin')
+    const before = await client.get(SETTINGS).loginAs(admin).withInertia()
+    assert.equal(before.body().props.form.values.vatRate, '7.50')
+
+    for (const [typed, stored] of [
+      ['7.5', '7.50'],
+      ['12', '12.00'],
+      ['0.25', '0.25'],
+    ]) {
+      const response = await client
+        .put(SETTINGS)
+        .loginAs(admin)
+        .withCsrfToken()
+        .withInertia()
+        .json(payload({ vatRate: typed }))
+        .redirects(0)
+      response.assertStatus(303)
+      const after = await client.get(SETTINGS).loginAs(admin).withInertia()
+      assert.equal(after.body().props.form.values.vatRate, stored, typed)
+    }
+  })
+
   test('an invalid save is a 422 with errors under each field, and nothing stored', async ({
     client,
     assert,

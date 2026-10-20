@@ -5,6 +5,7 @@ import Product from '#models/product'
 import Tag from '#models/tag'
 import { createUser } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
+import { toastAgainstSaveBar } from './overlap.ts'
 
 const CATEGORIES = '/admin/resources/categories'
 
@@ -225,6 +226,34 @@ test.group('Save and come back', (group) => {
     await check(['Cancel', 'Add another', 'Create'], 'create')
     await page.goto(`${CATEGORIES}/${category.id}/edit`)
     await check(['Cancel', 'Keep editing', 'Save changes'], 'edit')
+  })
+
+  test('on a phone the toast sits above the save bar, clear of its buttons', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-phone-toast' })
+    const page = await visit(`${CATEGORIES}/${category.id}/edit`)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.locator('.azu-save-bar').waitFor()
+
+    await page.locator('[data-azu-field="name"] input').fill('Kitchen and dining')
+    await page.getByRole('button', { name: 'Keep editing' }).click()
+    assert.deepEqual(await toastAgainstSaveBar(page, 'Category saved'), {
+      covered: [],
+      overBar: false,
+    })
+
+    await page.goto(`${CATEGORIES}/create`)
+    await page.locator('[data-azu-field="name"] input').fill('Garden')
+    await page.locator('[data-azu-field="slug"] input').fill('garden-phone-toast')
+    await page.getByRole('button', { name: 'Add another' }).click()
+    assert.deepEqual(await toastAgainstSaveBar(page, 'Category created'), {
+      covered: [],
+      overBar: false,
+    })
   })
 
   test('without create or update, neither button shows', async ({

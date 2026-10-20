@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { Azu } from '../azu.ts'
 import { renderPage } from '../render.ts'
+import { allows } from '../resources/abilities.ts'
 import type { FormErrors } from '../schema.ts'
 import { abilityAllows } from '../screens/abilities.ts'
 import type { Screen } from '../screens/define_screen.ts'
@@ -68,12 +69,18 @@ export class ScreensController {
   /**
    * `<path>/`: the `home` screen with the URL unchanged, a redirect to
    * the `home` resource's list, or the welcome page. A user who fails
-   * the home screen's ability gets the welcome page, not a 403.
+   * the home screen's ability, or the home resource's `viewList`, gets
+   * the welcome page, not a 403.
    */
   async home(ctx: HttpContext) {
     const { home, path } = this.context.config
     if (home && typeof home === 'object') {
-      return ctx.response.redirect().withQs(false).toPath(`${path}/resources/${home.resource}`)
+      // Only for a user who may list it; otherwise the welcome page, not a redirect to a 403
+      const resource = this.context.azu.resources.get(home.resource)
+      if (resource && (await allows(ctx, resource, 'viewList'))) {
+        return ctx.response.redirect().withQs(false).toPath(`${path}/resources/${home.resource}`)
+      }
+      return renderPage(ctx, this.context, 'azu/dashboard', {})
     }
     const screen = home ? this.context.azu.screens.get(home) : undefined
     if (home && screen && (await abilityAllows(ctx, screen.options.ability))) {

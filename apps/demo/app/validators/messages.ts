@@ -73,3 +73,13 @@ export const decimalString = (min: number) =>
     .trim()
     .regex(/^-?\d{1,10}(\.\d{1,2})?$/)
     .use(minDecimal({ min }))
+
+/**
+ * A valid decimal string with exactly two places, without going through
+ * floating point: "7.5" → "7.50", "12" → "12.00". For values stored as
+ * text, such as settings, which no decimal column formats on the way out.
+ */
+export const twoPlaces = (value: string) => {
+  const [whole, fraction = ''] = value.split('.')
+  return `${whole}.${fraction.padEnd(2, '0')}`
+}

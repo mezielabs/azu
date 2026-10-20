@@ -1001,6 +1001,17 @@
     @apply fixed right-4 bottom-4 z-50 flex flex-col gap-2;
   }
 
+  /*
+   * On phones a form's sticky save bar spans the bottom of the screen, so
+   * toasts sit above it rather than over its buttons: 1rem above the bar,
+   * whose height is its padding (py-3), a 44px button and its border.
+   */
+  @media (max-width: 767px) {
+    :root:has(.azu-form > .azu-save-bar) .azu-toast-region {
+      bottom: calc(1rem + 4.25rem + 1px);
+    }
+  }
+
   .azu-toast {
     @apply flex items-center gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg;
     border-color: var(--azu-border);
