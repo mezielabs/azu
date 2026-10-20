@@ -19,7 +19,10 @@ import type {
   ScreenSchema,
   RecordData,
   ResourceSchema,
+  WidgetData,
+  WidgetSchema,
 } from './schema.ts'
+import type { RangeInfo, RangeName } from './shared/metrics.ts'
 import type { ListState, PageSize } from './shared/list_state.ts'
 import type { Screen, ScreenAbility } from './screens/define_screen.ts'
 
@@ -371,7 +374,23 @@ export type ScreenPageProps = AzuSharedProps & {
   /** The form a form screen renders; `null` for a component screen */
   form: ScreenFormData | null
   errors: FormErrors
-}
+  /**
+   * A widgets screen's widgets (FR-24), the ones this user may see, in
+   * order; `null` for other screens. Each one's data arrives on its own,
+   * in the page prop its `key` names.
+   */
+  widgets: WidgetSchema[] | null
+  /** The widgets screen's current range, from `?range=`; `null` for other screens */
+  range: RangeInfo | null
+  /** The ranges the range switch offers, the default first */
+  ranges: RangeName[]
+} & WidgetProps
+
+/**
+ * Widget data on a widgets screen (FR-24), one deferred prop per widget:
+ * `widget0`, `widget1`… Undefined until it loads.
+ */
+export type WidgetProps = { [key: `widget${number}`]: WidgetData | undefined }
 
 /**
  * Props a screen's component receives (FR-20): its `data`, typed from

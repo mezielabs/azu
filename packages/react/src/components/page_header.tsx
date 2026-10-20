@@ -19,6 +19,8 @@ export function PageHeader(props: {
   page: string
   resource?: string
   breadcrumbs?: Breadcrumb[]
+  /** A line under the title, such as a widgets screen's range */
+  description?: ReactNode
   actions?: ReactNode
 }) {
   const crumbs = props.breadcrumbs ?? []
@@ -48,6 +50,7 @@ export function PageHeader(props: {
             props.title
           )}
         </h1>
+        {props.description && <p className="azu-page-description">{props.description}</p>}
       </div>
       {props.actions && <div className="azu-page-actions">{props.actions}</div>}
     </header>

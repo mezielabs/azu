@@ -6,6 +6,9 @@ import type { FormErrors } from '../schema.ts'
 import { abilityAllows } from '../screens/abilities.ts'
 import type { Screen } from '../screens/define_screen.ts'
 import { saveScreenForm, screenFormData, screenFormFields } from '../screens/screen_form.ts'
+import { RANGE_PARAM, parseRange } from '../shared/metrics.ts'
+import { visibleWidgets, widgetData, widgetSchema } from '../widgets/compute.ts'
+import { rangeBounds, rangeInfo } from '../widgets/ranges.ts'
 import type { AzuConfig } from '../types.ts'
 
 type Context = { config: AzuConfig; azu: Azu }
@@ -97,6 +100,35 @@ export class ScreensController {
       data: async () => (data ? ((await data(ctx)) ?? null) : null),
       form: screen.form ? await screenFormData(ctx, screen, screenFormFields(screen.form)) : null,
       errors,
+      ...(await this.#widgets(ctx, name, screen)),
     } as never)
+  }
+
+  /**
+   * A widgets screen's props (FR-24): the widgets this user may see,
+   * the range from `?range=`, and one deferred prop per widget, each in
+   * its own group, so each loads in its own request after the page
+   * paints and a slow or failing one never holds up the rest.
+   */
+  async #widgets(ctx: HttpContext, name: string, screen: Screen<any>) {
+    if (!screen.widgets) return { widgets: null, range: null, ranges: [] }
+    const { config } = this.context
+    const timezone = config.timezone
+    const rangeName = parseRange(ctx.request.qs()[RANGE_PARAM], screen.ranges)
+    const bounds = rangeBounds(rangeName, timezone)
+    const range = { name: rangeName, bounds, info: rangeInfo(rangeName, bounds, timezone) }
+    const visible = await visibleWidgets(ctx, screen.widgets)
+    const context = { path: config.path, timezone, defaultDisk: config.defaultDisk }
+    return {
+      widgets: visible.map(({ key, widget }) => widgetSchema(key, widget)),
+      range: range.info,
+      ranges: [...screen.ranges],
+      ...Object.fromEntries(
+        visible.map(({ key, widget }) => [
+          key,
+          ctx.inertia.defer(() => widgetData(ctx, context, name, widget, range), key),
+        ])
+      ),
+    }
   }
 }

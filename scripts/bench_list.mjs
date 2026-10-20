@@ -6,53 +6,13 @@
  * per scenario and reports p50, p95 and p99 server response times.
  *
  * Usage: node scripts/bench_list.mjs [baseUrl] [requestsPerScenario]
- * Credentials default to the demo seeder's admin; override with
- * BENCH_EMAIL and BENCH_PASSWORD.
+ * (credentials: scripts/bench_client.mjs)
  */
+import { signIn, time } from './bench_client.mjs'
+
 const base = process.argv[2] ?? 'http://localhost:3333'
 const runs = Number(process.argv[3] ?? 200)
-const email = process.env.BENCH_EMAIL ?? 'admin@azu.test'
-const password = process.env.BENCH_PASSWORD ?? 'password'
-
-const jar = new Map()
-function remember(response) {
-  for (const cookie of response.headers.getSetCookie()) {
-    const [pair] = cookie.split(';')
-    const [name, ...value] = pair.split('=')
-    jar.set(name, value.join('='))
-  }
-}
-const cookieHeader = () => [...jar].map(([name, value]) => `${name}=${value}`).join('; ')
-
-async function request(path, init = {}) {
-  const response = await fetch(base + path, {
-    redirect: 'manual',
-    ...init,
-    headers: { cookie: cookieHeader(), ...init.headers },
-  })
-  remember(response)
-  return response
-}
-
-// Sign in: Shield checks the XSRF cookie against the X-XSRF-TOKEN header
-remember(await fetch(`${base}/login`))
-const login = await request('/login', {
-  method: 'POST',
-  headers: {
-    'content-type': 'application/x-www-form-urlencoded',
-    'x-xsrf-token': decodeURIComponent(jar.get('XSRF-TOKEN') ?? ''),
-  },
-  body: new URLSearchParams({ email, password }),
-})
-const check = await request('/admin', {
-  headers: { 'x-inertia': 'true', 'x-inertia-version': '1' },
-})
-if (check.status !== 200 && check.status !== 409) {
-  console.error(`Sign-in failed (login ${login.status}, /admin ${check.status})`)
-  process.exit(1)
-}
-const version = (await check.json().catch(() => ({})))?.version ?? '1'
-const inertia = { 'x-inertia': 'true', 'x-inertia-version': String(version) }
+const { request, inertia } = await signIn(base)
 const partial = {
   ...inertia,
   'x-inertia-partial-component': 'azu/resource/index',
@@ -115,27 +75,11 @@ const scenarios = [
   ],
 ]
 
-const percentile = (sorted, p) =>
-  sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)]
-
 console.log(`${runs} sequential requests per scenario against ${base}\n`)
 console.log('p50 ms   p95 ms   p99 ms   scenario')
 let worst = 0
 for (const [label, url, headers] of scenarios) {
-  for (let i = 0; i < 10; i++) await (await request(url, { headers })).arrayBuffer()
-  const times = []
-  for (let i = 0; i < runs; i++) {
-    const started = performance.now()
-    const response = await request(url, { headers })
-    await response.arrayBuffer()
-    times.push(performance.now() - started)
-    if (response.status !== 200) {
-      console.error(`${label}: HTTP ${response.status}`)
-      process.exit(1)
-    }
-  }
-  times.sort((a, b) => a - b)
-  const [p50, p95, p99] = [50, 95, 99].map((p) => percentile(times, p))
+  const [p50, p95, p99] = await time(request, url, headers, runs, label)
   worst = Math.max(worst, p95)
   console.log(
     `${p50.toFixed(1).padStart(6)}   ${p95.toFixed(1).padStart(6)}   ${p99.toFixed(1).padStart(6)}   ${label}`

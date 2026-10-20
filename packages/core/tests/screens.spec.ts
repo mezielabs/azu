@@ -73,6 +73,7 @@ test.group('Screens (FR-20)', () => {
       icon: 'chart-column',
       component: 'SalesReport',
       form: false,
+      widgets: false,
     })
   })
 

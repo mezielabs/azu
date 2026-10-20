@@ -101,6 +101,32 @@ export default class MainSeeder extends BaseSeeder {
     ])
     void admin
     void staff
+    // More customers, signed up over the last two months, so the
+    // Overview's "New customers" compares with something (FR-24)
+    const NAMES = [
+      'Amina Yusuf',
+      'Emeka Nwosu',
+      'Funke Adeyemi',
+      'Kelechi Obi',
+      'Bisi Ade',
+      'Musa Danjuma',
+      'Ifeoma Nnaji',
+      'Segun Ojo',
+      'Zainab Bello',
+      'Obinna Eze',
+    ]
+    for (const [index, fullName] of NAMES.entries()) {
+      const [first] = fullName.toLowerCase().split(' ')
+      customers.push(
+        await User.create({
+          fullName,
+          email: `${first}@azu.test`,
+          password: 'password',
+          role: 'customer',
+          createdAt: DateTime.now().minus({ days: 3 + index * 6 }),
+        })
+      )
+    }
 
     const categories = await Category.createMany([
       { name: 'Kitchen', slug: 'kitchen', description: 'Pots, pans and everything in between' },
@@ -140,7 +166,7 @@ export default class MainSeeder extends BaseSeeder {
     }
 
     const statuses = ['pending', 'paid', 'shipped', 'cancelled'] as const
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= 60; i++) {
       const customer = customers[i % customers.length]
       const lines = [products[i % products.length], products[(i * 3) % products.length]]
       const order = await Order.create({
@@ -148,9 +174,9 @@ export default class MainSeeder extends BaseSeeder {
         number: `AZU-${String(1000 + i)}`,
         status: statuses[i % statuses.length],
         total: toDecimal(lines.reduce((sum, line) => sum + line.priceMinor, 0)),
-        // Over the last three weeks, newest first, so the Overview and the
-        // Sales report have something to show
-        placedAt: DateTime.now().minus({ hours: 2 + (i - 1) * 27 }),
+        // About one a day over the last two months, newest first, so the
+        // Overview can compare a range with the one before
+        placedAt: DateTime.now().minus({ hours: 2 + (i - 1) * 23 }),
       })
       await order.related('items').createMany(
         lines.map((line) => ({

@@ -87,6 +87,7 @@ Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval o
 - ⬜ CI green on the release commit (`ci.yml`: lint, typecheck, SQLite, Postgres 18, MySQL 8.4).
 - ⬜ `pnpm budget`: within budget (initial admin JS was 111.6 kB of 120 on #24).
 - ⬜ `pnpm bench:list` on Postgres with 100,000 products, against the 200 ms p95 target (spec §2 asks for it before each release).
+- ⬜ `pnpm bench:widgets` on Postgres with 100,000 orders (`node ace bench:orders --count=100000`), against the 100 ms p95 per widget target (spec §2).
 - ⬜ `pnpm prove:generator`: passes for every demo model.
 - ⬜ `node ace azu:doctor` in the demo: 0 errors, 0 warnings.
 - ⬜ The quickstart again, with the tarballs from the release commit (`docs/quickstart.md`).

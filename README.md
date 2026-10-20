@@ -363,7 +363,7 @@ When the policy has a `delete` method, every resource gets a Delete row and bulk
 
 ## Screens
 
-A screen is a page of your own in the panel: a report, a summary, a tool. It has its own ability, your component, and data from the server, or a [form](#form-screens) Azu renders. Generate one:
+A screen is a page of your own in the panel: a report, a summary, a tool. It has its own ability, your component, and data from the server, or a [form](#form-screens) or [widgets](#widgets) Azu renders. Generate one:
 
 ```sh
 node ace azu:screen SalesReport
@@ -468,6 +468,54 @@ home: { resource: 'orders' },
 ```
 
 The home screen replaces "Dashboard" at the top of the navigation. A user who fails its ability gets the welcome page, not a 403. With `{ resource }`, only users who may list that resource are redirected; everyone else gets the welcome page. A `home` that names no screen or resource stops the app from booting.
+
+## Widgets
+
+A screen can show widgets instead of a component or a form: key figures, a goal, a breakdown, a few recent records. Each widget reads one of your resources, through its own `query` hook, and shows only to users who may list that resource.
+
+```ts
+// app/admin/screens/overview.ts
+import { defineScreen, metric } from '@mezielabs/azu'
+import { accessAdmin } from '#abilities/main'
+import orders from '#admin/resources/order_resource'
+
+export default defineScreen({
+  label: 'Overview',
+  ability: accessAdmin,
+  ranges: ['today', '7d', '30d', 'month'], // the first is the default
+  widgets: [
+    metric
+      .value('Revenue')
+      .sum(orders, 'total')
+      .where((q) => q.whereIn('status', ['paid', 'shipped', 'delivered']))
+      .date('placedAt')
+      .format('currency', 'NGN')
+      .link({ status: 'paid' }),
+    metric.value('Orders').count(orders).date('placedAt'),
+    metric
+      .progress('October revenue goal')
+      .sum(orders, 'total')
+      .date('placedAt')
+      .period('month')
+      .goal(6_000_000),
+    metric.partition('Orders by status').count(orders).groupBy('status').date('placedAt'),
+    metric.table('Recent orders').resource(orders).latest('placedAt').limit(5),
+  ],
+})
+```
+
+- **Kinds:** `metric.value()` is one figure, `metric.progress()` a figure against a goal, `metric.partition()` a figure per value of a column, as bars, and `metric.table()` a few records with the resource's columns. A screen has `widgets`, `component` or `form`, never two of them.
+- **Aggregates:** `count(resource)`, and `sum`, `avg`, `min` and `max(resource, column)`. Column names are typed against the resource's model, so a misspelled column fails `tsc`. `sum` and the others take number columns and the columns the resource lists with `column.decimal()`: decimals are typed `string` on the model, so the resource is what says a column holds numbers. Decimal results stay exact strings on every database, and `avg` rounds to the column's scale (2 places for a number column).
+- **Access and scoping:** a widget needs the resource's `viewList`. Without it, the widget isn't on the page at all. Every widget's query starts from the resource's `query` hook, then the widget's `where()`, then the range, so a user never sees totals for records they couldn't list.
+- **Ranges:** `today`, `7d`, `30d`, `90d`, `month` (to date), `quarter` (to date) and `year` (to date), in the panel's `timezone`. The range is in the URL as `?range=`, and the switch beside the title changes it. A value widget with a `date()` is compared with the period before: the same number of days before for `7d`, `30d` and `90d`, and as long again from the start of the previous month, quarter or year for the to-date ranges. It reads "▲ 12.4% from NGN 4,281,750.00", "New" when the period before was 0, or "No change". `.compare(false)` turns it off. A widget without a `date()` is all-time, ignores the range, and says so.
+- **Progress** has its own `period()` (`day`, `week`, `month`, `quarter` or `year`, to date), not the screen's range. It shows how much of the goal is reached and how far through the period you are. `goal()` takes a number or `(ctx) => number`.
+- **Partition** labels come from the resource's select field or badge column, else the value in sentence case. `.limit(n)` (default 5) folds the rest into "Other".
+- **Tables** use the resource's columns (or `.columns([...])`, a typed subset) and its preloads, and link each row to its record when the user may `view` it. `.latest(column)` or `.orderBy(column, direction)` order them, and `.limit(n)` (default 5) caps them.
+- **Links:** `.link(filters?)` on a value or table widget links it to the resource's list, filtered by the resource's own filters, and by the range when the resource has a `dateRange` filter on the `date()` column. Partition rows link to the list filtered by their value when the resource has a select filter on that column. Filter names are checked at boot.
+- **Your own figure:** `metric.value(label).using(async (ctx, range) => number)` computes a value yourself. With no resource there's no automatic access check or scoping, so it needs `.ability(ability)`. It's called again with the previous period's range for the comparison.
+- **Width:** values, progress and partitions take one of the grid's four columns and tables two; `.width(1 | 2 | 3 | 4)` changes it. The grid is two columns on narrower screens, and one on phones.
+- **Loading:** each widget loads on its own after the page appears, so a slow or failing widget never holds up the others. A widget that throws shows "Couldn't load this" in its card, and the error goes to your log with the screen's and widget's names.
+- **Indexes:** each widget queries its resource's table with the range on the `date()` column, so index that column, and a table widget's sort column. On 100,000 orders on Postgres, the demo's Overview widgets take under 20 ms each at p95 with an index on `placed_at`, and up to 35 ms without one.
 
 ## Customising
 
@@ -593,13 +641,12 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 | `node ace azu:action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
 | `node ace azu:screen <Name>` | Creates a [screen](#screens) in `app/admin/screens` and its component in `inertia/admin/components`, ready to open at `/admin/screens/<name>`. With `--form`, a [form screen](#form-screens) and its validator in `app/validators` instead |
 | `node ace azu:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
-| `node ace azu:doctor` | Checks config (including a `home` that names nothing), missing policy methods, validators that miss form fields (screen forms' too), component names with no file (screens' too), and published pages that drifted. Exits with 1 on an error |
+| `node ace azu:doctor` | Checks config (including a `home` that names nothing), missing policy methods, validators that miss form fields (screen forms' too), component names with no file (screens' too), widgets that can't work (a `link()` filter or `date()` column the resource doesn't have, or a resource without `viewList`), and published pages that drifted. Exits with 1 on an error |
 
 ## Azu Pro
 
 The core is free and MIT licensed, and it always will be. Azu Pro adds the extensions clients tend to ask for once the basics work:
 
-- **Dashboards** with value, trend, and chart widgets
 - **Audit log** of every admin change, with before and after values
 - **CSV import and export** with a validation preview before anything is saved
 - **Impersonation** so support staff can see exactly what a user sees
@@ -613,7 +660,7 @@ Pro is licensed per project or for unlimited projects, and is checked at install
 - [ ] v0.x previews for early testers
 - [ ] v1.0: resources, fields, relationships, permissions, validation, actions, filters, theming
 - [ ] v1.1: bulk actions on all filtered rows, navigation badges, more override slots
-- [ ] Azu Pro: dashboards and audit log first
+- [ ] Azu Pro
 - [ ] Vue support, if there's demand
 
 ## Contributing

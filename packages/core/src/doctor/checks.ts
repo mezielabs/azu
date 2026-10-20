@@ -3,6 +3,7 @@ import { FORM_KINDS, inputName, validatorFor, type FormMode } from '../forms/for
 import { PAGE_NAMES, readStamp, sourceHash, type PageName } from '../publish/pages.ts'
 import { isBuiltInDelete, type Resource } from '../resources/define_resource.ts'
 import type { Screen } from '../screens/define_screen.ts'
+import { widgetProblems } from '../widgets/validate.ts'
 import { SLOT_NAMES } from '../shared/slots.ts'
 import type { AzuConfig } from '../types.ts'
 
@@ -13,7 +14,7 @@ import type { AzuConfig } from '../types.ts'
  */
 export type Finding = {
   level: 'error' | 'warning' | 'note'
-  area: 'config' | 'policies' | 'validators' | 'components' | 'published pages'
+  area: 'config' | 'policies' | 'validators' | 'components' | 'widgets' | 'published pages'
   message: string
 }
 
@@ -159,6 +160,36 @@ export function checkScreenValidators(screens: { name: string; screen: Screen<an
           `the ${name} screen's validator has no "${field.name}", ` +
           "so what users enter in that field isn't saved",
       })
+    }
+  }
+  return findings
+}
+
+/**
+ * Widgets on screens (FR-24) that can't work as written: a `link()`
+ * filter the resource doesn't have, a `date()` column that isn't a date
+ * or datetime (errors; boot fails on these too), and a resource whose
+ * policy has no `viewList`, so the widget never shows (warning).
+ */
+export function checkWidgets(screens: { name: string; screen: Screen<any> }[]): Finding[] {
+  const findings: Finding[] = []
+  for (const { name, screen } of screens) {
+    for (const widget of screen.widgets ?? []) {
+      for (const problem of widgetProblems(widget.state)) {
+        findings.push({
+          level: 'error',
+          area: 'widgets',
+          message: `the ${name} screen: ${problem}`,
+        })
+      }
+      const resource = widget.state.resource
+      if (resource && !hasMethod(resource, 'viewList')) {
+        findings.push({
+          level: 'warning',
+          area: 'widgets',
+          message: `the ${name} screen's "${widget.state.label}" widget reads ${resource.name}, and ${policyName(resource)} has no viewList, so it never shows`,
+        })
+      }
     }
   }
   return findings

@@ -67,6 +67,7 @@ test.group('Screen forms (FR-23)', () => {
       icon: null,
       component: null,
       form: true,
+      widgets: false,
     })
   })
 
@@ -74,11 +75,11 @@ test.group('Screen forms (FR-23)', () => {
     const form = { fields: [field.text('title')], validator, load: () => ({}), save: () => {} }
     assert.throws(
       () => loose({ label: 'Settings', ability: admins }),
-      /"Settings" screen needs exactly one of "component" \(your component\) or "form"/
+      /"Settings" screen needs exactly one of "component" \(your component\), "form" \(a form Azu renders\) or "widgets"/
     )
     assert.throws(
       () => loose({ label: 'Settings', ability: admins, component: 'Settings', form }),
-      /exactly one of .*, not both/
+      /exactly one of .*, not more than one/
     )
     assert.throws(
       () => loose({ label: 'Settings', ability: admins, form, data: () => ({}) }),
