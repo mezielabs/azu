@@ -38,6 +38,7 @@ export {
   ProgressWidget,
   PartitionWidget,
   TableWidget,
+  TrendWidget,
   type ScreenWidget,
   type MetricRange,
   type LinkFilters,

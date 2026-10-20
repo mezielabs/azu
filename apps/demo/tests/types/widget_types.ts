@@ -28,6 +28,10 @@ export const valid = defineScreen({
       .value('Custom')
       .using(async (_ctx, range) => range.start.day)
       .ability(accessAdmin),
+    // Trends (FR-25): date() required, by() and bars() optional
+    metric.trend('Revenue').sum(orders, 'total').date('placedAt'),
+    metric.trend('Orders').count(orders).date('placedAt').by('week').bars().compare(),
+    metric.trend('Cancelled').count(orders).date('placedAt').lowerIsBetter().width(2),
     // Down is good: value widgets only
     metric.value('Cancelled').count(orders).date('placedAt').lowerIsBetter(),
     metric
@@ -96,3 +100,21 @@ export const withComponent = defineScreen({
   component: 'Overview',
   widgets: [metric.value('Orders').count(orders)],
 })
+
+export const trendWithoutDate = defineScreen({
+  label: 'Overview',
+  ability: accessAdmin,
+  widgets: [
+    // @ts-expect-error a trend needs date(): the column its buckets count along
+    metric.trend('Revenue').sum(orders, 'total'),
+  ],
+})
+
+export const trendMistakes = [
+  // @ts-expect-error buckets are hour, day, week or month
+  metric.trend('Revenue').count(orders).date('placedAt').by('quarter'),
+  // @ts-expect-error date() on a text column
+  metric.trend('Revenue').count(orders).date('status'),
+  // @ts-expect-error sum() on a text column
+  metric.trend('Revenue').sum(orders, 'number'),
+]

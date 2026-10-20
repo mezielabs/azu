@@ -6,7 +6,7 @@ import type { Column } from '../resources/columns.ts'
 import type { Resource } from '../resources/define_resource.ts'
 import type { ColumnName, DateColumn, NumberColumn } from '../resources/model_types.ts'
 import type { NumberFormat } from '../shared/format.ts'
-import type { Better, Period, RangeName } from '../shared/metrics.ts'
+import type { Better, BucketUnit, Period, RangeName } from '../shared/metrics.ts'
 
 /** Any resource, with its model, policy and columns */
 export type AnyResource = Resource<any, any, any>
@@ -39,7 +39,7 @@ export type ListColumnOf<R> = ColumnNames<ColumnsOf<R>>
 
 export type Aggregate = 'count' | 'sum' | 'avg' | 'min' | 'max'
 
-export type WidgetKind = 'value' | 'progress' | 'partition' | 'table'
+export type WidgetKind = 'value' | 'progress' | 'partition' | 'table' | 'trend'
 
 /** Grid columns a widget spans, of 4 */
 export type WidgetWidth = 1 | 2 | 3 | 4
@@ -90,6 +90,10 @@ export type WidgetState = {
   limit: number | null
   orderBy: { column: string; direction: 'asc' | 'desc' } | null
   columns: string[] | null
+  /** A trend's bucket; `null` follows the range */
+  bucket: BucketUnit | null
+  /** How a trend draws */
+  chart: 'line' | 'bars'
 }
 
 const WIDGET = Symbol.for('mezielabs.azu.widget')
@@ -125,6 +129,8 @@ export class Widget<Kind extends WidgetKind = WidgetKind, R = AnyResource> {
       limit: null,
       orderBy: null,
       columns: null,
+      bucket: null,
+      chart: 'line',
       ...state,
     }
   }
@@ -320,18 +326,77 @@ export class TableWidget<R> extends ResourceWidget<'table', R> {
 }
 
 /**
+ * A figure over time (FR-25), counted in buckets: hours, days, weeks or
+ * months in the admin's timezone, drawn as a line or bars. `date()` is
+ * required: without it, a trend has nothing to count along, so it isn't
+ * a widget a screen takes (`HasDate`).
+ */
+export class TrendWidget<R, HasDate extends boolean = false> extends Widget<'trend', R> {
+  declare readonly __hasDate: HasDate
+
+  constructor(state: Partial<WidgetState> & { kind: 'trend'; label: string }) {
+    // Off unless asked for: a second line is a choice, not a default
+    super({ compare: false, ...state })
+  }
+
+  /** Narrows the query, after the resource's own `query` hook */
+  where(callback: Where<R>): this {
+    return this.set('where', callback as WidgetState['where'])
+  }
+
+  /** The date or datetime column the buckets count along. Required. */
+  date(column: DateColumnOf<R>): TrendWidget<R, true> {
+    this.set('dateColumn', column as string)
+    return this as unknown as TrendWidget<R, true>
+  }
+
+  /**
+   * The bucket: `hour`, `day`, `week` (from Monday) or `month`. Without
+   * it, the bucket follows the range: hours today, days up to 90 days,
+   * weeks for a quarter, months for a year.
+   */
+  by(unit: BucketUnit): this {
+    return this.set('bucket', unit)
+  }
+
+  /** Bars instead of a line */
+  bars(): this {
+    return this.set('chart', 'bars')
+  }
+
+  /** The previous period too, as a second, muted line */
+  compare(enabled = true): this {
+    return this.set('compare', enabled)
+  }
+
+  format(style: FormatStyle, currency?: string): this {
+    return this.set('format', { style, currency: currency ?? null })
+  }
+
+  /** For figures where down is good: a fall reads as better */
+  lowerIsBetter(): this {
+    return this.set('better', 'lower')
+  }
+}
+
+/**
  * The aggregates a value, progress or partition widget starts from.
  */
-class Aggregates<W extends 'value' | 'progress' | 'partition'> {
+class Aggregates<W extends 'value' | 'progress' | 'partition' | 'trend'> {
   constructor(
     protected kind: W,
     protected label: string
   ) {}
 
   protected make<R>(resource: R, aggregate: Aggregate, column: string | null): Built<W, R> {
-    const Class = { value: ValueWidget, progress: ProgressWidget, partition: PartitionWidget }[
-      this.kind
-    ] as new (state: Partial<WidgetState> & { kind: WidgetKind; label: string }) => Widget
+    const Class = {
+      value: ValueWidget,
+      progress: ProgressWidget,
+      partition: PartitionWidget,
+      trend: TrendWidget,
+    }[this.kind] as new (
+      state: Partial<WidgetState> & { kind: WidgetKind; label: string }
+    ) => Widget
     return new Class({
       kind: this.kind,
       label: this.label,
@@ -369,7 +434,9 @@ type Built<W, R> = W extends 'value'
   ? ValueWidget<R>
   : W extends 'progress'
     ? ProgressWidget<R>
-    : PartitionWidget<R>
+    : W extends 'trend'
+      ? TrendWidget<R, false>
+      : PartitionWidget<R>
 
 class ValueAggregates extends Aggregates<'value'> {
   /**
@@ -398,6 +465,8 @@ export const metric = {
   value: (label: string) => new ValueAggregates('value', label),
   /** A figure against a goal */
   progress: (label: string) => new Aggregates('progress', label),
+  /** A figure over time, in buckets (FR-25): needs `date()` */
+  trend: (label: string) => new Aggregates('trend', label),
   /** A figure per value of a column */
   partition: (label: string) => new Aggregates('partition', label),
   /** A few records */
@@ -417,3 +486,4 @@ export type ScreenWidget =
   | PartitionWidget<any>
   | TableWidget<any>
   | CustomValueWidget<true>
+  | TrendWidget<any, true>
