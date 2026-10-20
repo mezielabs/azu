@@ -34,3 +34,11 @@ export const viewReports = Bouncer.ability((user: User) => {
 export const viewOrders = Bouncer.ability((user: User) => {
   return user.role === 'admin'
 })
+
+/**
+ * Who can change the store's settings (FR-23): admins. Its own rule,
+ * so settings can move to another role without touching the others.
+ */
+export const manageSettings = Bouncer.ability((user: User) => {
+  return user.role === 'admin'
+})

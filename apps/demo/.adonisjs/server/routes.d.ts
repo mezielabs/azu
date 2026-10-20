@@ -7,6 +7,7 @@ export type ScannedRoutes = {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'azu.dashboard': { paramsTuple?: []; params?: {} }
     'azu.screens.show': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
+    'azu.screens.update': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
     'azu.resources.index': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.create': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
@@ -55,6 +56,10 @@ export type ScannedRoutes = {
     'session.create': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
   }
+  PUT: {
+    'azu.screens.update': { paramsTuple: [ParamValue]; params: {'screen': ParamValue} }
+    'azu.resources.update': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
+  }
   POST: {
     'azu.resources.store': { paramsTuple: [ParamValue]; params: {'resource': ParamValue} }
     'azu.resources.actions.run': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'resource': ParamValue,'kind': ParamValue,'action': ParamValue} }
@@ -62,9 +67,6 @@ export type ScannedRoutes = {
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
-  }
-  PUT: {
-    'azu.resources.update': { paramsTuple: [ParamValue,ParamValue]; params: {'resource': ParamValue,'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

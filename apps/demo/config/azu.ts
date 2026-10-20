@@ -41,7 +41,7 @@ const azuConfig = defineConfig({
    * Navigation group order. Groups not listed follow, by label.
    */
   navigation: {
-    groups: ['Sales', 'Catalog', 'Reports', 'Help'],
+    groups: ['Sales', 'Catalog', 'Reports', 'Settings', 'Help'],
     // Links to any URL (FR-21). An ability would only hide one; its page checks access itself
     links: [
       {

@@ -11,30 +11,9 @@ import { DateTime } from 'luxon'
 import Category from '#models/category'
 import Order from '#models/order'
 import Product from '#models/product'
-import type { Azu } from '@mezielabs/azu'
-import { createUser, withHome } from './helpers.ts'
+import { createUser, withHome, withScreen } from './helpers.ts'
 
 const REPORT = '/admin/screens/sales-report'
-
-/**
- * Mounts a screen for one test: a copy of the registry with it added,
- * put back afterwards, so it never reaches other tests' navigation
- */
-async function withScreen(
-  name: string,
-  screen: Parameters<Azu['registerScreen']>[1],
-  cleanup: (callback: () => void) => void
-) {
-  const azu = await app.container.make('azu')
-  const original = azu.screens
-  const registry = new (original.constructor as new () => typeof original)()
-  for (const entry of original.all()) registry.register(entry.name, entry.screen)
-  registry.register(name, screen)
-  Object.assign(azu, { screens: registry })
-  cleanup(() => {
-    Object.assign(azu, { screens: original })
-  })
-}
 
 const labels = (navigation: { items: { label: string }[] }[]) =>
   navigation.flatMap((group) => group.items.map((item) => item.label))
@@ -70,6 +49,7 @@ test.group('Admin / screens (FR-20, FR-21, FR-22)', (group) => {
       group: 'Reports',
       icon: 'chart-column',
       component: 'SalesReport',
+      form: false,
     })
     assert.equal(data.days, 7)
     assert.lengthOf(data.rows, 7)
@@ -276,5 +256,50 @@ test.group('Admin / azu:screen output (FR-20)', (group) => {
     response.assertInertiaComponent('azu/screen')
     assert.equal(response.body().props.screen.component, 'ZzGenerated')
     assert.isString(response.body().props.data.generatedAt)
+  }).timeout(180_000)
+})
+
+test.group('Admin / azu:screen --form output (FR-23)', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
+  test('compiles as written, renders and saves', async ({ client, assert, cleanup }) => {
+    const files = [
+      app.makePath('app/admin/screens/zz_generated_form.ts'),
+      app.makePath('app/validators/zz_generated_form.ts'),
+    ]
+    cleanup(async () => {
+      for (const file of files) await rm(file, { force: true })
+    })
+    await ace.boot()
+    ace.ui.switchMode('raw')
+    const command = await ace.create(await ace.find('azu:screen'), ['ZzGeneratedForm', '--form'])
+    await command.exec()
+    ace.ui.switchMode('normal')
+    command.assertSucceeded()
+
+    const tsc = app.makePath('node_modules/.bin/tsc')
+    await promisify(execFile)(tsc, ['--noEmit'], { cwd: app.makePath() })
+
+    const { default: generated } = await import(files[0])
+    await withScreen('zz-generated-form', generated, cleanup)
+
+    const admin = await createUser('admin')
+    const url = '/admin/screens/zz-generated-form'
+    const response = await client.get(url).loginAs(admin).withInertia()
+    response.assertStatus(200)
+    assert.deepEqual(response.body().props.form.values, {
+      title: 'Zz generated form',
+      enabled: false,
+    })
+
+    const saved = await client
+      .put(url)
+      .loginAs(admin)
+      .withCsrfToken()
+      .json({ title: 'Renamed', enabled: true })
+      .redirects(0)
+    saved.assertStatus(303)
+    const after = await client.get(url).loginAs(admin).withInertia()
+    assert.deepEqual(after.body().props.form.values, { title: 'Renamed', enabled: true })
   }).timeout(180_000)
 })

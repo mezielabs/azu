@@ -363,7 +363,7 @@ When the policy has a `delete` method, every resource gets a Delete row and bulk
 
 ## Screens
 
-A screen is a page of your own in the panel: a report, a summary, a tool. It has its own ability, your component, and data from the server. Generate one:
+A screen is a page of your own in the panel: a report, a summary, a tool. It has its own ability, your component, and data from the server, or a [form](#form-screens) Azu renders. Generate one:
 
 ```sh
 node ace azu:screen SalesReport
@@ -401,6 +401,60 @@ export default function SalesReport({ data }: ScreenProps<typeof salesReport>) {
 ```
 
 Screens in `app/admin/screens` load at boot (`screens.autoload` in `config/azu.ts`, like resources). Two with the same name stop the app from booting. With autoload off, register them in `start/azu.ts`: `azu.registerScreen('sales-report', salesReport)`.
+
+### Form screens
+
+A screen can have a form instead of a component: settings, a profile, anything that isn't one record of a model. Azu renders it like a resource form and saves through your validator. Where the values live is up to you: `load` reads them and `save` writes them.
+
+```sh
+node ace azu:screen StoreSettings --form
+```
+
+That writes the screen and a validator in `app/validators/store_settings.ts`. Fill in `load` and `save`:
+
+```ts
+// app/admin/screens/store_settings.ts
+import { defineScreen, field } from '@mezielabs/azu'
+import { DateTime } from 'luxon'
+import { manageSettings } from '#abilities/main'
+import Setting from '#models/setting'
+import { storeSettingsValidator } from '#validators/store_settings'
+
+export default defineScreen({
+  label: 'Store settings',
+  group: 'Settings',
+  icon: 'settings',
+  ability: manageSettings,
+  form: {
+    fields: [
+      field.text('storeName'),
+      field.select('currency').options({ NGN: 'Nigerian naira', GHS: 'Ghanaian cedi' }),
+      field.decimal('vatRate').label('VAT rate (%)'),
+      field.boolean('maintenanceMode'),
+      field.richText('checkoutAnnouncement'),
+      field.datetime('lastChangedAt').label('Last changed').readOnly(),
+    ],
+    validator: storeSettingsValidator,
+    // Your storage: here, the demo's key/value settings table
+    load: () =>
+      Setting.values([
+        'storeName',
+        'currency',
+        'vatRate',
+        'maintenanceMode',
+        'checkoutAnnouncement',
+        'lastChangedAt',
+      ]),
+    save: (input) => Setting.store({ ...input, lastChangedAt: DateTime.now() }),
+  },
+})
+```
+
+- **`form` or `component`, not both**, and no `data` beside a form: its values come from `load`. Either mistake is a type error and stops the app from booting.
+- **Field names are checked against what `load` returns**, so a misspelled field fails `tsc`, as on resources. Screen forms take text, textarea, number, decimal, boolean, select, date, datetime and rich text fields. File, image and relation fields aren't supported on screens yet.
+- **The screen's `ability` covers the form**, for opening it and for saving it, so fields have no `.ability()` here. `.readOnly()` works as on resources.
+- **Saving works like a resource form.** Only the form's writable fields are read from the request, then checked by the validator. Read-only fields reach the validator with `load`'s values. `save` gets the validator's output and nothing else. Rich text is sanitised and datetimes are read in the panel's `timezone`. A valid save comes back to the screen with a toast ("Store settings saved", or `successMessage`). Invalid input shows the errors under each field, with the input kept.
+- **The page** is the resource form's layout: the same widths, required markers and limits from the validator, the sticky save bar with a single "Save changes" button, and the "Leave without saving?" question.
 
 ### The home screen
 
@@ -537,9 +591,9 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 | `node ace add @mezielabs/azu` | Installs and configures Azu |
 | `node ace azu:resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
 | `node ace azu:action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
-| `node ace azu:screen <Name>` | Creates a [screen](#screens) in `app/admin/screens` and its component in `inertia/admin/components`, ready to open at `/admin/screens/<name>` |
+| `node ace azu:screen <Name>` | Creates a [screen](#screens) in `app/admin/screens` and its component in `inertia/admin/components`, ready to open at `/admin/screens/<name>`. With `--form`, a [form screen](#form-screens) and its validator in `app/validators` instead |
 | `node ace azu:publish [page]` | Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, lists them |
-| `node ace azu:doctor` | Checks config (including a `home` that names nothing), missing policy methods, validators that miss form fields, component names with no file (screens' too), and published pages that drifted. Exits with 1 on an error |
+| `node ace azu:doctor` | Checks config (including a `home` that names nothing), missing policy methods, validators that miss form fields (screen forms' too), component names with no file (screens' too), and published pages that drifted. Exits with 1 on an error |
 
 ## Azu Pro
 

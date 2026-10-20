@@ -1,0 +1,14 @@
+{{{
+  exports({ to: path })
+}}}
+import vine from '@vinejs/vine'
+
+/**
+ * The {{{ label }}} screen's form: Azu validates each save with it, and
+ * passes only its output to the screen's \`save\`. Declare every field
+ * the form has, except read-only ones.
+ */
+export const {{ validator }} = vine.create({
+  title: vine.string().trim().minLength(1).maxLength(100),
+  enabled: vine.boolean(),
+})

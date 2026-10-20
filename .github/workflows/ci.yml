@@ -45,6 +45,7 @@ jobs:
           for file in build/stubs/config/azu.stub build/stubs/start/azu.stub \
             build/stubs/inertia/admin/app.stub build/stubs/make/admin_action.stub \
             build/stubs/make/screen.stub build/stubs/make/screen_component.stub \
+            build/stubs/make/screen_form.stub build/stubs/make/screen_validator.stub \
             build/resources/views/admin.edge \
             build/commands/main.js build/commands/commands.json; do
             grep -qx "package/$file" /tmp/azu-pack/files || { echo "Missing $file"; exit 1; }

@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { generators } from '@adonisjs/core/app'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
-import type { Resource } from '../resources/define_resource.ts'
+import type { Resource, ValidatorLike } from '../resources/define_resource.ts'
 import type { FormErrors, FormFieldSchema } from '../schema.ts'
 import { processTimezone } from '../define_config.ts'
 import { sanitizeRichText } from '../files/sanitize_html.ts'
@@ -57,22 +57,80 @@ function toAttributes(model: LucidModel, output: Record<string, unknown>, target
 }
 
 /**
- * A record's current value for a field, as the form would submit it:
- * dates as `YYYY-MM-DD`, datetimes as `vine.date()` reads them, and
- * decimals as strings (SQLite returns numbers).
+ * The admin's timezone, which wall-clock datetimes are read in, and the
+ * server process's, which `vine.date()` reads them in
  */
-function currentInput(
-  record: LucidRow,
+export function formTimezones(timezone?: string) {
+  return { admin: timezone ?? processTimezone(), process: processTimezone() }
+}
+
+/**
+ * A current value for a field, as the form would submit it: dates as
+ * `YYYY-MM-DD`, datetimes as `vine.date()` reads them, and decimals as
+ * strings (SQLite returns numbers). From a record, or from a screen
+ * form's `load` (FR-23).
+ */
+export function currentInput(
+  source: LucidRow | Record<string, unknown>,
   field: FormFieldSchema,
   timezones: { admin: string; process: string }
 ): unknown {
-  const value = (record as unknown as Record<string, unknown>)[field.input]
+  const value = (source as unknown as Record<string, unknown>)[field.input]
   if (value === null || value === undefined) return value
   const date = value as { toISO?: () => string | null; toISODate?: () => string | null }
   if (typeof date.toISO === 'function') {
     return field.kind === 'date' ? date.toISODate!() : toValidatorDateTime(date.toISO(), timezones)
   }
   return field.kind === 'decimal' ? String(value) : value
+}
+
+/**
+ * The request's input for the declared, writable fields, and nothing
+ * else (mass assignment), as the validator should see it: datetimes
+ * read in the admin's timezone, rich text sanitised, an empty
+ * `manyToMany` selection restored. Shared by resource and screen saves.
+ */
+export function readFieldInput(
+  ctx: HttpContext,
+  fields: FormFieldSchema[],
+  timezones: { admin: string; process: string }
+): Record<string, unknown> {
+  const writable = fields.filter((field) => !field.readOnly)
+  const data = pick(
+    ctx.request.body(),
+    writable.map((field) => field.input)
+  )
+  for (const field of writable) {
+    if (!Object.hasOwn(data, field.input)) continue
+    const value = data[field.input]
+    if (field.kind === 'manyToMany' && value === EMPTY_RELATION_IDS) data[field.input] = []
+    if (field.kind === 'datetime') data[field.input] = toValidatorDateTime(value, timezones)
+    // The validator sees sanitised HTML, so its length rules apply to what's stored
+    if (field.kind === 'richText' && typeof value === 'string') {
+      data[field.input] = sanitizeRichText(value)
+    }
+  }
+  return data
+}
+
+/**
+ * Runs a VineJS validator: its output, or its messages as form errors.
+ * Any other error is thrown, as usual.
+ */
+export async function validateInput(
+  validator: ValidatorLike,
+  data: Record<string, unknown>,
+  options?: { meta?: unknown }
+): Promise<
+  { output: Record<string, unknown>; errors?: never } | { errors: FormErrors; output?: never }
+> {
+  try {
+    return { output: await validator.validate(data, options) }
+  } catch (error) {
+    const messages = validationMessages(error)
+    if (!messages) throw error
+    return { errors: toFormErrors(messages) }
+  }
 }
 
 /**
@@ -142,22 +200,8 @@ export async function saveRecord(
 
   const { record } = options
   const writable = fields.filter((field) => !field.readOnly)
-  const data = pick(
-    ctx.request.body(),
-    writable.map((field) => field.input)
-  )
-
-  const timezones = { admin: options.timezone ?? processTimezone(), process: processTimezone() }
-  for (const field of writable) {
-    if (!Object.hasOwn(data, field.input)) continue
-    const value = data[field.input]
-    if (field.kind === 'manyToMany' && value === EMPTY_RELATION_IDS) data[field.input] = []
-    if (field.kind === 'datetime') data[field.input] = toValidatorDateTime(value, timezones)
-    // The validator sees sanitised HTML, so its length rules apply to what's stored
-    if (field.kind === 'richText' && typeof value === 'string') {
-      data[field.input] = sanitizeRichText(value)
-    }
-  }
+  const timezones = formTimezones(options.timezone)
+  const data = readFieldInput(ctx, fields, timezones)
 
   // Uploads are checked (size, type from the bytes) and given keys, but
   // only stored once the record saves
@@ -195,15 +239,9 @@ export async function saveRecord(
   }
   const meta = resource.options.validators?.meta?.({ record, ctx }) ?? { record }
 
-  let output: Record<string, unknown> = {}
-  let errors: FormErrors = {}
-  try {
-    output = await validator.validate(data, { meta })
-  } catch (error) {
-    const messages = validationMessages(error)
-    if (!messages) throw error
-    errors = toFormErrors(messages)
-  }
+  const result = await validateInput(validator, data, { meta })
+  const output: Record<string, unknown> = result.output ?? {}
+  const errors: FormErrors = result.errors ?? {}
   // Upload problems come first under their field; the validator's follow
   for (const [path, messages] of Object.entries(files.errors)) {
     errors[path] = [...messages, ...(errors[path] ?? [])]

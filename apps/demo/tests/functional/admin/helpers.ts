@@ -1,4 +1,5 @@
 import app from '@adonisjs/core/services/app'
+import type { Azu } from '@mezielabs/azu'
 import type { AzuConfig } from '@mezielabs/azu/types'
 import { randomUUID } from 'node:crypto'
 import db from '@adonisjs/lucid/services/db'
@@ -53,5 +54,25 @@ export function withHome(home: AzuConfig['home'], cleanup: (callback: () => void
   config.home = home
   cleanup(() => {
     config.home = before
+  })
+}
+
+/**
+ * Mounts a screen for one test: a copy of the registry with it added,
+ * put back afterwards, so it never reaches other tests' navigation
+ */
+export async function withScreen(
+  name: string,
+  screen: Parameters<Azu['registerScreen']>[1],
+  cleanup: (callback: () => void) => void
+) {
+  const azu = await app.container.make('azu')
+  const original = azu.screens
+  const registry = new (original.constructor as new () => typeof original)()
+  for (const entry of original.all()) registry.register(entry.name, entry.screen)
+  registry.register(name, screen)
+  Object.assign(azu, { screens: registry })
+  cleanup(() => {
+    Object.assign(azu, { screens: original })
   })
 }

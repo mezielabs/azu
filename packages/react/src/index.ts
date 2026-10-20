@@ -21,6 +21,7 @@ export { FilterBar } from './components/list/filter_bar.tsx'
 export { AccountMenu, ThemeRadios } from './components/account_menu.tsx'
 export { Pagination } from './components/list/pagination.tsx'
 export { ResourceForm } from './components/form/resource_form.tsx'
+export { ScreenForm } from './components/form/screen_form.tsx'
 export { FormField } from './components/form/form_field.tsx'
 export { UnsavedChanges } from './components/form/unsaved_changes.tsx'
 export { FieldValueView } from './components/detail/field_value.tsx'
@@ -47,6 +48,7 @@ export type {
   ResourceEditPageProps,
   ResourceShowPageProps,
   ScreenPageProps,
+  ScreenFormData,
   ScreenProps,
   ScreenSchema,
   ResourceFormData,

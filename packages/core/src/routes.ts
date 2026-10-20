@@ -28,6 +28,8 @@ export function registerRoutes(
       router.get('/', (ctx) => screens.home(ctx)).as('azu.dashboard')
       // Custom screens (FR-20), under /screens/ so the panel's own routes have room
       router.get('/screens/:screen', (ctx) => screens.show(ctx)).as('azu.screens.show')
+      // A form screen submits to its own URL (FR-23)
+      router.put('/screens/:screen', (ctx) => screens.update(ctx)).as('azu.screens.update')
 
       router
         .group(() => {

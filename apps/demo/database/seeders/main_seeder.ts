@@ -5,6 +5,7 @@ import Category from '#models/category'
 import Coupon from '#models/coupon'
 import Order from '#models/order'
 import Product from '#models/product'
+import Setting from '#models/setting'
 import Tag from '#models/tag'
 import User from '#models/user'
 
@@ -196,5 +197,17 @@ export default class MainSeeder extends BaseSeeder {
         expiresAt: DateTime.utc(2026, 9, 30, 22, 59),
       },
     ])
+
+    // The Store settings screen's values (FR-23)
+    await Setting.store({
+      storeName: 'Azu Store',
+      supportEmail: 'help@azu.test',
+      currency: 'NGN',
+      vatRate: '7.50',
+      maintenanceMode: false,
+      checkoutAnnouncement:
+        '<p>Free delivery in Lagos on orders over <strong>NGN 50,000</strong>.</p>',
+      lastChangedAt: DateTime.utc(2026, 10, 1, 9, 0),
+    })
   }
 }

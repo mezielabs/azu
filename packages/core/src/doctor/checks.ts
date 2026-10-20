@@ -131,6 +131,40 @@ export function checkValidators(resources: Resource<any, any>[]): Finding[] {
 }
 
 /**
+ * A form screen's fields whose input its validator doesn't declare
+ * (FR-23), as `checkValidators` does for resources. Read-only fields
+ * aren't saved, so they're left out.
+ */
+export function checkScreenValidators(screens: { name: string; screen: Screen<any> }[]): Finding[] {
+  const findings: Finding[] = []
+  for (const { name, screen } of screens) {
+    const form = screen.form
+    if (!form) continue
+    if (!isIntrospectable(form.validator)) {
+      findings.push({
+        level: 'note',
+        area: 'validators',
+        message: `the ${name} screen's validator isn't a VineJS 4 validator, so its fields can't be checked`,
+      })
+      continue
+    }
+    const declared = introspectValidator(form.validator)
+    for (const item of form.fields) {
+      const field = item.toJSON()
+      if (field.readOnly || declared.has(field.name)) continue
+      findings.push({
+        level: 'error',
+        area: 'validators',
+        message:
+          `the ${name} screen's validator has no "${field.name}", ` +
+          "so what users enter in that field isn't saved",
+      })
+    }
+  }
+  return findings
+}
+
+/**
  * Component names that fields, columns, slots and screens use, which no
  * file in `inertia/admin/components` registers. Azu then renders its own
  * control, nothing for a slot, or an error for a screen.
@@ -168,11 +202,12 @@ export function checkComponents(
   }
   // A screen without its component renders an error in its place (FR-20)
   for (const { name, screen } of screens) {
-    if (registered.has(screen.options.component)) continue
+    const component = screen.options.component
+    if (component === undefined || registered.has(component)) continue
     findings.push({
       level: 'error',
       area: 'components',
-      message: `the ${name} screen uses ${screen.options.component}, but no file in inertia/admin/components registers it`,
+      message: `the ${name} screen uses ${component}, but no file in inertia/admin/components registers it`,
     })
   }
   return findings

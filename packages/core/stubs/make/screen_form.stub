@@ -1,0 +1,35 @@
+{{{
+  exports({ to: path })
+}}}
+import { defineScreen, field } from '@mezielabs/azu'
+import { accessAdmin } from '#abilities/main'
+import { {{ validator }} } from '#validators/{{ file }}'
+
+/**
+ * Until \`load\` and \`save\` use your app's storage (a settings table,
+ * a file, an API), the values live in memory and reset on restart.
+ */
+const values = { title: '{{{ label }}}', enabled: false }
+
+/**
+ * {{{ label }}}: a form screen, at /admin/screens/{{ name }} (under your
+ * config/azu.ts \`path\`). Azu renders the form from \`fields\`, shows what
+ * \`load\` returns, checks a save with the validator in
+ * app/validators/{{ file }}.ts, and hands \`save\` the validator's output.
+ *
+ * Who may open and save it: \`ability\`, a Bouncer ability checked on
+ * every request. accessAdmin lets in everyone who can open the panel; add
+ * a narrower ability to app/abilities/main.ts for anything sensitive.
+ */
+export default defineScreen({
+  label: '{{{ label }}}',
+  ability: accessAdmin,
+  form: {
+    fields: [field.text('title'), field.boolean('enabled')],
+    validator: {{ validator }},
+    load: () => values,
+    save: (input) => {
+      Object.assign(values, input)
+    },
+  },
+})

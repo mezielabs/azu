@@ -1,8 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { Azu } from '../azu.ts'
 import { renderPage } from '../render.ts'
+import type { FormErrors } from '../schema.ts'
 import { abilityAllows } from '../screens/abilities.ts'
 import type { Screen } from '../screens/define_screen.ts'
+import { saveScreenForm, screenFormData, screenFormFields } from '../screens/screen_form.ts'
 import type { AzuConfig } from '../types.ts'
 
 type Context = { config: AzuConfig; azu: Azu }
@@ -32,6 +34,38 @@ export class ScreensController {
   }
 
   /**
+   * PUT `<path>/screens/:screen`: saves a form screen (FR-23). The
+   * screen's ability is checked again, failing closed. A valid save
+   * redirects back to the screen (303); invalid input renders the form
+   * again with a 422 and `errors`.
+   */
+  async update(ctx: HttpContext) {
+    const name = ctx.params.screen
+    const screen = this.context.azu.screens.get(name)
+    if (!screen?.form) {
+      ctx.response.status(404)
+      return renderPage(ctx, this.context, 'azu/errors/not_found', {})
+    }
+    if (!(await abilityAllows(ctx, screen.options.ability))) {
+      ctx.response.status(403)
+      return renderPage(ctx, this.context, 'azu/errors/forbidden', {})
+    }
+    const fields = screenFormFields(screen.form)
+    const result = await saveScreenForm(ctx, screen, fields, {
+      timezone: this.context.config.timezone,
+    })
+    if (result.errors) {
+      ctx.response.status(422)
+      return this.#render(ctx, name, screen, result.errors)
+    }
+    return ctx.response
+      .redirect()
+      .withQs(false)
+      .status(303)
+      .toPath(`${this.context.config.path}/screens/${name}`)
+  }
+
+  /**
    * `<path>/`: the `home` screen with the URL unchanged, a redirect to
    * the `home` resource's list, or the welcome page. A user who fails
    * the home screen's ability gets the welcome page, not a 403.
@@ -48,11 +82,14 @@ export class ScreensController {
     return renderPage(ctx, this.context, 'azu/dashboard', {})
   }
 
-  #render(ctx: HttpContext, name: string, screen: Screen<any>) {
+  async #render(ctx: HttpContext, name: string, screen: Screen<any>, errors: FormErrors = {}) {
+    const { data } = screen.options
     return renderPage(ctx, this.context, 'azu/screen', {
       screen: screen.toSchema(name),
       // Lazy: a partial reload of `data` computes it alone
-      data: async () => (screen.options.data ? ((await screen.options.data(ctx)) ?? null) : null),
+      data: async () => (data ? ((await data(ctx)) ?? null) : null),
+      form: screen.form ? await screenFormData(ctx, screen, screenFormFields(screen.form)) : null,
+      errors,
     } as never)
   }
 }

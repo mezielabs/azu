@@ -353,12 +353,24 @@ export type RelationOptionsResponse = { options: RelationOption[] }
 export type NotFoundPageProps = AzuSharedProps
 
 /**
+ * A form screen's form (FR-23): its fields with validator hints, the
+ * values `load` returned, and the toast after a save.
+ */
+export type ScreenFormData = ResourceFormData & {
+  successMessage: string
+}
+
+/**
  * Props for the `azu/screen` page (FR-20): the screen, and what its
- * `data` function returned (`null` without one).
+ * `data` function returned (`null` without one). A form screen (FR-23)
+ * has `form`, and `errors` after a failed save.
  */
 export type ScreenPageProps = AzuSharedProps & {
   screen: ScreenSchema
   data: unknown
+  /** The form a form screen renders; `null` for a component screen */
+  form: ScreenFormData | null
+  errors: FormErrors
 }
 
 /**
