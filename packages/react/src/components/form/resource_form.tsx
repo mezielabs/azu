@@ -63,7 +63,7 @@ function sameValues(a: Values, b: Values) {
 }
 
 /**
- * The create and edit form (FR-06). It submits to its own URL; the
+ * The create and edit form (FR-06), and a form screen's (FR-23). It submits to its own URL; the
  * server validates through the resource's validator and either
  * redirects or renders the form again with a 422 and `errors`. Form
  * state survives only that render (`preserveState: 'errors'`), so a
@@ -82,7 +82,8 @@ export function ResourceForm(props: {
   method: 'post' | 'put'
   timezone: string
   submitLabel: string
-  cancelHref: string
+  /** Where Cancel goes; no Cancel without one (a form screen, FR-23) */
+  cancelHref?: string
   /** Shown as a toast once the record is saved */
   successMessage: string
   /**
@@ -223,9 +224,11 @@ export function ResourceForm(props: {
             {status}
           </p>
           <div className="azu-save-actions">
-            <Link href={props.cancelHref} className="azu-button">
-              Cancel
-            </Link>
+            {props.cancelHref && (
+              <Link href={props.cancelHref} className="azu-button">
+                Cancel
+              </Link>
+            )}
             {props.secondary && (
               // Not a submit button, so Enter in a field still uses the primary one
               <button

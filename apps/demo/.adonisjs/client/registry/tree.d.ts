@@ -11,6 +11,7 @@ export interface ApiDefinition {
     dashboard: typeof routes['azu.dashboard']
     screens: {
       show: typeof routes['azu.screens.show']
+      update: typeof routes['azu.screens.update']
     }
     resources: {
       index: typeof routes['azu.resources.index']

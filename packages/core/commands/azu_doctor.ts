@@ -11,6 +11,7 @@ import {
   checkConfig,
   checkPolicies,
   checkPublished,
+  checkScreenValidators,
   checkValidators,
   type Finding,
 } from '../src/doctor/checks.ts'
@@ -99,6 +100,7 @@ export default class AzuDoctor extends BaseCommand {
       }),
       ...checkPolicies(resources),
       ...checkValidators(resources),
+      ...checkScreenValidators(azu.screens.all()),
       ...checkComponents(resources, registered, azu.screens.all()),
       ...checkPublished(published, pkg && { version: pkg.version, sources }),
     ]

@@ -184,8 +184,10 @@ export type ScreenSchema = {
   label: string
   group: string | null
   icon: string | null
-  /** The registered component that renders it */
-  component: string
+  /** The registered component that renders it; `null` for a form screen */
+  component: string | null
+  /** A form Azu renders (FR-23), instead of a component */
+  form: boolean
 }
 
 export type NavigationGroup = {

@@ -48,6 +48,33 @@ test.group('azu:screen (FR-20)', (group) => {
     command.assertLogMatches(/\/admin\/screens\/sales-report/)
   })
 
+  test('--form writes a form screen and its validator, without a component (FR-23)', async ({
+    assert,
+    fs,
+  }) => {
+    const ace = await createAce(fs)
+    const command = await ace.create(AzuScreen, ['SiteSettings', '--form'])
+    await command.exec()
+    command.assertSucceeded()
+
+    const screen = await fs.contents('app/admin/screens/site_settings.ts')
+    assert.include(screen, `import { defineScreen, field } from '@mezielabs/azu'`)
+    assert.include(screen, `import { siteSettingsValidator } from '#validators/site_settings'`)
+    assert.include(screen, `label: 'Site settings',`)
+    assert.include(screen, `fields: [field.text('title'), field.boolean('enabled')],`)
+    assert.include(screen, `validator: siteSettingsValidator,`)
+    assert.include(screen, `load: () => values,`)
+    assert.notInclude(screen, 'component:')
+
+    const validator = await fs.contents('app/validators/site_settings.ts')
+    assert.include(validator, `export const siteSettingsValidator = vine.create({`)
+    assert.include(validator, `title: vine.string()`)
+    assert.include(validator, `enabled: vine.boolean(),`)
+
+    assert.isFalse(await fs.exists('inertia/admin/components/site_settings.tsx'))
+    command.assertLogMatches(/\/admin\/screens\/site-settings/)
+  })
+
   test("keeps existing files unless --force, and refuses a name that isn't one", async ({
     assert,
     fs,

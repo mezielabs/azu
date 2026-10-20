@@ -49,6 +49,20 @@ const REPORTS = {
     },
   ],
 }
+// A form screen (FR-23), admins only (manageSettings)
+const SETTINGS = {
+  label: 'Settings',
+  items: [
+    {
+      kind: 'screen',
+      name: 'store-settings',
+      label: 'Store settings',
+      icon: 'settings',
+      href: '/admin/screens/store-settings',
+      external: false,
+    },
+  ],
+}
 // An external link: a new tab
 const HELP = {
   label: 'Help',
@@ -80,7 +94,13 @@ test.group('Admin / resources (FR-03)', (group) => {
 
     response.assertStatus(200)
     // In navigation.groups' order (FR-16); the Overview home screen is the first link, not listed
-    assert.deepEqual(response.body().props.azu.navigation, [SALES, CATALOG, REPORTS, HELP])
+    assert.deepEqual(response.body().props.azu.navigation, [
+      SALES,
+      CATALOG,
+      REPORTS,
+      SETTINGS,
+      HELP,
+    ])
     assert.deepEqual(response.body().props.azu.home, {
       name: 'overview',
       label: 'Overview',
@@ -98,7 +118,8 @@ test.group('Admin / resources (FR-03)', (group) => {
     response.assertInertiaPropsContains({
       azu: {
         // CategoryPolicy and OrderPolicy are admin-only, and so are viewOrders
-        // (the Awaiting shipping link) and viewReports (the Sales report)
+        // (the Awaiting shipping link), viewReports (the Sales report) and
+        // manageSettings (Store settings)
         navigation: [
           { label: 'Sales', items: [COUPONS] },
           { label: 'Catalog', items: [CATALOG.items[0]] },

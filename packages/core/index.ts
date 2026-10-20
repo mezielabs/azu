@@ -23,6 +23,10 @@ export {
   defineScreen,
   Screen,
   type ScreenOptions,
+  type ComponentScreenOptions,
+  type FormScreenOptions,
+  type ScreenForm,
+  type ScreenFieldFor,
   type ScreenAbility,
 } from './src/screens/define_screen.ts'
 export type { Azu } from './src/azu.ts'

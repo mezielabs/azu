@@ -53,6 +53,18 @@ export const minDecimal = vine.createRule(
 )
 
 /**
+ * An upper bound for a decimal kept as a string, as `minDecimal`
+ */
+export const maxDecimal = vine.createRule(
+  (value: unknown, options: { max: number }, field: FieldContext) => {
+    if (typeof value !== 'string') return
+    if (Number(value) > options.max) {
+      field.report(messages.max, 'max', field, options)
+    }
+  }
+)
+
+/**
  * A decimal with up to 10 digits and 2 places, as an exact string
  */
 export const decimalString = (min: number) =>

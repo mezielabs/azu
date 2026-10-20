@@ -3,6 +3,7 @@ import {
   AdminLayout,
   Head,
   PageHeader,
+  ScreenForm,
   useComponent,
   type ScreenPageProps,
 } from '@mezielabs/azu-react'
@@ -12,10 +13,31 @@ import {
  * label), a header with the label, then the app's component with
  * `{ data, screen }`. A component no file registers shows an error that
  * names it, rather than a blank page.
+ *
+ * A form screen (FR-23) renders Azu's form instead, laid out as the
+ * resource forms are, with a single "Save changes" button. It submits
+ * to the screen's own URL.
  */
-export default function ScreenPage({ azu, screen, data }: ScreenPageProps) {
-  const Component = useComponent(screen.component)
+export default function ScreenPage({ azu, screen, data, form, errors }: ScreenPageProps) {
+  const Component = useComponent(screen.component ?? undefined)
   const breadcrumbs = [...(screen.group ? [{ label: screen.group }] : []), { label: screen.label }]
+
+  if (form) {
+    return (
+      <AdminLayout azu={azu} title={screen.label}>
+        <div className="azu-form-page" data-azu-screen={screen.name}>
+          <Head title={screen.label} />
+          <PageHeader
+            page="screen"
+            resource={screen.name}
+            title={screen.label}
+            breadcrumbs={breadcrumbs}
+          />
+          <ScreenForm azu={azu} screen={screen} form={form} errors={errors} />
+        </div>
+      </AdminLayout>
+    )
+  }
 
   return (
     <AdminLayout azu={azu} title={screen.label}>
@@ -36,7 +58,7 @@ export default function ScreenPage({ azu, screen, data }: ScreenPageProps) {
             <p>
               The {screen.label} screen uses the {screen.component} component, but no file in
               inertia/admin/components registers it. Add{' '}
-              <code>inertia/admin/components/{componentFile(screen.component)}.tsx</code>.
+              <code>inertia/admin/components/{componentFile(screen.component ?? '')}.tsx</code>.
             </p>
           </div>
         )}

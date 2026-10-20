@@ -40,6 +40,7 @@ test.group('Navigation (FR-16)', (group) => {
       { text: 'Categories', icon: 'folder', svgHidden: 'true', lucide: true },
       { text: 'Tags', icon: 'tag', svgHidden: 'true', lucide: true },
       { text: 'Sales report', icon: 'chart-column', svgHidden: 'true', lucide: true },
+      { text: 'Store settings', icon: 'settings', svgHidden: 'true', lucide: true },
       // An external link (FR-21): its own icon, then the new-tab one
       {
         text: 'Azu documentation (opens in a new tab)',
@@ -52,6 +53,7 @@ test.group('Navigation (FR-16)', (group) => {
       'SALES',
       'CATALOG',
       'REPORTS',
+      'SETTINGS',
       'HELP',
     ])
   })

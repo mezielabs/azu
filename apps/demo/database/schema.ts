@@ -133,6 +133,23 @@ export class ProductSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class SettingSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'key', 'type', 'updatedAt', 'value'] as const
+  $columns = SettingSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare key: string
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare value: string | null
+}
+
 export class TagSchema extends BaseModel {
   static $columns = ['createdAt', 'id', 'name', 'slug', 'updatedAt'] as const
   $columns = TagSchema.$columns

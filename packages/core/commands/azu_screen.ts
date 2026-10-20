@@ -7,15 +7,21 @@ import { stubsRoot } from '../stubs/main.ts'
  * `node ace azu:screen <Name>` (FR-20, spec §7): writes a custom screen
  * to `app/admin/screens/<name>.ts` and its component to
  * `inertia/admin/components/<name>.tsx`, which compile and render as
- * they are.
+ * they are. With `--form` (FR-23), a form screen and its validator in
+ * `app/validators/<name>.ts` instead.
  */
 export default class AzuScreen extends BaseCommand {
   static commandName = 'azu:screen'
-  static description = 'Create a custom admin screen and its component'
+  static description = 'Create a custom admin screen and its component, or a form screen'
   static options: CommandOptions = {}
 
   @args.string({ description: 'The screen, e.g. SalesReport or Overview' })
   declare name: string
+
+  @flags.boolean({
+    description: 'A form Azu renders, with a validator in app/validators, instead of a component',
+  })
+  declare form: boolean
 
   @flags.boolean({ description: 'Overwrite the files if they exist', alias: 'f' })
   declare force: boolean
@@ -36,6 +42,25 @@ export default class AzuScreen extends BaseCommand {
     codemods.overwriteExisting = this.force === true
 
     const values = { name, file, label, component: pascal }
+    if (this.form) {
+      const validator = `${string.camelCase(pascal)}Validator`
+      const screen = await codemods.makeUsingStub(stubsRoot, 'make/screen_form.stub', {
+        ...values,
+        validator,
+        path: this.app.makePath('app/admin/screens', `${file}.ts`),
+      })
+      await codemods.makeUsingStub(stubsRoot, 'make/screen_validator.stub', {
+        ...values,
+        validator,
+        path: this.app.validatorsPath(`${file}.ts`),
+      })
+      if (screen.status !== 'skipped') {
+        this.logger.info(
+          `Open it at /admin/screens/${name}. Its values live in memory until load and save use your storage; give it a narrower ability than accessAdmin for anything sensitive`
+        )
+      }
+      return
+    }
     const screen = await codemods.makeUsingStub(stubsRoot, 'make/screen.stub', {
       ...values,
       path: this.app.makePath('app/admin/screens', `${file}.ts`),
