@@ -60,6 +60,56 @@ async function loaded(page: any) {
 test.group('Widgets', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
+  for (const initialLoad of [false, true]) {
+    test(`an old ${initialLoad ? 'deferred load' : 'range reload'} cannot overwrite the selected range`, async ({
+      visit,
+      browserContext,
+      assert,
+      cleanup,
+    }) => {
+      await store()
+      await browserContext.loginAs(await createUser('admin'))
+      const page = await visit('/admin')
+      await loaded(page)
+      let release!: () => void
+      let captured!: () => void
+      const hold = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const ready = new Promise<void>((resolve) => {
+        captured = resolve
+      })
+      cleanup(() => release())
+      const oldUrl = initialLoad ? '**/admin' : '**/admin?range=7d'
+      await page.route(oldUrl, async (route: any) => {
+        if (route.request().headers()['x-inertia-partial-data'] !== 'widget1')
+          return route.continue()
+        const response = await route.fetch()
+        captured()
+        await hold
+        await route.fulfill({ response })
+      })
+      const switcher = page.getByRole('group', { name: 'Date range' })
+      if (initialLoad) await page.goto('/admin')
+      else await switcher.getByRole('button', { name: '7 days' }).click()
+      await ready
+      const cancelled = page.waitForEvent('requestfailed', {
+        predicate: (request: any) => request.headers()['x-inertia-partial-data'] === 'widget1',
+      })
+      const selected = initialLoad ? '7 days' : '30 days'
+      await switcher.getByRole('button', { name: selected }).click()
+      await cancelled
+      release()
+      await loaded(page)
+      const figure = page.locator('[data-azu-widget="value"]').nth(1).locator('.azu-widget-figure')
+      await figure.filter({ hasText: initialLoad ? /^3$/ : /^13$/ }).waitFor()
+      assert.equal(
+        await switcher.getByRole('button', { name: selected }).getAttribute('aria-pressed'),
+        'true'
+      )
+    })
+  }
+
   test('the Overview renders its widgets and switches range', async ({
     visit,
     browserContext,

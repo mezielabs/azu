@@ -18,6 +18,9 @@ export function RangeSwitch(props: {
 
   function select(range: RangeName) {
     if (range === props.current) return
+    // Deferred loads and retries are async too. Abort the old period before
+    // changing its label, so none of those responses can overwrite the new one.
+    router.cancelAll({ sync: false, prefetch: false })
     router.get(
       withRange(url, range, props.ranges[0]),
       {},
