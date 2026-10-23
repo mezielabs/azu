@@ -73,6 +73,95 @@ async function pageProps(client: any, user: any, url: string) {
 test.group('Admin / widgets (FR-24)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
+  test('partition averages and extrema aggregate omitted records with scope and range intact', async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const customer = await createUser('customer')
+    const other = await createUser('customer')
+    const now = DateTime.now().minus({ hours: 1 })
+    for (const [status, value] of [
+      ['paid', '100.00'],
+      ['pending', '20.00'],
+      ['cancelled', '10.00'],
+      ['cancelled', '10.00'],
+    ] as const) {
+      await placeOrder(customer.id, status, value, now)
+    }
+    await placeOrder(other.id, 'paid', '999.00', now)
+    await placeOrder(customer.id, 'paid', '999.00', now.minus({ days: 400 }))
+    await placeOrder(customer.id, 'shipped', '999.00', now)
+    const scoped = defineResource(Order, {
+      policy: OrderPolicy,
+      query: (query) => query.where('userId', customer.id),
+      columns: [column.decimal('total')],
+    })
+    await withScreen(
+      'partition-aggregates',
+      defineScreen({
+        label: 'Aggregates',
+        ability: accessAdmin,
+        widgets: (['avg', 'min', 'max'] as const).map((operation) =>
+          metric
+            .partition(operation)
+            [operation](scoped, 'total')
+            .groupBy('status')
+            .limit(1)
+            .date('placedAt')
+            .where((query) => query.whereNot('status', 'shipped'))
+        ),
+      }),
+      cleanup
+    )
+    for (const [index, total, omitted] of [
+      [0, '35.00', '13.33'],
+      [1, '10.00', '10.00'],
+      [2, '100.00', '20.00'],
+    ] as const) {
+      const data = await widgetOf(
+        client,
+        admin,
+        `widget${index}`,
+        '/admin/screens/partition-aggregates'
+      )
+      assert.equal(data.total, total)
+      assert.equal(data.rows[0].value, '100.00')
+      assert.equal(data.rows[1].label, 'Other')
+      assert.equal(data.rows[1].value, omitted)
+      assert.equal(data.rows[1].share, Number(omitted) / 100)
+      assert.isNull(data.rows[1].href)
+      for (const row of data.rows) assert.isNull(row.percent)
+    }
+  })
+
+  test('Other includes null grouping keys for non-additive partitions', async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const admin = await createUser('admin')
+    const customer = await createUser('customer')
+    const now = DateTime.now().minus({ hours: 1 })
+    const top = await placeOrder(customer.id, 'paid', '100.00', now)
+    const bottom = await placeOrder(customer.id, 'pending', '10.00', now)
+    await Order.query().where('id', bottom.id).update({ updatedAt: null })
+    await withScreen(
+      'null-partition',
+      defineScreen({
+        label: 'Null keys',
+        ability: accessAdmin,
+        widgets: [metric.partition('Average').avg(orders, 'total').groupBy('updatedAt').limit(1)],
+      }),
+      cleanup
+    )
+    const data = await widgetOf(client, admin, 'widget0', '/admin/screens/null-partition')
+    assert.equal(data.total, '55.00')
+    assert.equal(data.rows[0].value, top.total)
+    assert.equal(data.rows[1].value, '10.00')
+  })
+
   test('the page lists the widgets and the range; their data loads separately', async ({
     client,
     assert,

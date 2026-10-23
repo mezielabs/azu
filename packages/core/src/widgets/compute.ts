@@ -212,8 +212,13 @@ async function resultScale(state: WidgetState): Promise<number | null> {
  * The aggregate on the column, optionally within `bounds`, as an exact
  * decimal string
  */
-async function aggregate(state: WidgetState, bounds: Bounds | null): Promise<string> {
+async function aggregate(
+  state: WidgetState,
+  bounds: Bounds | null,
+  narrow?: (query: ModelQueryBuilderContract<LucidModel>) => void
+): Promise<string> {
   const query = baseQuery(state)
+  narrow?.(query)
   if (bounds && state.dateColumn) withinBounds(query, state, bounds)
   query.clearSelect().clearOrder()
   const model = state.resource!.model
@@ -391,7 +396,10 @@ async function partitionData(
   if (state.aggregate === 'count') query.count('* as value')
   else query[state.aggregate!](`${qualified(model, state.column!)} as value`)
   const scale = await resultScale(state)
-  const results = await query.pojo<{ group_key: unknown; value: unknown }>()
+  const results = await query.pojo<{
+    group_key: string | number | boolean | Date | null
+    value: unknown
+  }>()
   // Largest first; ties in the options' order, then by label, so the
   // rows never swap places between loads or databases
   const options = valueOptions(resource, state.groupBy!)
@@ -403,7 +411,12 @@ async function partitionData(
   const groups = results
     .map((row) => {
       const key = groupKey(row.group_key)
-      return { key, label: valueLabel(options, key), value: decimalResult(row.value, scale) }
+      return {
+        key,
+        rawKey: row.group_key,
+        label: valueLabel(options, key),
+        value: decimalResult(row.value, scale),
+      }
     })
     .sort(
       (a, b) =>
@@ -415,12 +428,25 @@ async function partitionData(
   const limit = state.limit ?? DEFAULT_LIMIT
   const shown = groups.slice(0, limit)
   const rest = groups.slice(limit)
-  const total = addDecimals(groups.map((group) => group.value))
-  const largest = Math.max(
-    0,
-    ...shown.map((group) => Number(group.value)),
-    rest.length ? Number(addDecimals(rest.map((group) => group.value))) : 0
-  )
+  const additive = state.aggregate === 'count' || state.aggregate === 'sum'
+  const bounds = state.dateColumn ? range.bounds : null
+  // Non-additive aggregates must run over the records, not their rounded
+  // group values. Keep original database keys for booleans, dates and nulls.
+  const [total, other] = await Promise.all([
+    additive ? addDecimals(groups.map((group) => group.value)) : aggregate(state, bounds),
+    rest.length === 0
+      ? null
+      : additive
+        ? addDecimals(rest.map((group) => group.value))
+        : aggregate(state, bounds, (omitted) => {
+            const keys = rest.flatMap((group) => (group.rawKey === null ? [] : [group.rawKey]))
+            omitted.where((subset) => {
+              if (keys.length) subset.whereIn(column, keys)
+              if (rest.some((group) => group.rawKey === null)) subset.orWhereNull(column)
+            })
+          }),
+  ])
+  const largest = Math.max(0, ...shown.map((group) => Number(group.value)), Number(other ?? 0))
 
   // Rows link to the list filtered by their value, when the resource can filter by it
   const select = resource
@@ -437,7 +463,7 @@ async function partitionData(
     label,
     value,
     share: largest > 0 ? Number(value) / largest : 0,
-    percent: Number(total) > 0 ? Number(value) / Number(total) : 0,
+    percent: additive ? (Number(total) > 0 ? Number(value) / Number(total) : 0) : null,
     href:
       linkable && select && key !== null && linkFilterValue(resource, select.name, key) !== null
         ? listHref(context.path, resource, { ...filters, [select.name]: key })
@@ -446,7 +472,7 @@ async function partitionData(
 
   const rows = shown.map((group) => row(group.key, group.label, group.value, true))
   if (rest.length > 0) {
-    rows.push(row(null, 'Other', addDecimals(rest.map((group) => group.value)), false))
+    rows.push(row(null, 'Other', other!, false))
   }
   return {
     status: 'ok',

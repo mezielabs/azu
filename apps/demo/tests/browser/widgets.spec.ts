@@ -5,7 +5,10 @@ import { DateTime } from 'luxon'
 import Category from '#models/category'
 import Order from '#models/order'
 import Product from '#models/product'
-import { createUser } from '../functional/admin/helpers.ts'
+import { createUser, withScreen } from '../functional/admin/helpers.ts'
+import { defineScreen, metric } from '@mezielabs/azu'
+import orderResource from '#admin/resources/order_resource'
+import { accessAdmin } from '#abilities/main'
 import { axeViolations } from './axe.ts'
 
 /** Orders over the last two months, and two products low on stock */
@@ -255,6 +258,34 @@ test.group('Widgets', (group) => {
       .locator('[data-azu-widget="table"]')
       .getByRole('link', { name: 'Clay pot' })
       .waitFor()
+  })
+
+  test('average partitions show values without misleading percentages', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await store()
+    await withScreen(
+      'average-partition',
+      defineScreen({
+        label: 'Average order by status',
+        ability: accessAdmin,
+        widgets: [
+          metric.partition('Average order').avg(orderResource, 'total').groupBy('status').limit(1),
+        ],
+      }),
+      cleanup
+    )
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin/screens/average-partition')
+    await loaded(page)
+    const partition = page.locator('.azu-partition')
+    assert.notInclude(await partition.innerText(), '%')
+    assert.equal(await partition.locator('li').count(), 2)
+    assert.include(await partition.innerText(), 'Other')
+    assert.deepEqual(await axeViolations(page), [])
   })
 
   test('the Overview passes axe in both themes, desktop and phone', async ({
