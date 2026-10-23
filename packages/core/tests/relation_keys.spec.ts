@@ -13,6 +13,7 @@ import { selectedRelations } from '../src/list/filters.ts'
 import {
   hasManyColumns,
   manyToManyCount,
+  manyToManyValues,
   manyToManyIds,
   manyToManyReadOnlyReason,
   relationKeys,
@@ -206,6 +207,7 @@ test.group('Custom Lucid relation keys', (group) => {
         pivotTable: 'product_tag',
         pivotForeignKey: 'product_id',
         pivotRelatedForeignKey: 'tag_code',
+        pivotColumns: ['note'],
       })
       declare tags: ManyToMany<typeof Tag>
     }
@@ -221,6 +223,7 @@ test.group('Custom Lucid relation keys', (group) => {
     await db.connection().schema.createTable('product_tag', (table) => {
       table.integer('product_id')
       table.string('tag_code')
+      table.string('note')
     })
     const tag = await Tag.create({ code: 'clay', name: 'Clay' })
     const product = await Product.create({})
@@ -235,15 +238,23 @@ test.group('Custom Lucid relation keys', (group) => {
 
     // Even more than 200 duplicate rows are still one attached key.
     await db.table('product_tag').multiInsert(
-      Array.from({ length: 200 }, () => ({
+      Array.from({ length: 200 }, (_, index) => ({
         product_id: product.id,
         tag_code: tag.code,
+        note: `Attachment ${index}`,
       }))
     )
     const hidden = await Tag.create({ code: 'gift', name: 'Gift' })
-    await other.related('tags').attach([hidden.code])
-    assert.equal(await manyToManyCount(Product, product, 'tags'), 1)
+    await product.related('tags').attach([hidden.code])
+    const unrelated = await Tag.create({ code: 'other', name: 'Other product only' })
+    await other.related('tags').attach([unrelated.code])
+    assert.equal(await manyToManyCount(Product, product, 'tags'), 2)
     assert.isNull(await manyToManyReadOnlyReason(context, Product, tags, product))
+    const values = await manyToManyValues({} as HttpContext, context, Product, tags, product)
+    assert.deepEqual(
+      values.map((item) => item.id),
+      [tag.code, hidden.code]
+    )
     // Duplicates cannot disguise a genuinely hidden key.
     related.options.query = (query) => {
       query.where('tags.code', hidden.code)
