@@ -219,12 +219,12 @@ export type PartitionRow = {
   /** The grouped value; `null` for "Other" and for empty values */
   key: string | null
   label: string
-  /** A count or total, as an exact decimal string */
+  /** The group aggregate, as an exact decimal string */
   value: string
   /** Of the largest row, 0 to 1, for the bar */
   share: number
-  /** Of all rows, 0 to 1 */
-  percent: number
+  /** Share of the total for count/sum; null for averages and extrema */
+  percent: number | null
   /** The filtered list, when the resource has a select filter on the column */
   href: string | null
 }
@@ -262,7 +262,7 @@ export type WidgetData =
       status: 'ok'
       kind: 'partition'
       rows: PartitionRow[]
-      /** All rows together, as an exact decimal string */
+      /** The aggregate over all matching records, as an exact decimal string */
       total: string
       /** What's counted, for "386 orders"; `null` for a total */
       unit: { one: string; other: string } | null
