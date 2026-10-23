@@ -180,10 +180,25 @@ async function scopedAttachments(
     .related(field.name)
     .query()
   resource?.options.query?.(query)
-  if (title) query.orderBy(columnName(keys.related, title), 'asc')
-  const related = (await query
-    .orderBy(columnName(keys.related, keys.related.primaryKey), 'asc')
-    .limit(MANY_TO_MANY_LIMIT)) as LucidRow[]
+  const primary = `${keys.related.table}.${columnName(keys.related, keys.related.primaryKey)}`
+  const label = title ? `${keys.related.table}.${columnName(keys.related, title)}` : null
+  // Group only scalar record keys/titles before applying the limit. An
+  // aggregate keeps Lucid from adding pivot metadata to this selection;
+  // differing pivot rows must not count as different picker records.
+  const columns = label ? [primary, label] : [primary]
+  query.clearSelect().select(columns).groupBy(columns).count('* as attachment_rows').clearOrder()
+  if (label) query.orderBy(label, 'asc')
+  const selected = (await query.orderBy(primary, 'asc').limit(MANY_TO_MANY_LIMIT)) as LucidRow[]
+  if (selected.length === 0) return []
+
+  // Fetch full models for per-record policies on the same connection. Grouping
+  // is limited to scalar keys/titles: full records can contain JSON columns.
+  const records = keys.related.query({ client: query.client }).whereIn(
+    primary,
+    selected.map((item) => item.$primaryKeyValue as string | number)
+  )
+  if (label) records.orderBy(label, 'asc')
+  const related = await records.orderBy(primary, 'asc')
 
   return related
 }
