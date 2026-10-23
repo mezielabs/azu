@@ -16,6 +16,7 @@ export const ACCESS_ABILITY = 'accessAdmin'
 type AccessContext = {
   auth?: { use(guard?: string): { check(): Promise<boolean> } }
   bouncer?: { allows(ability: string): Promise<boolean> }
+  session?: { setIntendedUrl(url: string): void }
 }
 
 /**
@@ -35,7 +36,7 @@ export class AdminAccessMiddleware {
   constructor(protected config: AzuConfig) {}
 
   async handle(ctx: HttpContext, next: NextFn) {
-    const { auth, bouncer } = ctx as HttpContext & AccessContext
+    const { auth, bouncer, session } = ctx as HttpContext & AccessContext
 
     if (!auth) {
       ctx.logger.warn('Azu denied admin access: @adonisjs/auth is not set up for this request')
@@ -43,6 +44,16 @@ export class AdminAccessMiddleware {
     }
 
     if (!(await auth.use(this.config.guard).check())) {
+      // Remember navigations, never writes or background widget reloads.
+      // The host app consumes this after successful authentication.
+      if (
+        session &&
+        ctx.request.method() === 'GET' &&
+        (!ctx.request.ajax() || ctx.request.header('x-inertia')) &&
+        !ctx.request.header('x-inertia-partial-data')
+      ) {
+        session.setIntendedUrl(ctx.request.url(true))
+      }
       if (ctx.request.header('x-inertia')) {
         return ctx.inertia.location(this.config.loginUrl)
       }

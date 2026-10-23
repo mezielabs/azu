@@ -75,7 +75,7 @@ export const accessAdmin = Bouncer.ability((user: User) => {
 
 If you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` to add the ability. Without Bouncer, Azu denies everyone.
 
-Note: Azu uses your app's existing auth guard. Guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403.
+Note: Azu uses your app's existing auth guard. Guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403. With session middleware installed, Azu remembers the requested admin URL, including its query string, for guest GET navigations. After successful login, consume `session.pullIntendedUrl()` and validate that it is a local path. For Inertia login submissions, return `inertia.location(destination)` so the browser loads Azu's separate entry point; for ordinary submissions, redirect to it. If no valid destination is saved, redirect to your own fallback route (the demo uses `dashboard`). Failed logins keep the destination; destination authorization still applies. The demo also validates that the saved destination is a local path before redirecting. Background partial reloads and writes do not replace it.
 
 ## Quick start
 
