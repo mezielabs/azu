@@ -1997,6 +1997,7 @@
   .azu-widget {
     @apply relative flex min-w-0 flex-col gap-1.5 rounded-xl border px-[18px] py-4;
     grid-column: span 1;
+    container-type: inline-size;
     border-color: var(--azu-border);
     background: var(--azu-surface);
   }
@@ -2067,11 +2068,14 @@
   }
 
   .azu-widget-figure {
-    @apply m-0 text-[28px] leading-tight font-semibold tracking-tight;
+    @apply m-0 leading-tight font-semibold tracking-tight;
+    font-size: clamp(1.125rem, 10cqi, 1.75rem);
+    word-break: break-all;
     font-variant-numeric: tabular-nums;
   }
 
   .azu-widget-delta {
+    overflow-wrap: anywhere;
     @apply m-0 text-[13px];
     color: var(--azu-muted);
     font-variant-numeric: tabular-nums;
