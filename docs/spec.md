@@ -217,6 +217,7 @@ How an action runs (FR-12):
 
 The access gate runs on every admin route, after the admin root view is set up:
 
+- With session middleware, guest GET navigations save their intended local URL and query string using the session package; writes and background partial reloads do not replace it. The host login flow consumes the destination after authentication with a fallback route, and the destination still checks authorization.
 - Guests get a 302 to `loginUrl`. Inertia visits get a 409 location response instead, so the browser loads the app's login page rather than rendering it inside the admin app.
 - Signed-in users must pass `accessAdmin`, or they get a 403 and the `azu/errors/forbidden` page.
 - It fails closed. Without auth, without Bouncer, or without an `accessAdmin` ability, everyone is denied. The reason is logged for the developer, never shown to the user.
