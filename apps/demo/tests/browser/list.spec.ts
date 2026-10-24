@@ -139,10 +139,10 @@ test.group('List page', (group) => {
     await cards.waitFor()
     assert.equal(await page.locator('.azu-table-container').count(), 0)
     await cards.getByRole('link', { name: /Pot 30/ }).waitFor()
-    // No "30 products" box: the cards follow the controls
+    // No summary box: the cards follow the mobile sorting/selection controls
     assert.equal(await page.locator('.azu-list-summary').count(), 0)
-    const controls = (await page.locator('.azu-list-controls').boundingBox())!
-    assert.approximately((await cards.boundingBox())!.y, controls.y + controls.height, 1)
+    const controls = (await page.locator('.azu-mobile-list-controls').boundingBox())!
+    assert.approximately((await cards.boundingBox())!.y, controls.y + controls.height + 12, 1)
 
     // The New button is a 44px icon button with its name for screen readers
     const create = page.getByRole('link', { name: 'New product' })

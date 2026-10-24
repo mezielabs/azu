@@ -1675,6 +1675,33 @@
     outline-color: var(--azu-surface);
   }
 
+  .azu-mobile-list-controls {
+    @apply mb-3 flex flex-wrap items-end gap-3;
+  }
+
+  .azu-mobile-sort {
+    @apply flex min-w-0 flex-1 flex-col gap-1 text-sm;
+  }
+
+  .azu-mobile-list-controls .azu-button,
+  .azu-mobile-list-controls .azu-input {
+    @apply min-h-11;
+  }
+
+  .azu-card-selection {
+    @apply ml-1 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg;
+  }
+
+  .azu-card-selection input {
+    @apply h-5 w-5;
+    accent-color: var(--azu-brand);
+  }
+
+  .azu-card-selection:focus-within {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 2px;
+  }
+
   /* Rows as cards: the list below 768px */
 
   .azu-card {
@@ -1767,6 +1794,19 @@
   }
 
   @media (max-width: 767px) {
+    .azu-list-bar.azu-bulk-bar {
+      @apply flex-wrap gap-y-2 rounded-lg p-3;
+    }
+
+    .azu-bulk-bar .azu-bulk-action,
+    .azu-bulk-bar .azu-bulk-link {
+      @apply inline-flex min-h-11 items-center;
+    }
+
+    .azu-bulk-bar > .azu-bulk-link:not(.azu-bulk-clear) {
+      @apply whitespace-normal;
+    }
+
     .azu-new-button {
       @apply h-11 w-11 justify-center p-0;
     }
