@@ -302,3 +302,5 @@ Newest at the bottom. Each entry: date, decision, why.
   - **Try again reloads one widget.** A failed card offers it, and it asks for that widget's prop alone, so the others keep what they have. Retrying the whole page would reload every widget to fix one.
   - **Table widgets scroll in the list table's own container,** which already had `overflow-x: auto`: the Recent orders table was wider than its card, and macOS's hidden scrollbars made it look cut off. The demo shows four of its columns, which fit at 1440px, and its table loses its own border inside the card.
   - **Demo grid:** a "Cancelled orders" value widget (lower is better) sits with the goal beside Orders by status, so every row is full at four columns and at two.
+
+- **2026-10-24 · Custom fields expose required state (U04).** `FieldProps.field.required` is an optional additive type hint for metadata already passed at runtime. The demo and README SKU input use a stable React ID to associate label and errors, native required semantics and the same visible asterisk as built-in fields. Uppercasing and server validation are unchanged.
