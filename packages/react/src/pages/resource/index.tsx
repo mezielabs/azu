@@ -102,7 +102,9 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         row.abilities.update ? `${path}/${encodeURIComponent(String(row.id))}/edit` : undefined
       }
       className={className}
-      onAction={(action) => actions.run(action, { ids: [row.id] })}
+      onAction={(action) =>
+        actions.run(action, { ids: [row.id] }, row.title ?? `${resource.singularLabel} ${row.id}`)
+      }
     />
   )
   const selecting = selected.length > 0

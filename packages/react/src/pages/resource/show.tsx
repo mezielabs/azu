@@ -72,7 +72,8 @@ export default function ResourceShow({
   )
   const narrow = useMediaQuery(COMPACT_QUERY)
   const split = splitActions(rowActions, { narrow })
-  const run = (action: (typeof rowActions)[number]) => actions.run(action, { ids: [record.id] })
+  const run = (action: (typeof rowActions)[number]) =>
+    actions.run(action, { ids: [record.id] }, name)
 
   const layout = detailLayout(fields, resource.columns)
   // The row the list would have, for column cells (the fallback, the badge)
