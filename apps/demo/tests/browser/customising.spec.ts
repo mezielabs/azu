@@ -23,7 +23,7 @@ test.group('Customising (FR-15)', (group) => {
     const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-custom' })
 
     const page = await visit('/admin/resources/products/create')
-    const sku = page.getByLabel('SKU', { exact: true })
+    const sku = page.getByRole('textbox', { name: 'SKU', exact: true })
     await sku.fill('pot-ab12')
     assert.equal(await sku.inputValue(), 'POT-AB12')
 
@@ -38,6 +38,32 @@ test.group('Customising (FR-15)', (group) => {
 
     const product = await Product.findByOrFail('sku', 'POT-AB12')
     assert.equal(product.categoryId, category.id)
+  })
+
+  test('SkuInput announces required state and its validation error', async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin/resources/products/create')
+    const sku = page.getByRole('textbox', { name: 'SKU', exact: true })
+    await sku.waitFor()
+    assert.isTrue(await sku.evaluate((input: any) => input.required))
+    const id = await sku.getAttribute('id')
+    assert.isNotNull(id)
+    const field = page.locator('[data-azu-field="sku"]')
+    assert.equal(await field.locator('.azu-required').getAttribute('aria-hidden'), 'true')
+    await sku.focus()
+    await sku.press('Tab')
+    await page.click('form button[type="submit"]')
+    await field.locator('.azu-field-error').waitFor()
+    assert.equal(await sku.getAttribute('aria-invalid'), 'true')
+    assert.equal(await sku.getAttribute('id'), id)
+    const errorId = await field.locator('.azu-field-error').getAttribute('id')
+    assert.equal(await sku.getAttribute('aria-describedby'), errorId)
+    assert.match(await field.locator('.azu-field-error').innerText(), /required/i)
+    assert.deepEqual(await axeViolations(page), [])
   })
 
   test('StockBar renders the stock cell', async ({ visit, browserContext }) => {
@@ -182,7 +208,7 @@ test.group('Customising (FR-15)', (group) => {
     assert.isBelow(await layoutShift(list), 0.01)
 
     const form = await visit('/admin/resources/products/create')
-    await form.getByLabel('SKU', { exact: true }).waitFor()
+    await form.getByRole('textbox', { name: 'SKU', exact: true }).waitFor()
     assert.sameMembers(await loaded(form), ['sku_input.tsx'])
     assert.equal(await form.locator('.azu-placeholder').count(), 0)
     assert.isBelow(await layoutShift(form), 0.01)
