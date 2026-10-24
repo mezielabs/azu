@@ -23,7 +23,7 @@ const ActionDialog = lazy(async () => ({
  */
 export type ActionTarget = { ids: (string | number)[] } | { matching: MatchingRows }
 
-type Pending = { action: ActionSchema; target: ActionTarget }
+type Pending = { action: ActionSchema; target: ActionTarget; recordTitle?: string }
 
 /**
  * Runs a resource's actions (FR-12): opens the confirm dialog when the
@@ -65,9 +65,9 @@ export function useActions(options: {
     }
   }
 
-  function run(action: ActionSchema, target: ActionTarget) {
+  function run(action: ActionSchema, target: ActionTarget, recordTitle?: string) {
     setErrors({})
-    const next = { action, target }
+    const next = { action, target, recordTitle }
     if ('matching' in target || action.confirm || action.fields.length > 0) setPending(next)
     else void execute(next)
   }
@@ -77,6 +77,7 @@ export function useActions(options: {
       <ActionDialog
         key={`${pending.action.kind}.${pending.action.name}`}
         action={pending.action}
+        recordTitle={pending.recordTitle}
         count={'ids' in pending.target ? pending.target.ids.length : pending.target.matching.count}
         matching={'matching' in pending.target}
         noun={{

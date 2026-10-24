@@ -17,6 +17,8 @@ export function ActionDialog(props: {
   action: ActionSchema
   /** Records it will run on */
   count: number
+  /** Display context for a single row, never submitted as action input. */
+  recordTitle?: string
   /** It runs on every matching row (FR-17), not a selection */
   matching?: boolean
   noun: { one: string; many: string }
@@ -51,6 +53,14 @@ export function ActionDialog(props: {
     : count === 1
       ? `1 ${props.noun.one}`
       : `${total} ${props.noun.many}`
+  // "delete" is reserved for Azu's built-in permanent deletion.
+  const deleting = action.name === 'delete'
+  const deleteTarget =
+    action.kind === 'row' && props.recordTitle
+      ? `“${props.recordTitle}”`
+      : props.matching
+        ? target
+        : `${total} selected ${count === 1 ? props.noun.one : props.noun.many}`
   // A run in more than one chunk can partly succeed: say so up front
   const note = props.matching ? chunkedRunNote(count) : null
 
@@ -68,11 +78,19 @@ export function ActionDialog(props: {
               {action.label}
             </Heading>
             <p className="azu-dialog-body">
-              {action.confirm ?? `${action.label} ${target}?`}
-              {action.kind === 'bulk' && action.confirm && (
+              {deleting
+                ? `Delete ${deleteTarget}?`
+                : (action.confirm ?? `${action.label} ${target}?`)}
+              {!deleting && action.kind === 'bulk' && action.confirm && (
                 <span className="azu-dialog-count"> ({target})</span>
               )}
             </p>
+            {deleting && (
+              <p className="azu-dialog-body">
+                This permanently deletes {count === 1 ? 'the record' : 'these records'} and cannot
+                be undone.
+              </p>
+            )}
             {note && <p className="azu-dialog-body azu-dialog-note">{note}</p>}
             {action.fields.length > 0 && (
               <Suspense fallback={null}>
