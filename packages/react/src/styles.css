@@ -2502,3 +2502,57 @@
     white-space: nowrap;
   }
 }
+
+/* Touch controls: keep the compact desktop layout for precise pointers. */
+@layer components {
+  @media (pointer: coarse), (max-width: 767px) {
+    .azu-input:not(.azu-textarea),
+    .azu-save-actions .azu-button,
+    .azu-button,
+    .azu-date-button,
+    .azu-combobox-button,
+    .azu-tag-remove,
+    .azu-page-button,
+    .azu-toast-close,
+    .azu-radio,
+    .azu-switch,
+    .azu-option,
+    .azu-menu-item {
+      min-height: 44px;
+    }
+
+    .azu-button,
+    .azu-date-button,
+    .azu-combobox-button,
+    .azu-tag-remove,
+    .azu-page-button,
+    .azu-toast-close {
+      min-width: 44px;
+    }
+
+    .azu-radio,
+    .azu-switch {
+      gap: 12px;
+    }
+
+    .azu-option,
+    .azu-menu-item {
+      padding-block: 12px;
+    }
+
+    .azu-field .azu-date-group {
+      padding-block: 0;
+    }
+
+    .azu-date-input {
+      min-height: 44px;
+      align-items: center;
+    }
+
+    .azu-calendar-cell {
+      height: 44px;
+      /* Seven dates must still fit the popover on the narrowest phones. */
+      width: min(44px, calc((100vw - 52px) / 7));
+    }
+  }
+}
