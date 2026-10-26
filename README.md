@@ -114,6 +114,20 @@ The **Columns** control, beside the list's filters (beside Sort by on phones), s
 
 On phones, a card shows two details by default. Once columns are chosen, it shows every chosen one, each on its own line. Hiding a column is a presentation choice, not an authorisation rule: the server still decides which columns exist.
 
+## Form sections
+
+Use `.section('Details')` on a field to group resource, screen, or action form fields under a heading:
+
+```ts
+fields: [
+  field.text('name').section('Details'),
+  field.text('sku').section('Details'),
+  field.decimal('price').section('Pricing'),
+]
+```
+
+Groups follow the first appearance of each heading; fields keep declaration order within their group. Fields without a section form an unheaded group. Blank headings reset a field to that group. Groups only exist when they contain visible, authorized fields. Headings stay visible, fields stack on phones, and validation focuses the first invalid control in displayed order. Ungrouped forms keep their existing layout; detail pages are unchanged.
+
 ## Resources
 
 A resource is one file that points at a Lucid model and borrows its policy and validators:

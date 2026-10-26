@@ -10,6 +10,7 @@ import {
 } from '@mezielabs/azu/shared'
 import type { FieldValue, FormErrors, RelationValue, ResourceFormData } from '@mezielabs/azu/types'
 import { showToast } from '../toast.tsx'
+import { FormSections } from './form_sections.tsx'
 import { FormField } from './form_field.tsx'
 import { UnsavedChanges } from './unsaved_changes.tsx'
 
@@ -196,21 +197,23 @@ export function ResourceForm(props: {
       )}
       {/* Short fields pair up side by side on a wide form */}
       <div className="azu-form-body">
-        {form.fields.map((field) => (
-          <div key={field.name} className="azu-form-cell" data-azu-width={fieldWidth(field)}>
-            <FormField
-              field={field}
-              value={values[field.name] ?? null}
-              onChange={(value) => {
-                setValues((current) => ({ ...current, [field.name]: value }))
-                setEdited((current) => new Set(current).add(field.name))
-              }}
-              errors={shownErrors(field.name, field.input)}
-              timezone={timezone}
-              values={values}
-            />
-          </div>
-        ))}
+        <FormSections fields={form.fields}>
+          {(field) => (
+            <div key={field.name} className="azu-form-cell" data-azu-width={fieldWidth(field)}>
+              <FormField
+                field={field}
+                value={values[field.name] ?? null}
+                onChange={(value) => {
+                  setValues((current) => ({ ...current, [field.name]: value }))
+                  setEdited((current) => new Set(current).add(field.name))
+                }}
+                errors={shownErrors(field.name, field.input)}
+                timezone={timezone}
+                values={values}
+              />
+            </div>
+          )}
+        </FormSections>
       </div>
       {/* Stays at the bottom of the window while the form scrolls */}
       <div className="azu-save-bar">
