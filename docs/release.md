@@ -6,6 +6,10 @@ The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early test
 
 Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval or access
 
+## Language scope
+
+The preview ships an English built-in UI. There is no panel-wide locale or translation catalog, and the built-in strings do not pass through AdonisJS i18n. Supplied labels and validation messages can use the app's wording. Release notes must not claim full localization or translation-ready UI; that integration remains deferred.
+
 ## 1. Version and tag
 
 - ⬜ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm publish` rewrites to `^0.1.0-preview.0`.
