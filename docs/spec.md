@@ -549,3 +549,7 @@ For each: what works, what doesn't, the recommended approach, and any spec chang
 - Does the free core include read-only CSV export? (Currently Pro.)
 - Design the React component contract so a Vue front end can follow later without changing resource definitions.
 - ~~Which headless component library and rich text editor version to standardise on.~~ Closed 2026-10-12: React Aria Components (including its table) and Tiptap 3 as a lazily loaded optional peer, pending the week-one check in §11. See `docs/decisions.md`.
+
+### Resource list column visibility (U09)
+
+Resource lists provide a Columns selector and Reset to defaults. The selector uses only the current server schema, applies `hiddenByDefault` initially, and keeps at least one column visible (the first declared column if every default is hidden). Choices survive the list's partial reloads for search, filters, sort and paging; a full reload or leaving the list resets them. No browser storage or cross-user preference is created. A stale choice is intersected with the current schema. Phone cards show every visible detail on separate lines; embedded tables/cards retain their defaults. Column visibility is presentation, never authorization.

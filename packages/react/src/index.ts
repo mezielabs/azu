@@ -82,3 +82,4 @@ export type {
   ListFilter,
   ActionSchema,
 } from '@mezielabs/azu/types'
+export { ColumnVisibility } from './components/list/column_visibility.tsx'

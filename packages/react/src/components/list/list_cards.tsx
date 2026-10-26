@@ -15,6 +15,8 @@ export function ListCards(props: {
   label: string
   columns: ColumnSchema[]
   titleColumn: string | null
+  /** Render every visible detail when column visibility is user-controlled. */
+  showAllDetails?: boolean
   rows: ListRow[]
   timezone: string
   rowHref?: (row: ListRow) => string | undefined
@@ -36,7 +38,7 @@ export function ListCards(props: {
   const badge = visible.find((column) => column.kind === 'badge')
   const details = visible
     .filter((column) => column !== image && column !== title && column !== badge)
-    .slice(0, 2)
+    .slice(0, props.showAllDetails ? undefined : 2)
 
   if (props.rows.length === 0) {
     return <div className="azu-table-empty azu-list-cards">{props.emptyState ?? 'No records'}</div>
@@ -101,7 +103,9 @@ export function ListCards(props: {
                 {body}
               </Link>
             ) : (
-              <div className="azu-card-link">{body}</div>
+              <div className="azu-card-link">
+                {body}
+              </div>
             )}
             {!props.selection && props.rowMenu?.(row)}
           </li>

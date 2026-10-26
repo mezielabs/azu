@@ -108,6 +108,12 @@ Azu reads the model's columns, casts, and relationships, then writes `app/admin/
 
 The generated resource is a starting point. Open it and adjust what's wrong.
 
+## List columns
+
+The **Columns** control on resource lists lets administrators show or hide columns, including those marked `.hiddenByDefault()`, and reset to the resource defaults. At least one column remains visible. Choices stay while sorting, filtering, searching and paging on the current list; a full reload or leaving the list resets them. They are not stored in the browser or shared between users.
+
+Phone cards show every selected detail column on separate lines. The selector only offers columns present in the server-provided schema; visibility choices cannot recover omitted data. Hiding a column is a presentation preference, not an authorization rule.
+
 ## Resources
 
 A resource is one file that points at a Lucid model and borrows its policy and validators:

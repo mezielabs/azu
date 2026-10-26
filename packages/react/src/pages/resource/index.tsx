@@ -1,7 +1,8 @@
 import { router } from '@inertiajs/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   actionKey,
+  visibleListColumns,
   splitActions,
   bulkActionsFor,
   listStateUrl,
@@ -14,6 +15,7 @@ import {
 } from '@mezielabs/azu/shared'
 import {
   ActionsMenu,
+  ColumnVisibility,
   AdminLayout,
   DataTable,
   FilterBar,
@@ -55,6 +57,12 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const [cleared, setCleared] = useState(0)
   const table = useRef<HTMLElement>(null)
   const path = `${azu.path}/resources/${resource.name}`
+  const [columnChoice, setColumnChoice] = useState<{ path: string; names: string[] } | null>(null)
+  const columns = useMemo(
+    () =>
+      visibleListColumns(resource.columns, columnChoice?.path === path ? columnChoice.names : null),
+    [resource.columns, columnChoice, path]
+  )
   const slot = { resource, page: 'index', record: null, path } as const
 
   const actions = useActions({
@@ -186,6 +194,11 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         actions={
           <>
             <Slot name="toolbar" {...slot} />
+            <ColumnVisibility
+              columns={resource.columns}
+              visible={columns.map((column) => column.name)}
+              onChange={(names) => setColumnChoice(names === null ? null : { path, names })}
+            />
             {abilities.create && (
               <Link
                 href={`${path}/create`}
@@ -296,7 +309,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         {phone ? (
           <ListCards
             label={resource.label}
-            columns={resource.columns}
+            columns={columns}
+            showAllDetails
             titleColumn={resource.title}
             rows={list.rows}
             timezone={azu.timezone}
@@ -309,7 +323,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
           <div className="azu-list-table">
             <DataTable
               label={resource.label}
-              columns={resource.columns}
+              columns={columns}
               titleColumn={resource.title}
               rows={list.rows}
               state={list.state}
