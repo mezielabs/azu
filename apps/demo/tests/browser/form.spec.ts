@@ -26,7 +26,7 @@ async function product() {
 test.group('Form page', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('short fields pair up on a wide form, and stack on a phone', async ({
+  test('sections keep short field widths and stack on a phone', async ({
     visit,
     browserContext,
     assert,
@@ -39,12 +39,20 @@ test.group('Form page', (group) => {
     const box = async (name: string) =>
       (await page.locator(`[data-azu-field="${name}"]`).first().boundingBox())!
     const name = await box('name')
-    let sku = await box('sku')
-    let price = await box('price')
-    // SKU (40 characters) and price share a row; the name takes it all
-    assert.equal(Math.round(sku.y), Math.round(price.y))
-    assert.isAbove(price.x, sku.x + sku.width - 1)
-    assert.approximately(name.width, sku.width + price.width, 24)
+    let category = await box('category')
+    let status = await box('status')
+    // Category and status are short, but tags between them take a full row.
+    // Fields in different sections never share a row.
+    assert.isAbove(status.y, category.y)
+    assert.approximately(status.x, category.x, 1)
+    assert.approximately(name.width, category.width * 2, 24)
+    assert.deepEqual(await page.locator('.azu-form-section > h2').allTextContents(), [
+      'Details',
+      'Pricing',
+      'Organisation',
+      'Media',
+    ])
+    await page.getByRole('region', { name: 'Pricing', exact: true }).getByLabel('Price').waitFor()
     // The form keeps to its reading width
     const form = (await page.locator('.azu-form-body').boundingBox())!
     assert.isAtMost(form.width, 760)
@@ -52,12 +60,13 @@ test.group('Form page', (group) => {
     assert.equal(await page.locator('[data-azu-field="price"] .azu-affix').innerText(), 'NGN')
 
     await page.setViewportSize({ width: 390, height: 844 })
-    sku = await box('sku')
-    price = await box('price')
-    assert.isAtLeast(price.y, sku.y + sku.height)
+    category = await box('category')
+    status = await box('status')
+    assert.isAtLeast(status.y, category.y + category.height)
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme })
       assert.deepEqual(await axeViolations(page), [], `phone form, ${colorScheme}`)
+      await page.screenshot({ path: `/private/tmp/azu-u08-${colorScheme}.png`, fullPage: true })
     }
   })
 
@@ -91,6 +100,11 @@ test.group('Form page', (group) => {
     await page.locator('[data-azu-field="price"] input').fill('-5')
     await bar.getByRole('button', { name: 'Save changes' }).click()
     await page.locator('[data-azu-field="price"] input[aria-invalid="true"]').waitFor()
+    assert.isTrue(
+      await page
+        .locator('[data-azu-field="price"] input')
+        .evaluate((input: any) => input === input.ownerDocument.activeElement)
+    )
     // The demo's validator names the field by its label
     await page
       .locator('[data-azu-field="price"] .azu-field-error')

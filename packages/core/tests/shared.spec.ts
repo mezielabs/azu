@@ -38,6 +38,7 @@ import {
   withPageParam,
   fieldWidth,
   formStatus,
+  formSections,
   type ListState,
 } from '../shared.ts'
 import type { ActionSchema, FormFieldSchema, ListRow } from '../src/schema.ts'
@@ -659,5 +660,31 @@ test.group('After a save (layout 4/4)', () => {
       assert.equal(afterSave(value, 'create'), 'show', String(value))
       assert.equal(afterSave(value, 'edit'), 'show', String(value))
     }
+  })
+})
+
+test.group('Form sections', () => {
+  test('groups in first-appearance order and preserves field order, including unheaded fields', ({
+    assert,
+  }) => {
+    const fields = [
+      { name: 'name', section: 'Details' },
+      { name: 'notes' },
+      { name: 'price', section: 'Pricing' },
+      { name: 'sku', section: 'Details' },
+      { name: 'extra', section: '  ' },
+    ]
+    assert.deepEqual(
+      formSections(fields).map((group) => ({
+        heading: group.heading,
+        names: group.fields.map((field) => field.name),
+      })),
+      [
+        { heading: 'Details', names: ['name', 'sku'] },
+        { heading: null, names: ['notes', 'extra'] },
+        { heading: 'Pricing', names: ['price'] },
+      ]
+    )
+    assert.deepEqual(formSections([]), [])
   })
 })

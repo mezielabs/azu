@@ -48,3 +48,15 @@ export function formStatus(state: { dirty: boolean; invalid: number }): string |
   }
   return parts.length > 0 ? parts.join(' · ') : null
 }
+
+/** Group visible form fields by heading in first-appearance order, preserving field order within each group. */
+export function formSections<T extends { section?: string | null }>(fields: readonly T[]) {
+  const groups = new Map<string | null, T[]>()
+  for (const field of fields) {
+    const heading = field.section?.trim() || null
+    const group = groups.get(heading)
+    if (group) group.push(field)
+    else groups.set(heading, [field])
+  }
+  return [...groups].map(([heading, items]) => ({ heading, fields: items }))
+}

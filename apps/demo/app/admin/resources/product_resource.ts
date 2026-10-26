@@ -1,7 +1,7 @@
 /**
  * The README's Product resource, verbatim apart from the actions (from
  * the README's "Actions" section, plus a restock action), validator metadata (from its
- * "Validation" section), a boolean filter, and the thumbnail's disk: the README stores it
+ * "Validation" section), named form sections, a boolean filter, and the thumbnail's disk: the README stores it
  * on S3, the demo on Drive's default local disk so it runs offline.
  * Loaded by convention from app/admin/resources.
  */
@@ -42,15 +42,18 @@ export default defineResource(Product, {
   ],
 
   fields: [
-    field.text('name'),
+    field.text('name').section('Details'),
     // From the README's "Customising" section: inertia/admin/components/sku_input.tsx
-    field.text('sku').component('SkuInput'),
-    field.decimal('price').min(0),
-    field.belongsTo('category').searchable('name'),
-    field.manyToMany('tags').searchable('name'),
-    field.select('status').options({ draft: 'Draft', published: 'Published' }),
-    field.richText('description'),
-    field.image('thumbnail').maxSize('2mb'),
+    field.text('sku').section('Details').component('SkuInput'),
+    field.decimal('price').section('Pricing').min(0),
+    field.belongsTo('category').section('Organisation').searchable('name'),
+    field.manyToMany('tags').section('Organisation').searchable('name'),
+    field
+      .select('status')
+      .section('Organisation')
+      .options({ draft: 'Draft', published: 'Published' }),
+    field.richText('description').section('Media'),
+    field.image('thumbnail').section('Media').maxSize('2mb'),
   ],
 
   filters: [
@@ -82,7 +85,10 @@ export default defineResource(Product, {
     action
       .row('restock')
       .ability('restock')
-      .fields([field.number('quantity').help('Added to the current stock')], restockValidator)
+      .fields(
+        [field.number('quantity').section('Stock adjustment').help('Added to the current stock')],
+        restockValidator
+      )
       .handle(async (product, { input }) => {
         product.stock += input.quantity
         await product.save()
