@@ -576,14 +576,13 @@ async function trendData(
   const resource = state.resource!
   const unit = trendUnit(state, range.name)
   const buckets = bucketBounds(unit, range.bounds, context.timezone)
+  const previousBuckets = state.compare
+    ? bucketBounds(unit, range.bounds.previous, context.timezone)
+    : null
   const [values, previous] = await Promise.all([
     bucketValues(state, buckets, range.bounds),
-    state.compare
-      ? bucketValues(
-          state,
-          bucketBounds(unit, range.bounds.previous, context.timezone),
-          range.bounds.previous
-        )
+    previousBuckets
+      ? bucketValues(state, previousBuckets, range.bounds.previous)
       : Promise.resolve(null),
   ])
 
@@ -608,6 +607,8 @@ async function trendData(
     value: values[index],
     // Aligned by position: the nth bucket of each period
     previous: previous ? (previous[index] ?? zero) : null,
+    previousStart: previousBuckets?.[index]?.start.toISO() ?? null,
+    previousEnd: previousBuckets?.[index]?.end.toISO() ?? null,
     href:
       dateRange && unit !== 'hour'
         ? listHref(context.path, resource, { ...filters, [dateRange.name]: days(bucket) })

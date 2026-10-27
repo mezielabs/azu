@@ -46,7 +46,19 @@ test.group('Trends', (group) => {
     const box = await plot.boundingBox()
     await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2)
     await tooltip.waitFor()
-    assert.match(await tooltip.innerText(), /^\w{3} \d{1,2} \w{3}\nNGN[\s\S]+\nPrevious: NGN/)
+    // The previous line names its own bucket: the same day 30 days before
+    assert.match(
+      await tooltip.innerText(),
+      /^\w{3} \d{1,2} \w{3}\nNGN[\s\S]+\nPrevious \(\w{3} \d{1,2} \w{3}\): NGN/
+    )
+    // The y axis writes the currency as the cards and the tooltip do
+    const axis: string[] = await plot
+      .locator('svg text.azu-trend-axis:not(.azu-trend-x)')
+      .evaluateAll((texts: any[]) => texts.map((text) => text.textContent))
+    assert.isTrue(
+      axis.every((text: string) => /^NGN\s[\d.]+K?$/.test(text)),
+      axis.join(', ')
+    )
     await page.mouse.move(0, 0)
     await tooltip.waitFor({ state: 'detached' })
 
@@ -63,10 +75,13 @@ test.group('Trends', (group) => {
     await page.keyboard.press('End')
     assert.match(await tooltip.innerText(), new RegExp(`^${today}`))
     // Said to screen readers too
+    const monthAgo = DateTime.now().minus({ days: 30 }).toFormat('ccc d LLL')
     assert.match(
       await plot.locator('[aria-live="polite"]').innerText(),
-      new RegExp(`^${today}: NGN`)
+      new RegExp(`^${today}: NGN[\\s\\d,.]+\\. Previous \\(${monthAgo}\\): NGN`)
     )
+    // ...and so does the tooltip
+    assert.match(await tooltip.innerText(), new RegExp(`\\nPrevious \\(${monthAgo}\\): NGN`))
     // The image's label sums it up
     assert.match(
       (await plot.locator('svg').getAttribute('aria-label'))!,
@@ -90,7 +105,7 @@ test.group('Trends', (group) => {
     for (let index = 0; index < 7; index++) {
       const text = await plot.locator('.azu-trend-tooltip').innerText()
       const lines = text.split('\n')
-      fromChart.push(`${lines[0]} ${lines[1]} ${lines[2].replace('Previous: ', '')}`)
+      fromChart.push(`${lines[0]} ${lines[1]} ${lines[2].replace(/^Previous \([^)]*\): /, '')}`)
       await page.keyboard.press('ArrowRight')
     }
 

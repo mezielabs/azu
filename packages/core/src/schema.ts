@@ -223,6 +223,9 @@ export type TrendBucket = {
   value: string
   /** The previous period's bucket at the same position, with `compare()` */
   previous: string | null
+  /** Where that previous bucket starts and ends, to name it ("Wed 16 Sep"); `null` without one */
+  previousStart: string | null
+  previousEnd: string | null
   /** The list filtered to this day, week or month; `null` for hours */
   href: string | null
 }

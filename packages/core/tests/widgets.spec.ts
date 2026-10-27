@@ -20,6 +20,7 @@ import {
   withRange,
 } from '../src/shared/metrics.ts'
 import { addDecimals, decimalResult, roundDecimal } from '../src/widgets/decimals.ts'
+import { formatDecimal } from '../src/shared/format.ts'
 import {
   axisLabel,
   axisTicks,
@@ -27,6 +28,7 @@ import {
   bucketLabels,
   compactValue,
   niceTicks,
+  previousLine,
   trendShapes,
 } from '../src/shared/trends.ts'
 import { visibleWidgets, widgetData, widgetSchema } from '../src/widgets/compute.ts'
@@ -654,6 +656,18 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
     assert.equal(count.previousTotal, '1')
     assert.isTrue(count.buckets.some((bucket) => bucket.value === '0'))
     assert.isTrue(count.buckets.every((bucket) => bucket.previous !== null))
+    // Each previous bucket is the same day of the week before
+    for (const bucket of count.buckets) {
+      const start = DateTime.fromISO(bucket.start)
+      assert.equal(
+        DateTime.fromISO(bucket.previousStart!).toMillis(),
+        start.minus({ days: 7 }).toMillis()
+      )
+      assert.equal(
+        DateTime.fromISO(bucket.previousEnd!).toMillis(),
+        start.minus({ days: 6 }).toMillis()
+      )
+    }
     assert.equal(
       count.buckets.at(-1)!.end.slice(0, 10),
       DateTime.utc().plus({ days: 1 }).toISODate()
@@ -673,6 +687,7 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
     assert.equal(revenue.total, '300.60')
     assert.isTrue(revenue.buckets.every((bucket) => /^\d+\.\d{2}$/.test(bucket.value)))
     assert.isNull(revenue.previousTotal)
+    assert.isTrue(revenue.buckets.every((bucket) => bucket.previousStart === null))
     assert.equal(revenue.noun, 'orders')
   })
 
@@ -861,8 +876,16 @@ test.group('Trend chart helpers (FR-25)', () => {
     assert.deepEqual(niceTicks(240_000), [0, 100_000, 200_000, 300_000])
     assert.deepEqual(niceTicks(7), [0, 2.5, 5, 7.5])
     assert.deepEqual(niceTicks(0), [0])
-    assert.equal(compactValue(80_000, { style: 'currency', currency: 'NGN' }, 'en'), '₦80K')
+    // The axis writes a currency as the cards and tooltip do
+    const naira = { style: 'currency', currency: 'NGN' } as const
+    const dollars = { style: 'currency', currency: 'USD' } as const
+    const spaced = (text: string) => text.replace(/\u00a0/g, ' ')
+    assert.equal(spaced(compactValue(30_000, naira, 'en')), 'NGN 30K')
+    assert.equal(spaced(formatDecimal('30000.00', naira, 'en')), 'NGN 30,000.00')
+    assert.equal(compactValue(30_000, dollars, 'en'), '$30K')
+    assert.equal(formatDecimal('30000.00', dollars, 'en'), '$30,000.00')
     assert.equal(compactValue(1200, null, 'en'), '1.2K')
+    assert.equal(compactValue(0.4, { style: 'percent', currency: null }, 'en'), '40%')
   })
 
   test('bucket labels in the admin timezone, the repeated hour told apart', ({ assert }) => {
@@ -894,6 +917,11 @@ test.group('Trend chart helpers (FR-25)', () => {
       '01:00–02:00 GMT',
       '02:00–03:00',
     ])
+    assert.equal(
+      previousLine('Wed 16 Sep', 'NGN 20,500.00'),
+      'Previous (Wed 16 Sep): NGN 20,500.00'
+    )
+    assert.equal(previousLine(null, '0'), 'Previous: 0')
     assert.equal(axisLabel(day, 'day', LAGOS), '14 Oct')
     assert.equal(axisLabel(day, 'month', LAGOS), 'Oct')
   })

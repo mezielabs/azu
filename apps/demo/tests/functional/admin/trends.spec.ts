@@ -179,6 +179,13 @@ test.group('Admin / trends (FR-25)', (group) => {
       ]
     )
     assert.equal(trend.previousTotal, '2')
+    // Each previous bucket is named by its own day: seven days earlier
+    for (const bucket of trend.buckets) {
+      assert.equal(
+        DateTime.fromISO(bucket.previousStart).toISODate(),
+        DateTime.fromISO(bucket.start).minus({ days: 7 }).toISODate()
+      )
+    }
   })
 
   test("a user without the resource's viewList gets no trend", async ({ client, assert }) => {

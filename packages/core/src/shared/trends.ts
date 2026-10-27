@@ -4,7 +4,7 @@
  * formatted with `Intl` in the admin's timezone; no Luxon in the
  * browser.
  */
-import type { NumberFormat } from './format.ts'
+import { formatOptions, type NumberFormat } from './format.ts'
 import type { BucketUnit } from './metrics.ts'
 
 /** A bucket as the chart gets it: its start and end, ISO instants */
@@ -112,26 +112,15 @@ export function niceTicks(max: number): number[] {
 }
 
 /**
- * A y-axis label: the widget's format, compact ("₦80K", "1.2K", "40%")
+ * A y-axis label: the widget's format, as the cards and the tooltip
+ * write it, in compact notation ("NGN 30K", "$30K", "1.2K", "40%")
  */
 export function compactValue(value: number, format: NumberFormat, locale?: string): string {
-  if (format?.style === 'currency' && format.currency) {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: format.currency,
-      currencyDisplay: 'narrowSymbol',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value)
-  }
-  if (format?.style === 'percent') {
-    return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(
-      value
-    )
-  }
-  return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(
-    value
-  )
+  return new Intl.NumberFormat(locale, {
+    ...formatOptions(format),
+    notation: 'compact',
+    maximumFractionDigits: format?.style === 'percent' ? 0 : 1,
+  }).format(value)
 }
 
 /** Where things go: the plot's box inside the chart, in pixels */
@@ -198,4 +187,13 @@ export function trendShapes(
 export function bucketAt(pointerX: number, box: ChartBox, count: number): number | null {
   if (count === 0 || pointerX < box.left || pointerX > box.left + box.width) return null
   return Math.min(count - 1, Math.max(0, Math.floor(((pointerX - box.left) / box.width) * count)))
+}
+
+/**
+ * The previous period's line in a trend's tooltip and live region:
+ * "Previous (Wed 16 Sep): NGN 20,500.00", or without its bucket's name
+ * when there's none.
+ */
+export function previousLine(label: string | null, value: string): string {
+  return label ? `Previous (${label}): ${value}` : `Previous: ${value}`
 }

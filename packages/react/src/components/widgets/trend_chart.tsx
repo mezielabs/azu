@@ -7,6 +7,7 @@ import {
   compactValue,
   formatDecimal,
   niceTicks,
+  previousLine,
   trendShapes,
   type ChartBox,
 } from '@mezielabs/azu/shared'
@@ -57,6 +58,19 @@ export function TrendChart(props: { widget: WidgetSchema; data: Trend; timezone:
     () => bucketLabels(data.buckets, data.unit, timezone),
     [data.buckets, data.unit, timezone]
   )
+  // The previous period's buckets have names of their own: "Wed 16 Sep"
+  const previousLabels = useMemo(() => {
+    const named = data.buckets.filter((bucket) => bucket.previousStart && bucket.previousEnd)
+    const names = bucketLabels(
+      named.map((bucket) => ({ start: bucket.previousStart!, end: bucket.previousEnd! })),
+      data.unit,
+      timezone
+    )
+    let next = 0
+    return data.buckets.map((bucket) =>
+      bucket.previousStart && bucket.previousEnd ? names[next++] : null
+    )
+  }, [data.buckets, data.unit, timezone])
   const format = (value: string) => formatDecimal(value, widget.format)
   const empty =
     values.every((value) => value === 0) && (previous ?? []).every((value) => value === 0)
@@ -80,11 +94,12 @@ export function TrendChart(props: { widget: WidgetSchema; data: Trend; timezone:
       `highest ${labels[peak]}, ${format(data.buckets[peak].value)}` +
       (data.previousTotal === null ? '' : `; previous period ${format(data.previousTotal)}`)
 
+  // What the tooltip shows, as the live region reads it
   const describe = (index: number) => {
     const bucket = data.buckets[index]
-    const previousText =
-      bucket.previous === null ? '' : `, previous period ${format(bucket.previous)}`
-    return `${labels[index]}: ${format(bucket.value)}${previousText}`
+    const current = `${labels[index]}: ${format(bucket.value)}`
+    if (bucket.previous === null) return current
+    return `${current}. ${previousLine(previousLabels[index], format(bucket.previous))}`
   }
 
   function open(index: number | null) {
@@ -277,7 +292,9 @@ export function TrendChart(props: { widget: WidgetSchema; data: Trend; timezone:
               <span className="azu-trend-tooltip-label">{labels[active]}</span>
               <strong>{format(data.buckets[active].value)}</strong>
               {data.buckets[active].previous !== null && (
-                <span>Previous: {format(data.buckets[active].previous!)}</span>
+                <span>
+                  {previousLine(previousLabels[active], format(data.buckets[active].previous!))}
+                </span>
               )}
             </div>
           )}
