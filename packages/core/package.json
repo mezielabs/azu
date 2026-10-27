@@ -1,7 +1,7 @@
 {
   "name": "@mezielabs/azu",
   "description": "Admin panel for AdonisJS 7, built on your Lucid models, Bouncer policies and VineJS validators",
-  "version": "0.0.0",
+  "version": "0.1.0-preview.0",
   "type": "module",
   "license": "MIT",
   "author": "Mezie Labs",
@@ -11,7 +11,8 @@
   "files": [
     "build",
     "!build/bin",
-    "!build/tests"
+    "!build/tests",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "main": "build/index.js",
   "exports": {
@@ -151,5 +152,23 @@
   },
   "dependencies": {
     "sanitize-html": "^2.18.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mezielabs/azu.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/mezielabs/azu#readme",
+  "bugs": {
+    "url": "https://github.com/mezielabs/azu/issues"
+  },
+  "keywords": [
+    "adonisjs",
+    "adonis",
+    "admin",
+    "admin-panel",
+    "inertia",
+    "react",
+    "lucid"
+  ]
 }

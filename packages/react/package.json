@@ -1,7 +1,7 @@
 {
   "name": "@mezielabs/azu-react",
   "description": "Inertia + React pages and components for Azu",
-  "version": "0.0.0",
+  "version": "0.1.0-preview.0",
   "type": "module",
   "license": "MIT",
   "author": "Mezie Labs",
@@ -40,7 +40,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "compile": "tsc -p tsconfig.build.json && tailwindcss -i ./src/styles.css -o ./build/azu.css --minify",
+    "compile": "node -e \"require('node:fs').rmSync('build', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && tailwindcss -i ./src/styles.css -o ./build/azu.css --minify",
     "build": "pnpm run compile",
     "prepublishOnly": "pnpm run build"
   },
@@ -121,5 +121,23 @@
       "package": "lucide-react",
       "path": "dist/esm/icons/{name}.mjs"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mezielabs/azu.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/mezielabs/azu#readme",
+  "bugs": {
+    "url": "https://github.com/mezielabs/azu/issues"
+  },
+  "keywords": [
+    "adonisjs",
+    "adonis",
+    "admin",
+    "admin-panel",
+    "inertia",
+    "react",
+    "lucid"
+  ]
 }

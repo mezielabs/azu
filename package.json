@@ -18,7 +18,8 @@
     "bench:list": "node scripts/bench_list.mjs",
     "bench:widgets": "node scripts/bench_widgets.mjs",
     "prove:generator": "pnpm build && node scripts/prove_generator.mjs",
-    "screenshots": "pnpm build && AZU_SCREENSHOTS=1 pnpm --filter demo exec node ace test browser --files=tests/browser/screenshots.spec.ts"
+    "screenshots": "pnpm build && AZU_SCREENSHOTS=1 pnpm --filter demo exec node ace test browser --files=tests/browser/screenshots.spec.ts",
+    "pack:check": "pnpm build && pnpm --filter \"./packages/*\" -r pack --pack-destination \"$PWD/artifacts/packages\" && node scripts/check_release_packages.mjs artifacts/packages && node --test scripts/tests/release_packages.spec.mjs"
   },
   "devDependencies": {
     "@adonisjs/prettier-config": "^1.5.0",
