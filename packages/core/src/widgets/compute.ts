@@ -68,6 +68,7 @@ export function widgetSchema(key: string, widget: Widget): WidgetSchema {
     label: state.label,
     width: state.width ?? WIDTHS[state.kind],
     format: state.format,
+    compact: state.compact,
     // Progress has its own period; a table without date() just lists
     note: !ranged && (state.kind === 'value' || state.kind === 'partition') ? 'All time' : null,
     compares:

@@ -2003,6 +2003,7 @@
   .azu-widget {
     @apply relative flex min-w-0 flex-col gap-1.5 rounded-xl border px-[18px] py-4;
     grid-column: span 1;
+    container-type: inline-size;
     border-color: var(--azu-border);
     background: var(--azu-surface);
   }
@@ -2073,11 +2074,15 @@
   }
 
   .azu-widget-figure {
-    @apply m-0 text-[28px] leading-tight font-semibold tracking-tight;
+    @apply m-0 leading-tight font-semibold tracking-tight;
+    font-size: clamp(1.125rem, 10cqi, 1.75rem);
+    /* Wraps at a space before it splits digits, only when it must */
+    overflow-wrap: anywhere;
     font-variant-numeric: tabular-nums;
   }
 
   .azu-widget-delta {
+    overflow-wrap: anywhere;
     @apply m-0 text-[13px];
     color: var(--azu-muted);
     font-variant-numeric: tabular-nums;
@@ -2204,16 +2209,31 @@
   }
 
   .azu-partition-value {
-    @apply text-right whitespace-nowrap;
+    @apply text-right;
     font-variant-numeric: tabular-nums;
   }
 
+  /* The figure and its percentage each stay whole; they wrap between */
   .azu-partition-value strong {
-    @apply font-semibold;
+    @apply font-semibold whitespace-nowrap;
   }
 
-  .azu-partition-value span {
+  .azu-partition-value > span {
+    @apply whitespace-nowrap;
     color: var(--azu-muted);
+  }
+
+  /* A narrow card, or enlarged text: the bar goes under the label and value */
+  @container (max-width: 20rem) {
+    .azu-partition-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 0.375rem;
+    }
+
+    .azu-partition-bar {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
   }
 
   .azu-widget[data-azu-widget='table'] {

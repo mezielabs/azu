@@ -77,6 +77,8 @@ export type WidgetState = {
   where: ((query: ModelQueryBuilderContract<any>) => unknown) | null
   dateColumn: string | null
   format: NumberFormat
+  /** Whether figures are abbreviated; `null` from 1,000,000 up */
+  compact: boolean | null
   link: LinkFilters | null
   compare: boolean
   /** Which way a value widget's comparison is good */
@@ -117,6 +119,7 @@ export class Widget<Kind extends WidgetKind = WidgetKind, R = AnyResource> {
       where: null,
       dateColumn: null,
       format: null,
+      compact: null,
       link: null,
       compare: true,
       better: 'higher',
@@ -184,6 +187,15 @@ type FormatStyle = 'currency' | 'percent'
  * a `date()`.
  */
 export class ValueWidget<R> extends ResourceWidget<'value', R> {
+  /**
+   * Abbreviates its figures ("NGN 194K"), or with `compact(false)` never
+   * does. By default, figures from 1,000,000 up are ("NGN 4.28M"). The
+   * exact figure stays in the tooltip and for screen readers.
+   */
+  compact(enabled = true): this {
+    return this.set('compact', enabled)
+  }
+
   /** Formats the value: `format('currency', 'NGN')` or `format('percent')` */
   format(style: FormatStyle, currency?: string): this {
     return this.set('format', { style, currency: currency ?? null })
@@ -226,6 +238,15 @@ export class CustomValueWidget<HasAbility extends boolean = false> extends Widge
     return this as unknown as CustomValueWidget<true>
   }
 
+  /**
+   * Abbreviates its figures ("NGN 194K"), or with `compact(false)` never
+   * does. By default, figures from 1,000,000 up are ("NGN 4.28M"). The
+   * exact figure stays in the tooltip and for screen readers.
+   */
+  compact(enabled = true): this {
+    return this.set('compact', enabled)
+  }
+
   format(style: FormatStyle, currency?: string): this {
     return this.set('format', { style, currency: currency ?? null })
   }
@@ -259,6 +280,15 @@ export class ProgressWidget<R> extends ResourceWidget<'progress', R> {
     return this.set('goal', goal)
   }
 
+  /**
+   * Abbreviates its figures ("NGN 194K"), or with `compact(false)` never
+   * does. By default, figures from 1,000,000 up are ("NGN 4.28M"). The
+   * exact figure stays in the tooltip and for screen readers.
+   */
+  compact(enabled = true): this {
+    return this.set('compact', enabled)
+  }
+
   format(style: FormatStyle, currency?: string): this {
     return this.set('format', { style, currency: currency ?? null })
   }
@@ -279,6 +309,15 @@ export class PartitionWidget<R> extends ResourceWidget<'partition', R> {
   /** Rows shown; the rest fold into "Other". Default 5. */
   limit(rows: number): this {
     return this.set('limit', rows)
+  }
+
+  /**
+   * Abbreviates its figures ("NGN 194K"), or with `compact(false)` never
+   * does. By default, figures from 1,000,000 up are ("NGN 4.28M"). The
+   * exact figure stays in the tooltip and for screen readers.
+   */
+  compact(enabled = true): this {
+    return this.set('compact', enabled)
   }
 
   format(style: FormatStyle, currency?: string): this {
