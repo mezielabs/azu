@@ -15,7 +15,7 @@ export default class SessionController {
     await auth.use('web').login(user)
     const intended = session.pullIntendedUrl()
     if (typeof intended === 'string' && intended.startsWith('/') && isValidRedirectUrl(intended)) {
-      // Admin has its own Inertia entry point, so load its document.
+      // The admin has its own Inertia entry point, so load its page
       if (request.header('x-inertia')) return inertia.location(intended)
       return response.redirect(intended)
     }

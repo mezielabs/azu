@@ -20,6 +20,26 @@ type AccessContext = {
 }
 
 /**
+ * Admin GET routes that answer JSON to `fetch()`, never pages: a guest's
+ * request to one mustn't become where login returns to (U02).
+ */
+const JSON_ROUTES = new Set(['azu.resources.fields.options', 'azu.resources.filters.options'])
+
+/**
+ * Whether a guest's request is a page they navigated to, so login can
+ * return there (U02): a GET that's an Inertia visit but not a partial
+ * reload, or that asks for HTML. Never a JSON endpoint, whatever headers
+ * it sends.
+ */
+function isNavigation(ctx: HttpContext): boolean {
+  const { request } = ctx
+  if (request.method() !== 'GET' || JSON_ROUTES.has(ctx.route?.name ?? '')) return false
+  // Inertia sets X-Inertia-Partial-Component on every partial reload, `only` or `except`
+  if (request.header('x-inertia')) return !request.header('x-inertia-partial-component')
+  return request.accepts(['html']) === 'html'
+}
+
+/**
  * The access gate for every admin route (FR-02).
  *
  * - Guests are sent to `config.loginUrl`: a 302, or for Inertia visits a
@@ -44,16 +64,9 @@ export class AdminAccessMiddleware {
     }
 
     if (!(await auth.use(this.config.guard).check())) {
-      // Remember navigations, never writes or background widget reloads.
+      // Remember page navigations, never writes, partial reloads or JSON.
       // The host app consumes this after successful authentication.
-      if (
-        session &&
-        ctx.request.method() === 'GET' &&
-        (!ctx.request.ajax() || ctx.request.header('x-inertia')) &&
-        !ctx.request.header('x-inertia-partial-data')
-      ) {
-        session.setIntendedUrl(ctx.request.url(true))
-      }
+      if (session && isNavigation(ctx)) session.setIntendedUrl(ctx.request.url(true))
       if (ctx.request.header('x-inertia')) {
         return ctx.inertia.location(this.config.loginUrl)
       }

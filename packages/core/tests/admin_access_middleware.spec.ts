@@ -11,6 +11,10 @@ type FakeOptions = {
   session?: boolean
   method?: string
   partial?: boolean
+  /** Asks for JSON rather than HTML */
+  json?: boolean
+  /** The matched route's name */
+  route?: string
 }
 
 /**
@@ -46,13 +50,15 @@ function fakeContext(options: FakeOptions) {
     session: options.session
       ? { setIntendedUrl: (url: string) => (calls.intended = url) }
       : undefined,
+    route: options.route ? { name: options.route } : undefined,
     request: {
       method: () => options.method ?? 'GET',
       ajax: () => Boolean(options.inertia),
+      accepts: (types: string[]) => (options.json ? null : types[0]),
       url: () => '/admin/resources/products?search=clay',
       header: (name: string) =>
-        name === 'x-inertia-partial-data' && options.partial
-          ? 'widget0'
+        name === 'x-inertia-partial-component' && options.partial
+          ? 'azu/screen'
           : name === 'x-inertia' && options.inertia
             ? 'true'
             : null,
@@ -116,6 +122,12 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
       { method: 'DELETE' },
       { inertia: true, partial: true },
       { authenticated: true, bouncer: allow },
+      // fetch() asking for JSON
+      { json: true },
+      // The JSON endpoints, even when the request accepts HTML or is Inertia's
+      { route: 'azu.resources.fields.options' },
+      { route: 'azu.resources.filters.options' },
+      { route: 'azu.resources.fields.options', inertia: true },
     ]) {
       const background = await run({ authenticated: false, session: true, ...options })
       assert.isUndefined(background.intended)
