@@ -275,7 +275,13 @@ function PartitionBody(props: { widget: WidgetSchema; data: Ok<'partition'> }) {
             </span>
             <span className="azu-partition-value">
               <strong>{value}</strong>
-              {hidden(unit ? ` ${unit}, ` : ', ')} <span>{percentOf(row.percent)}</span>
+              {hidden(`${unit ? ` ${unit}` : ''}${row.percent !== null ? ', ' : ''}`)}
+              {row.percent !== null && (
+                <>
+                  {' '}
+                  <span>{percentOf(row.percent)}</span>
+                </>
+              )}
               {row.href && hidden('. Show them')}
             </span>
           </>
