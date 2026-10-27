@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
+import { formSections } from '../src/shared/form_layout.ts'
 import { formFields, manyToManyInput } from '../src/forms/form_fields.ts'
 import { missingValidatorMessage, saveRecord } from '../src/forms/save_record.ts'
 import { defineResource } from '../src/resources/define_resource.ts'
@@ -73,8 +74,8 @@ test.group('Form fields', () => {
     fields: [
       field.text('name'),
       field.text('sku').visibleOn('create'),
-      field.text('slug').visibleOn('edit'),
-      field.decimal('price').ability('editPrice'),
+      field.text('slug').visibleOn('edit').section('Edit only'),
+      field.decimal('price').ability('editPrice').section('Pricing'),
       field.manyToMany('tags'),
     ],
   } as never)
@@ -82,6 +83,14 @@ test.group('Form fields', () => {
   test('visibleOn picks the form', async ({ assert }) => {
     const create = await formFields(request({}, ['editPrice']), resource, 'create')
     const edit = await formFields(request({}, ['editPrice']), resource, 'edit', {} as never)
+    assert.deepEqual(
+      formSections(create).map((group) => group.heading),
+      [null, 'Pricing']
+    )
+    assert.deepEqual(
+      formSections(edit).map((group) => group.heading),
+      [null, 'Edit only', 'Pricing']
+    )
     assert.deepEqual(
       create.map((item) => item.name),
       ['name', 'sku', 'price', 'tags']
@@ -94,6 +103,10 @@ test.group('Form fields', () => {
 
   test("a field's ability hides it unless the policy allows it", async ({ assert }) => {
     const fields = await formFields(request({}, []), resource, 'create')
+    assert.deepEqual(
+      formSections(fields).map((group) => group.heading),
+      [null]
+    )
     assert.notInclude(
       fields.map((item) => item.name),
       'price'

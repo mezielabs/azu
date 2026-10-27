@@ -68,6 +68,11 @@ export class Field<
     return this.#set('label', text)
   }
 
+  /** Group form fields under a heading. Blank text leaves the field ungrouped. */
+  section(heading: string): this {
+    return this.#set('section', heading.trim() || null)
+  }
+
   help(text: string): this {
     return this.#set('help', text)
   }

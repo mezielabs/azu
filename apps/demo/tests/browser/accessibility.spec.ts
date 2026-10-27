@@ -68,7 +68,7 @@ const scans: Scan[] = [
     open: async (page) => {
       await page.click('[aria-label="Actions for Clay pot"]')
       await page.click('[role="menuitem"]:has-text("Restock")')
-      await page.waitForSelector('[role="alertdialog"] input')
+      await page.getByRole('region', { name: 'Stock adjustment' }).getByLabel('Quantity').waitFor()
       await page.click('[role="alertdialog"] button[type="submit"]')
       await page.waitForSelector('[role="alertdialog"] .azu-field-error')
     },
@@ -94,7 +94,18 @@ const scans: Scan[] = [
     name: "form with a manyToMany picker's options open",
     url: () => '/admin/resources/products/create',
     open: async (page) => {
-      await page.click('[data-azu-field="tags"] [aria-label="Show Tags options"]')
+      const trigger = page.locator('[data-azu-field="tags"] [aria-label="Show Tags options"]')
+      // Put the entire picker in view before opening its options. Focusing
+      // an input at the viewport edge scrolls it, which closes the popover.
+      await trigger.evaluate((element: any) => element.scrollIntoView({ block: 'center' }))
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            const frame = (globalThis as any).requestAnimationFrame
+            frame(() => frame(() => resolve()))
+          })
+      )
+      await trigger.click()
       await page.waitForSelector('.azu-popover [role="option"]')
     },
     popoverOpen: true,

@@ -89,6 +89,20 @@ Azu reads the model's columns, casts, and relationships, then writes `app/admin/
 
 The generated resource is a starting point. Open it and adjust what's wrong.
 
+## Form sections
+
+Use `.section('Details')` on a field to group resource, screen, or action form fields under a heading:
+
+```ts
+fields: [
+  field.text('name').section('Details'),
+  field.text('sku').section('Details'),
+  field.decimal('price').section('Pricing'),
+]
+```
+
+Groups follow the first appearance of each heading; fields keep declaration order within their group. Fields without a section form an unheaded group. Blank headings reset a field to that group. Groups only exist when they contain visible, authorized fields. Headings stay visible, fields stack on phones, and validation focuses the first invalid control in displayed order. Ungrouped forms keep their existing layout; detail pages are unchanged.
+
 ## Resources
 
 A resource is one file that points at a Lucid model and borrows its policy and validators:

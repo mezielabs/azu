@@ -27,6 +27,12 @@ const resource = (name: string, options: Record<string, unknown> = {}) =>
   defineResource(model(name), { policy: CatalogPolicy, ...options } as never)
 
 test.group('Builders', () => {
+  test('section headings serialize only when configured', ({ assert }) => {
+    assert.notProperty(field.text('name').toJSON(), 'section')
+    assert.equal(field.text('name').section(' Details ').toJSON().section, 'Details')
+    assert.isNull(field.text('name').section('Details').section(' ').toJSON().section)
+  })
+
   test('columns serialise with default labels', ({ assert }) => {
     assert.deepEqual(column.decimal('unitPrice').format('currency', 'NGN').sortable().toJSON(), {
       kind: 'decimal',

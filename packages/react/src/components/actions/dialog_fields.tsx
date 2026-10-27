@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { fieldErrors } from '@mezielabs/azu/shared'
 import type { FieldValue, FormErrors, FormFieldSchema } from '@mezielabs/azu/types'
+import { FormSections } from '../form/form_sections.tsx'
 import { FormField } from '../form/form_field.tsx'
 
 /**
@@ -27,17 +28,19 @@ export function DialogFields(props: {
 
   return (
     <div ref={container} className="azu-dialog-fields">
-      {props.fields.map((field) => (
-        <FormField
-          key={field.name}
-          field={field}
-          value={props.values[field.name] ?? null}
-          onChange={(value) => props.onChange(field.name, value)}
-          errors={fieldErrors(props.errors, field.name)}
-          timezone={props.timezone}
-          values={props.values}
-        />
-      ))}
+      <FormSections fields={props.fields}>
+        {(field) => (
+          <FormField
+            key={field.name}
+            field={field}
+            value={props.values[field.name] ?? null}
+            onChange={(value) => props.onChange(field.name, value)}
+            errors={fieldErrors(props.errors, field.name)}
+            timezone={props.timezone}
+            values={props.values}
+          />
+        )}
+      </FormSections>
     </div>
   )
 }
