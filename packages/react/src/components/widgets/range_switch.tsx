@@ -1,4 +1,5 @@
 import { router, usePage } from '@inertiajs/react'
+import { useRef } from 'react'
 import { RANGE_LABELS, withRange, type RangeName } from '@mezielabs/azu/shared'
 
 /**
@@ -6,7 +7,17 @@ import { RANGE_LABELS, withRange, type RangeName } from '@mezielabs/azu/shared'
  * Switching keeps the range in `?range=` with a partial visit, then
  * reloads each widget's data in its own request, so one slow widget
  * doesn't hold up the others.
+ *
+ * Only the latest switch's figures land (C01): each switch aborts the
+ * previous period's widget requests (deferred loads, retries, reloads),
+ * and a switch superseded before its visit finished never reloads.
  */
+/**
+ * Which switch is the latest. A switch whose range visit finishes after
+ * a newer one started never starts its reloads (C01).
+ */
+let latest = 0
+
 export function RangeSwitch(props: {
   ranges: RangeName[]
   current: RangeName
@@ -14,10 +25,17 @@ export function RangeSwitch(props: {
   widgets: string[]
 }) {
   const { url } = usePage()
+  // The range a switch in flight is going to: `current` still names the old one
+  const pending = useRef<RangeName | null>(null)
   if (props.ranges.length < 2) return null
 
   function select(range: RangeName) {
-    if (range === props.current) return
+    if (range === (pending.current ?? props.current)) return
+    const generation = ++latest
+    pending.current = range
+    // Deferred loads, retries and the last switch's reloads are async too:
+    // abort the old period's before changing the label
+    router.cancelAll({ sync: false, prefetch: false })
     router.get(
       withRange(url, range, props.ranges[0]),
       {},
@@ -27,7 +45,13 @@ export function RangeSwitch(props: {
         preserveScroll: true,
         replace: true,
         onSuccess: () => {
+          // A newer switch started while this visit was finishing
+          if (generation !== latest) return
+          router.cancelAll({ sync: false, prefetch: false })
           for (const key of props.widgets) router.reload({ only: [key] })
+        },
+        onFinish: () => {
+          if (generation === latest) pending.current = null
         },
       }
     )
