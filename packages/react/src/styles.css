@@ -1966,8 +1966,14 @@
     flex-basis: 16rem;
   }
 
+  /* ...and then scrolls inside the header rather than widening the page */
+  .azu-page-header:has(.azu-range-switch) .azu-page-actions {
+    @apply max-w-full min-w-0 shrink;
+  }
+
+  /* Scrolls sideways when a phone can't fit every range */
   .azu-range-switch {
-    @apply inline-flex gap-0.5 rounded-[10px] border p-[3px];
+    @apply inline-flex max-w-full gap-0.5 overflow-x-auto rounded-[10px] border p-[3px];
     border-color: var(--azu-border);
     background: var(--azu-subtle);
   }
@@ -2236,6 +2242,162 @@
 
   .azu-widget-table .azu-widget-empty {
     @apply px-[18px] pb-4;
+  }
+
+  /* Trend widgets (FR-25): hand-written SVG from the theme's colours */
+  .azu-trend {
+    @apply flex min-w-0 flex-col gap-2;
+  }
+
+  .azu-trend-toolbar {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .azu-trend-legend {
+    @apply m-0 flex list-none flex-wrap gap-4 p-0 text-xs;
+    color: var(--azu-muted);
+  }
+
+  .azu-trend-legend li {
+    @apply flex items-center gap-1.5;
+  }
+
+  .azu-trend-legend li::before {
+    @apply inline-block h-0.5 w-4 rounded-full;
+    content: '';
+    background: var(--azu-brand-solid);
+  }
+
+  .azu-trend-legend li[data-azu-series='previous']::before {
+    background: var(--azu-muted);
+  }
+
+  .azu-trend-toggle {
+    @apply ml-auto text-xs;
+  }
+
+  .azu-trend-toggle[aria-pressed='true'] {
+    background: var(--azu-subtle);
+  }
+
+  .azu-trend-plot {
+    @apply relative min-w-0 rounded-md;
+    touch-action: pan-y;
+  }
+
+  .azu-trend-plot[data-azu-linked] {
+    cursor: pointer;
+  }
+
+  .azu-trend-plot:focus-visible {
+    outline: 2px solid var(--azu-brand);
+    outline-offset: 2px;
+  }
+
+  .azu-trend-svg {
+    @apply block max-w-full overflow-visible;
+  }
+
+  .azu-trend-grid {
+    stroke: var(--azu-border);
+    stroke-width: 1;
+    opacity: 0.6;
+  }
+
+  .azu-trend-baseline {
+    stroke: var(--azu-border);
+    stroke-width: 1;
+  }
+
+  .azu-trend-axis {
+    fill: var(--azu-muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-trend-line {
+    stroke: var(--azu-brand-solid);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .azu-trend-area {
+    fill: var(--azu-brand-solid);
+    opacity: 0.12;
+  }
+
+  .azu-trend-dot,
+  .azu-trend-crosshair circle {
+    fill: var(--azu-brand-solid);
+    stroke: var(--azu-surface);
+    stroke-width: 2;
+  }
+
+  .azu-trend-bar {
+    fill: var(--azu-brand-solid);
+    opacity: 0.85;
+  }
+
+  .azu-trend-bar[data-azu-active] {
+    opacity: 1;
+  }
+
+  .azu-trend-previous {
+    stroke: var(--azu-muted);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+    opacity: 0.8;
+  }
+
+  .azu-trend-crosshair line {
+    stroke: var(--azu-muted);
+    stroke-width: 1;
+  }
+
+  .azu-trend-tooltip {
+    @apply pointer-events-none absolute top-1 z-10 flex -translate-x-1/2 flex-col gap-0.5 rounded-lg px-2.5 py-2 text-xs whitespace-nowrap shadow-lg;
+    background: var(--azu-text);
+    color: var(--azu-surface);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-trend-tooltip strong {
+    @apply text-[13px] font-semibold;
+  }
+
+  .azu-trend-tooltip-label {
+    opacity: 0.8;
+  }
+
+  .azu-trend-table-wrap {
+    @apply max-h-72 overflow-auto rounded-md border;
+    border-color: var(--azu-border);
+  }
+
+  .azu-trend-table {
+    @apply w-full text-[13px];
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .azu-trend-table :is(th, td) {
+    @apply border-b px-3 py-1.5 text-left font-normal whitespace-nowrap;
+    border-color: var(--azu-border);
+  }
+
+  .azu-trend-table thead th {
+    @apply sticky top-0 text-xs font-medium;
+    background: var(--azu-surface);
+    color: var(--azu-muted);
+  }
+
+  .azu-trend-table td {
+    @apply text-right;
+  }
+
+  .azu-trend-empty {
+    @apply text-center;
   }
 
   /* Columns follow the grid's own width, so the sidebar is accounted for */

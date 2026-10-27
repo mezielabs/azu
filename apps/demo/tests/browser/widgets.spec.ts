@@ -73,6 +73,7 @@ test.group('Widgets', (group) => {
       'Orders',
       'Average order',
       'New customers',
+      'Revenue over time',
       'Cancelled orders',
       'Monthly revenue goal',
       'Orders by status',

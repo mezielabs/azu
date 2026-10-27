@@ -9,6 +9,7 @@ import {
 import type { AzuSharedProps, ScreenSchema, WidgetData, WidgetSchema } from '@mezielabs/azu/types'
 import type { ReactNode } from 'react'
 import { DataTable } from '../list/data_table.tsx'
+import { TrendChart } from './trend_chart.tsx'
 
 type Ok<Kind extends string> = Extract<WidgetData, { status: 'ok'; kind: Kind }>
 
@@ -135,6 +136,9 @@ function WidgetCard(props: {
 
 /** What sits beside a card's label: "386 orders", "12 days left", "View all" */
 function cardAside(data: Extract<WidgetData, { status: 'ok' }>): ReactNode {
+  if (data.kind === 'trend') {
+    return <span className="azu-widget-aside">By {data.unit}</span>
+  }
   if (data.kind === 'progress') {
     return <span className="azu-widget-aside">{timeLeft(data.remaining)}</span>
   }
@@ -171,6 +175,8 @@ function WidgetBody(props: {
       return <PartitionBody widget={widget} data={data} />
     case 'table':
       return <TableBody azu={props.azu} widget={widget} data={data} />
+    case 'trend':
+      return <TrendChart widget={widget} data={data} timezone={props.azu.timezone} />
   }
 }
 

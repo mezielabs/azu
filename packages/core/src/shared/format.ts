@@ -15,13 +15,23 @@ export const TEXT_CELL_LENGTH = 60
 
 const DECIMAL = /^-?\d+(\.\d+)?$/
 
-function numberFormat(format: NumberFormat, locale: string | undefined, fractionDigits?: number) {
+/**
+ * The `Intl.NumberFormat` options for a column's or widget's format, so
+ * every place that shows a figure (cells, cards, tooltips, chart axes)
+ * writes its currency the same way: "NGN 30,000.00", "NGN 30K".
+ * `null` for a plain number.
+ */
+export function formatOptions(format: NumberFormat): Intl.NumberFormatOptions | null {
   if (format?.style === 'currency' && format.currency) {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency: format.currency })
+    return { style: 'currency', currency: format.currency }
   }
-  if (format?.style === 'percent') {
-    return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 2 })
-  }
+  if (format?.style === 'percent') return { style: 'percent', maximumFractionDigits: 2 }
+  return null
+}
+
+function numberFormat(format: NumberFormat, locale: string | undefined, fractionDigits?: number) {
+  const options = formatOptions(format)
+  if (options) return new Intl.NumberFormat(locale, options)
   // A decimal keeps its scale ('1750.50' stays two places); numbers show what they have
   return fractionDigits === undefined
     ? new Intl.NumberFormat(locale, { maximumFractionDigits: 20 })

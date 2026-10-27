@@ -201,7 +201,7 @@ export type ScreenSchema = {
 export type WidgetSchema = {
   /** The page prop its data arrives in, `widget0` */
   key: string
-  kind: 'value' | 'progress' | 'partition' | 'table'
+  kind: 'value' | 'progress' | 'partition' | 'table' | 'trend'
   label: string
   /** Grid columns it spans, of 4 */
   width: 1 | 2 | 3 | 4
@@ -212,6 +212,22 @@ export type WidgetSchema = {
   compares: boolean
   /** Which way is good: `lower` for cancellations, refunds, response times */
   better: 'higher' | 'lower'
+}
+
+/** One bucket of a trend widget (FR-25) */
+export type TrendBucket = {
+  /** Where the bucket starts and ends, as ISO instants in the admin's timezone */
+  start: string
+  end: string
+  /** An exact decimal string; 0 for an empty bucket */
+  value: string
+  /** The previous period's bucket at the same position, with `compare()` */
+  previous: string | null
+  /** Where that previous bucket starts and ends, to name it ("Wed 16 Sep"); `null` without one */
+  previousStart: string | null
+  previousEnd: string | null
+  /** The list filtered to this day, week or month; `null` for hours */
+  href: string | null
 }
 
 /** A partition widget's row */
@@ -234,7 +250,11 @@ export type PartitionRow = {
  * the error is logged on the server and the card says so.
  */
 export type WidgetData =
-  | { status: 'error' }
+  | {
+      status: 'error'
+      /** Why, when it's something the user can act on (a trend's range too long) */
+      message?: string
+    }
   | {
       status: 'ok'
       kind: 'value'
@@ -266,6 +286,20 @@ export type WidgetData =
       total: string
       /** What's counted, for "386 orders"; `null` for a total */
       unit: { one: string; other: string } | null
+    }
+  | {
+      status: 'ok'
+      kind: 'trend'
+      /** What each bucket covers: an hour, a day, a week (from Monday) or a month */
+      unit: 'hour' | 'day' | 'week' | 'month'
+      chart: 'line' | 'bars'
+      buckets: TrendBucket[]
+      /** All buckets together, as an exact decimal string */
+      total: string
+      /** The previous period's total, with `compare()`; else `null` */
+      previousTotal: string | null
+      /** What's counted, lower case, for "No orders in this range" */
+      noun: string
     }
   | {
       status: 'ok'

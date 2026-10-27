@@ -20,9 +20,21 @@ import {
   withRange,
 } from '../src/shared/metrics.ts'
 import { addDecimals, decimalResult, roundDecimal } from '../src/widgets/decimals.ts'
+import { formatDecimal } from '../src/shared/format.ts'
+import {
+  axisLabel,
+  axisTicks,
+  bucketAt,
+  bucketLabels,
+  compactValue,
+  niceTicks,
+  previousLine,
+  trendShapes,
+} from '../src/shared/trends.ts'
 import { visibleWidgets, widgetData, widgetSchema } from '../src/widgets/compute.ts'
 import { metric } from '../src/widgets/metrics.ts'
 import { periodBounds, rangeBounds, rangeInfo } from '../src/widgets/ranges.ts'
+import { bucketBounds, bucketCounts, bucketFor } from '../src/widgets/buckets.ts'
 
 const LAGOS = 'Africa/Lagos'
 const admins = Bouncer.ability(() => true)
@@ -625,6 +637,60 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
     }
   })
 
+  test('trends: one bucket per day, empty ones 0, exact sums, the previous period aligned', async ({
+    assert,
+  }) => {
+    const { ctx } = request()
+    type Trend = Extract<Awaited<ReturnType<typeof widgetData>>, { kind: 'trend' }>
+    const count = (await widgetData(
+      ctx,
+      context,
+      'overview',
+      metric.trend('Orders').count(orders).date('placedAt').compare(),
+      range()
+    )) as Trend
+    assert.equal(count.unit, 'day')
+    assert.lengthOf(count.buckets, 7)
+    // Three orders in the last 7 days, one in the 7 before
+    assert.equal(count.total, '3')
+    assert.equal(count.previousTotal, '1')
+    assert.isTrue(count.buckets.some((bucket) => bucket.value === '0'))
+    assert.isTrue(count.buckets.every((bucket) => bucket.previous !== null))
+    // Each previous bucket is the same day of the week before
+    for (const bucket of count.buckets) {
+      const start = DateTime.fromISO(bucket.start)
+      assert.equal(
+        DateTime.fromISO(bucket.previousStart!).toMillis(),
+        start.minus({ days: 7 }).toMillis()
+      )
+      assert.equal(
+        DateTime.fromISO(bucket.previousEnd!).toMillis(),
+        start.minus({ days: 6 }).toMillis()
+      )
+    }
+    assert.equal(
+      count.buckets.at(-1)!.end.slice(0, 10),
+      DateTime.utc().plus({ days: 1 }).toISODate()
+    )
+    // Each day links to the list filtered to it
+    const day = count.buckets[0].start.slice(0, 10)
+    assert.equal(count.buckets[0].href, `/admin/resources/orders?placedAt=${day}..${day}`)
+
+    const revenue = (await widgetData(
+      ctx,
+      context,
+      'overview',
+      metric.trend('Revenue').sum(orders, 'total').date('placedAt').bars(),
+      range()
+    )) as Trend
+    assert.equal(revenue.chart, 'bars')
+    assert.equal(revenue.total, '300.60')
+    assert.isTrue(revenue.buckets.every((bucket) => /^\d+\.\d{2}$/.test(bucket.value)))
+    assert.isNull(revenue.previousTotal)
+    assert.isTrue(revenue.buckets.every((bucket) => bucket.previousStart === null))
+    assert.equal(revenue.noun, 'orders')
+  })
+
   test('progress against a goal, over its own period', async ({ assert }) => {
     const { ctx } = request()
     const data = await widgetData(
@@ -655,5 +721,227 @@ test.group('Widget data on SQLite (FR-24)', (group) => {
     const data = await widgetData(ctx, context, 'overview', broken, range())
     assert.deepEqual(data, { status: 'error' })
     assert.deepEqual(errors, [`Azu couldn't load the "Broken" widget on the "overview" screen`])
+  })
+})
+
+test.group('Trend buckets (FR-25)', () => {
+  const LONDON = 'Europe/London'
+  const at = (iso: string, zone: string) => DateTime.fromISO(iso, { zone })
+  const starts = (
+    unit: Parameters<typeof bucketBounds>[0],
+    from: string,
+    to: string,
+    zone: string
+  ) =>
+    bucketBounds(unit, { start: at(from, zone), end: at(to, zone) }, zone).map((bucket) =>
+      bucket.start.toISO()
+    )
+
+  test('hours, days, weeks (from Monday) and months in Africa/Lagos', ({ assert }) => {
+    assert.deepEqual(starts('hour', '2026-10-20T00:00', '2026-10-20T02:30', LAGOS), [
+      '2026-10-20T00:00:00.000+01:00',
+      '2026-10-20T01:00:00.000+01:00',
+      '2026-10-20T02:00:00.000+01:00',
+    ])
+    assert.deepEqual(starts('day', '2026-10-18T00:00', '2026-10-20T10:00', LAGOS), [
+      '2026-10-18T00:00:00.000+01:00',
+      '2026-10-19T00:00:00.000+01:00',
+      '2026-10-20T00:00:00.000+01:00',
+    ])
+    // Thursday 1 October falls in the week of Monday 28 September
+    assert.deepEqual(starts('week', '2026-10-01T00:00', '2026-10-13T09:00', LAGOS), [
+      '2026-09-28T00:00:00.000+01:00',
+      '2026-10-05T00:00:00.000+01:00',
+      '2026-10-12T00:00:00.000+01:00',
+    ])
+    assert.deepEqual(starts('month', '2026-01-01T00:00', '2026-03-05T09:00', LAGOS), [
+      '2026-01-01T00:00:00.000+01:00',
+      '2026-02-01T00:00:00.000+01:00',
+      '2026-03-01T00:00:00.000+01:00',
+    ])
+  })
+
+  test('Europe/London on 25 October 2026: a 25-hour day and a repeated hour', ({ assert }) => {
+    const [day] = bucketBounds(
+      'day',
+      { start: at('2026-10-25T00:00', LONDON), end: at('2026-10-25T23:00', LONDON) },
+      LONDON
+    )
+    assert.equal(day.end.diff(day.start, 'hours').hours, 25)
+    assert.equal(day.end.toISO(), '2026-10-26T00:00:00.000+00:00')
+
+    const hours = bucketBounds(
+      'hour',
+      { start: at('2026-10-25T00:00', LONDON), end: at('2026-10-25T03:30', LONDON) },
+      LONDON
+    )
+    // 01:00 twice: first in summer time, then in winter time, an hour apart
+    assert.deepEqual(
+      hours.map((bucket) => bucket.start.toISO()),
+      [
+        '2026-10-25T00:00:00.000+01:00',
+        '2026-10-25T01:00:00.000+01:00',
+        '2026-10-25T01:00:00.000+00:00',
+        '2026-10-25T02:00:00.000+00:00',
+        '2026-10-25T03:00:00.000+00:00',
+      ]
+    )
+    assert.isTrue(hours.every((bucket) => bucket.end.diff(bucket.start, 'minutes').minutes === 60))
+
+    // In spring the clocks go forward: 01:00 never happens, and the day is 23 hours
+    const spring = bucketBounds(
+      'hour',
+      { start: at('2026-03-29T00:00', LONDON), end: at('2026-03-29T03:00', LONDON) },
+      LONDON
+    ).map((bucket) => bucket.start.toFormat('HH:mm'))
+    assert.deepEqual(spring, ['00:00', '02:00'])
+    const [short] = bucketBounds(
+      'day',
+      { start: at('2026-03-29T00:00', LONDON), end: at('2026-03-29T12:00', LONDON) },
+      LONDON
+    )
+    assert.equal(short.end.diff(short.start, 'hours').hours, 23)
+  })
+
+  test('the bucket follows the range, and more than 100 is refused', ({ assert }) => {
+    assert.deepEqual(
+      (['today', '7d', '30d', '90d', 'month', 'quarter', 'year'] as const).map(bucketFor),
+      ['hour', 'day', 'day', 'day', 'day', 'week', 'month']
+    )
+    assert.throws(
+      () =>
+        bucketBounds(
+          'hour',
+          { start: at('2026-10-01T00:00', LAGOS), end: at('2026-10-10T00:00', LAGOS) },
+          LAGOS
+        ),
+      /More than 100 hours in this range/
+    )
+    assert.deepEqual(bucketCounts('hour', '90d'), { min: 2137, max: 2161 })
+    assert.deepEqual(bucketCounts('day', 'year'), { min: 1, max: 366 })
+    assert.isAtMost(bucketCounts('week', 'quarter').max, 100)
+    assert.isAtMost(bucketCounts('month', 'year').max, 100)
+  })
+
+  test('boot refuses a by() that always needs more than 100; doctor one that can', ({ assert }) => {
+    assert.throws(
+      () =>
+        loose({
+          ranges: ['today', '30d'],
+          widgets: [metric.trend('Hourly').count(orders).date('placedAt').by('hour')],
+        }),
+      /"Hourly" trend counts by\('hour'\), which needs more than 100 buckets for 30d/
+    )
+    assert.throws(
+      () => loose({ widgets: [metric.trend('Dateless').count(orders)] }),
+      /"Dateless" widget needs date\(\)/
+    )
+    // Day buckets over a year: fine in January, too many by April
+    const screen = loose({
+      ranges: ['30d', 'year'],
+      widgets: [metric.trend('Daily').count(orders).date('placedAt').by('day')],
+    })
+    assert.deepEqual(
+      checkWidgets([{ name: 'overview', screen }]).map((finding) => finding.message),
+      [
+        `the overview screen: the "Daily" trend counts by('day'), which can need more than 100 buckets for year: use a longer unit, or leave by() out to follow the range`,
+      ]
+    )
+    // Without by(), it follows the range and never needs too many
+    const auto = loose({
+      ranges: ['today', '7d', '30d', '90d', 'month', 'quarter', 'year'],
+      widgets: [metric.trend('Auto').count(orders).date('placedAt')],
+    })
+    assert.deepEqual(checkWidgets([{ name: 'overview', screen: auto }]), [])
+    assert.deepInclude(widgetSchema('widget0', auto.widgets![0]), {
+      kind: 'trend',
+      width: 4,
+      compares: false,
+    })
+  })
+})
+
+test.group('Trend chart helpers (FR-25)', () => {
+  test('x labels: an even step, the last included, fewer when narrow', ({ assert }) => {
+    assert.deepEqual(axisTicks(30, 1000, 40), [0, 5, 10, 15, 20, 25, 29])
+    // The year by month on a phone: no two months side by side
+    assert.deepEqual(axisTicks(10, 280, 24), [0, 2, 4, 6, 9])
+    assert.deepEqual(axisTicks(7, 1000, 40), [0, 1, 2, 3, 4, 5, 6])
+    assert.deepEqual(axisTicks(90, 260, 40), [0, 23, 46, 69, 89])
+    assert.deepEqual(axisTicks(1, 300, 40), [0])
+  })
+
+  test('y ticks: 3 or 4 round steps from 0, and compact labels', ({ assert }) => {
+    assert.deepEqual(niceTicks(19_500), [0, 10_000, 20_000])
+    assert.deepEqual(niceTicks(240_000), [0, 100_000, 200_000, 300_000])
+    assert.deepEqual(niceTicks(7), [0, 2.5, 5, 7.5])
+    assert.deepEqual(niceTicks(0), [0])
+    // The axis writes a currency as the cards and tooltip do
+    const naira = { style: 'currency', currency: 'NGN' } as const
+    const dollars = { style: 'currency', currency: 'USD' } as const
+    const spaced = (text: string) => text.replace(/\u00a0/g, ' ')
+    assert.equal(spaced(compactValue(30_000, naira, 'en')), 'NGN 30K')
+    assert.equal(spaced(formatDecimal('30000.00', naira, 'en')), 'NGN 30,000.00')
+    assert.equal(compactValue(30_000, dollars, 'en'), '$30K')
+    assert.equal(formatDecimal('30000.00', dollars, 'en'), '$30,000.00')
+    assert.equal(compactValue(1200, null, 'en'), '1.2K')
+    assert.equal(compactValue(0.4, { style: 'percent', currency: null }, 'en'), '40%')
+  })
+
+  test('bucket labels in the admin timezone, the repeated hour told apart', ({ assert }) => {
+    const iso = (value: string, zone: string) => DateTime.fromISO(value, { zone }).toISO()!
+    const day = { start: iso('2026-10-14T00:00', LAGOS), end: iso('2026-10-15T00:00', LAGOS) }
+    assert.deepEqual(bucketLabels([day], 'day', LAGOS), ['Wed 14 Oct'])
+    assert.deepEqual(bucketLabels([day], 'week', LAGOS), ['Week of 14 Oct'])
+    assert.deepEqual(bucketLabels([day], 'month', LAGOS), ['October 2026'])
+    assert.deepEqual(
+      bucketLabels(
+        [{ start: iso('2026-10-14T14:00', LAGOS), end: iso('2026-10-14T15:00', LAGOS) }],
+        'hour',
+        LAGOS
+      ),
+      ['14:00–15:00']
+    )
+    const london = 'Europe/London'
+    const hours = bucketBounds(
+      'hour',
+      {
+        start: DateTime.fromISO('2026-10-25T00:00', { zone: london }),
+        end: DateTime.fromISO('2026-10-25T02:30', { zone: london }),
+      },
+      london
+    ).map((bucket) => ({ start: bucket.start.toISO()!, end: bucket.end.toISO()! }))
+    assert.deepEqual(bucketLabels(hours, 'hour', london), [
+      '00:00–01:00',
+      '01:00–02:00 GMT+1',
+      '01:00–02:00 GMT',
+      '02:00–03:00',
+    ])
+    assert.equal(
+      previousLine('Wed 16 Sep', 'NGN 20,500.00'),
+      'Previous (Wed 16 Sep): NGN 20,500.00'
+    )
+    assert.equal(previousLine(null, '0'), 'Previous: 0')
+    assert.equal(axisLabel(day, 'day', LAGOS), '14 Oct')
+    assert.equal(axisLabel(day, 'month', LAGOS), 'Oct')
+  })
+
+  test('shapes: the line through the middles, bars with a gap, the bucket under a pointer', ({
+    assert,
+  }) => {
+    const box = { left: 50, top: 10, width: 300, height: 200 }
+    const shapes = trendShapes([0, 50, 100], [100, 0, 0], box, 100)
+    assert.deepEqual(shapes.x, [100, 200, 300])
+    assert.deepEqual(shapes.y, [210, 110, 10])
+    assert.equal(shapes.line, 'M100.0 210.0 L200.0 110.0 L300.0 10.0')
+    assert.equal(shapes.previous, 'M100.0 10.0 L200.0 210.0 L300.0 210.0')
+    assert.equal(shapes.bars[0], '')
+    assert.match(
+      shapes.bars[2],
+      /^M251 210 L251 13 Q251 10 254 10 L346 10 Q349 10 349 13 L349 210 Z$/
+    )
+    assert.equal(bucketAt(149, box, 3), 0)
+    assert.equal(bucketAt(250, box, 3), 2)
+    assert.isNull(bucketAt(20, box, 3))
   })
 })

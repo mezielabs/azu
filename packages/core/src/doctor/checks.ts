@@ -3,7 +3,7 @@ import { FORM_KINDS, inputName, validatorFor, type FormMode } from '../forms/for
 import { PAGE_NAMES, readStamp, sourceHash, type PageName } from '../publish/pages.ts'
 import { isBuiltInDelete, type Resource } from '../resources/define_resource.ts'
 import type { Screen } from '../screens/define_screen.ts'
-import { widgetProblems } from '../widgets/validate.ts'
+import { bucketProblems, widgetProblems } from '../widgets/validate.ts'
 import { SLOT_NAMES } from '../shared/slots.ts'
 import type { AzuConfig } from '../types.ts'
 
@@ -175,6 +175,14 @@ export function checkWidgets(screens: { name: string; screen: Screen<any> }[]): 
   const findings: Finding[] = []
   for (const { name, screen } of screens) {
     for (const widget of screen.widgets ?? []) {
+      // A by() too fine for one of the screen's ranges: that range's card fails
+      for (const problem of bucketProblems(widget.state, screen.ranges, false)) {
+        findings.push({
+          level: 'error',
+          area: 'widgets',
+          message: `the ${name} screen: ${problem}`,
+        })
+      }
       for (const problem of widgetProblems(widget.state)) {
         findings.push({
           level: 'error',
