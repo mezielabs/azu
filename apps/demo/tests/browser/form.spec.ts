@@ -66,7 +66,7 @@ test.group('Form page', (group) => {
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme })
       assert.deepEqual(await axeViolations(page), [], `phone form, ${colorScheme}`)
-      await page.screenshot({ path: `/private/tmp/azu-u08-${colorScheme}.png`, fullPage: true })
+      await page.screenshot({ path: `tmp/review-evidence/azu-u08-${colorScheme}.png`, fullPage: true })
     }
   })
 
