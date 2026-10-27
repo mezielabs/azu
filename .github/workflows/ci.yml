@@ -4,9 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -35,21 +36,16 @@ jobs:
       # and ace loads every command, even for generate:key
       - run: pnpm build
 
-      # What `node ace configure` and the provider need at runtime ships in
-      # the package: stubs, the Edge view and the commands index
-      - name: Packed core includes stubs, views and commands
+      - name: Inspect both preview tarballs
         run: |
-          mkdir -p /tmp/azu-pack
-          (cd packages/core && pnpm pack --pack-destination /tmp/azu-pack > /dev/null)
-          tar -tzf /tmp/azu-pack/mezielabs-azu-*.tgz > /tmp/azu-pack/files
-          for file in build/stubs/config/azu.stub build/stubs/start/azu.stub \
-            build/stubs/inertia/admin/app.stub build/stubs/make/admin_action.stub \
-            build/stubs/make/screen.stub build/stubs/make/screen_component.stub \
-            build/stubs/make/screen_form.stub build/stubs/make/screen_validator.stub \
-            build/resources/views/admin.edge \
-            build/commands/main.js build/commands/commands.json; do
-            grep -qx "package/$file" /tmp/azu-pack/files || { echo "Missing $file"; exit 1; }
-          done
+          pnpm --filter "./packages/*" -r pack --pack-destination "$PWD/artifacts/packages"
+          node scripts/check_release_packages.mjs artifacts/packages
+          node --test scripts/tests/release_packages.spec.mjs
+
+      - name: Strict package export lint
+        run: |
+          (cd packages/core && pnpm dlx publint@0.3.12 --strict)
+          (cd packages/react && pnpm dlx publint@0.3.12 --strict)
 
       # Ace commands (codegen in typecheck) validate the demo's env
       - name: Create demo .env

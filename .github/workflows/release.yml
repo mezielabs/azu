@@ -1,0 +1,79 @@
+name: Preview release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Preview version from both package manifests
+        required: true
+        type: string
+      publish:
+        description: Publish the verified preview tarballs (owner approval required)
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  packages:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Build and inspect release packages
+        env:
+          AZU_RELEASE_VERSION: ${{ inputs.version }}
+        run: pnpm pack:check
+      - uses: actions/upload-artifact@v7
+        with:
+          name: preview-packages-${{ github.sha }}
+          path: artifacts/packages/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: packages
+    if: inputs.publish && github.ref == 'refs/heads/main' && github.repository == 'mezielabs/azu'
+    runs-on: ubuntu-latest
+    environment: npm-preview
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: preview-packages-${{ github.sha }}
+          path: artifacts/packages/
+      - name: Recheck downloaded packages and npm OIDC support
+        env:
+          AZU_RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node scripts/check_release_packages.mjs artifacts/packages
+          node -e "const {execFileSync}=require('node:child_process'); const [major,minor,patch]=execFileSync('npm',['--version'],{encoding:'utf8'}).trim().split('.').map(Number); if (major<11 || (major===11 && (minor<5 || (minor===5 && patch<1)))) throw Error('npm 11.5.1+ required for trusted publishing')"
+      # pnpm pack already rewrites workspace:^ to the coordinated preview version.
+      # Publish exactly the inspected tarballs, core first, never the source folders.
+      - name: Publish preview packages
+        env:
+          AZU_RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          npm publish "artifacts/packages/mezielabs-azu-${AZU_RELEASE_VERSION}.tgz" --tag preview --access public --provenance
+          npm publish "artifacts/packages/mezielabs-azu-react-${AZU_RELEASE_VERSION}.tgz" --tag preview --access public --provenance
