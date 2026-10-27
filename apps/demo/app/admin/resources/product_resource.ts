@@ -45,7 +45,7 @@ export default defineResource(Product, {
   fields: [
     field.text('name').section('Details'),
     // From the README's "Customising" section: inertia/admin/components/sku_input.tsx
-    field.text('sku').section('Details').component('SkuInput'),
+    field.text('sku').component('SkuInput').section('Details'),
     field.decimal('price').section('Pricing').min(0),
     field.belongsTo('category').section('Organisation').searchable('name'),
     field.manyToMany('tags').section('Organisation').searchable('name'),

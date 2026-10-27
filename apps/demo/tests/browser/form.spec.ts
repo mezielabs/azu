@@ -99,6 +99,13 @@ test.group('Form page', (group) => {
     await page.locator('[data-azu-field="price"] input').fill('-5')
     await bar.getByRole('button', { name: 'Save changes' }).click()
     await page.locator('[data-azu-field="price"] input[aria-invalid="true"]').waitFor()
+    // The form moves focus to the first invalid field in the next frame,
+    // after the errors render: wait for it rather than check at once
+    await page.waitForFunction(
+      () =>
+        (globalThis as any).document.activeElement?.closest('[data-azu-field="price"]') !== null &&
+        (globalThis as any).document.activeElement?.tagName === 'INPUT'
+    )
     assert.isTrue(
       await page
         .locator('[data-azu-field="price"] input')
