@@ -8,6 +8,13 @@ type FakeOptions = {
   authenticated?: boolean
   bouncer?: { allows(ability: string): Promise<boolean> }
   inertia?: boolean
+  session?: boolean
+  method?: string
+  partial?: boolean
+  /** Asks for JSON rather than HTML */
+  json?: boolean
+  /** The matched route's name */
+  route?: string
 }
 
 /**
@@ -15,6 +22,7 @@ type FakeOptions = {
  */
 function fakeContext(options: FakeOptions) {
   const calls = {
+    intended: undefined as string | undefined,
     guard: undefined as string | undefined,
     redirect: undefined as string | undefined,
     location: undefined as string | undefined,
@@ -39,8 +47,21 @@ function fakeContext(options: FakeOptions) {
             },
           },
     bouncer: options.bouncer,
+    session: options.session
+      ? { setIntendedUrl: (url: string) => (calls.intended = url) }
+      : undefined,
+    route: options.route ? { name: options.route } : undefined,
     request: {
-      header: (name: string) => (name === 'x-inertia' && options.inertia ? 'true' : null),
+      method: () => options.method ?? 'GET',
+      ajax: () => Boolean(options.inertia),
+      accepts: (types: string[]) => (options.json ? null : types[0]),
+      url: () => '/admin/resources/products?search=clay',
+      header: (name: string) =>
+        name === 'x-inertia-partial-component' && options.partial
+          ? 'azu/screen'
+          : name === 'x-inertia' && options.inertia
+            ? 'true'
+            : null,
     },
     response: {
       redirect: (url: string) => (calls.redirect = url),
@@ -88,6 +109,29 @@ test.group('AdminAccessMiddleware (FR-02)', () => {
     assert.equal(result.location, '/login')
     assert.isUndefined(result.redirect)
     assert.isFalse(result.nextCalled)
+  })
+
+  test('remembers only guest navigations when a session is available', async ({ assert }) => {
+    for (const inertia of [false, true]) {
+      const navigation = await run({ authenticated: false, session: true, inertia })
+      assert.equal(navigation.intended, '/admin/resources/products?search=clay')
+    }
+    for (const options of [
+      { method: 'POST' },
+      { method: 'PUT' },
+      { method: 'DELETE' },
+      { inertia: true, partial: true },
+      { authenticated: true, bouncer: allow },
+      // fetch() asking for JSON
+      { json: true },
+      // The JSON endpoints, even when the request accepts HTML or is Inertia's
+      { route: 'azu.resources.fields.options' },
+      { route: 'azu.resources.filters.options' },
+      { route: 'azu.resources.fields.options', inertia: true },
+    ]) {
+      const background = await run({ authenticated: false, session: true, ...options })
+      assert.isUndefined(background.intended)
+    }
   })
 
   test('uses the configured guard and login URL', async ({ assert }) => {

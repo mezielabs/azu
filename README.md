@@ -75,7 +75,26 @@ export const accessAdmin = Bouncer.ability((user: User) => {
 
 If you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` to add the ability. Without Bouncer, Azu denies everyone.
 
-Note: Azu uses your app's existing auth guard. Guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403.
+Note: Azu uses your app's existing auth guard: guests are redirected to your login page, and signed-in users who fail `accessAdmin` get a 403. With session middleware, Azu remembers the admin page a guest asked for, so your login can send them back there, as the demo's does:
+
+```ts
+// app/controllers/session_controller.ts
+import { isValidRedirectUrl } from '@adonisjs/core/http/helpers'
+
+async store({ request, auth, response, session, inertia }: HttpContext) {
+  const { email, password } = await request.validateUsing(loginValidator)
+  const user = await User.verifyCredentials(email, password)
+
+  await auth.use('web').login(user)
+  const intended = session.pullIntendedUrl()
+  if (typeof intended === 'string' && intended.startsWith('/') && isValidRedirectUrl(intended)) {
+    // The admin has its own Inertia entry point, so load its page
+    if (request.header('x-inertia')) return inertia.location(intended)
+    return response.redirect(intended)
+  }
+  return response.redirect().toRoute('dashboard')
+}
+```
 
 ## Quick start
 

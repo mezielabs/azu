@@ -16,6 +16,27 @@ export const ACCESS_ABILITY = 'accessAdmin'
 type AccessContext = {
   auth?: { use(guard?: string): { check(): Promise<boolean> } }
   bouncer?: { allows(ability: string): Promise<boolean> }
+  session?: { setIntendedUrl(url: string): void }
+}
+
+/**
+ * Admin GET routes that answer JSON to `fetch()`, never pages: a guest's
+ * request to one mustn't become where login returns to (U02).
+ */
+const JSON_ROUTES = new Set(['azu.resources.fields.options', 'azu.resources.filters.options'])
+
+/**
+ * Whether a guest's request is a page they navigated to, so login can
+ * return there (U02): a GET that's an Inertia visit but not a partial
+ * reload, or that asks for HTML. Never a JSON endpoint, whatever headers
+ * it sends.
+ */
+function isNavigation(ctx: HttpContext): boolean {
+  const { request } = ctx
+  if (request.method() !== 'GET' || JSON_ROUTES.has(ctx.route?.name ?? '')) return false
+  // Inertia sets X-Inertia-Partial-Component on every partial reload, `only` or `except`
+  if (request.header('x-inertia')) return !request.header('x-inertia-partial-component')
+  return request.accepts(['html']) === 'html'
 }
 
 /**
@@ -35,7 +56,7 @@ export class AdminAccessMiddleware {
   constructor(protected config: AzuConfig) {}
 
   async handle(ctx: HttpContext, next: NextFn) {
-    const { auth, bouncer } = ctx as HttpContext & AccessContext
+    const { auth, bouncer, session } = ctx as HttpContext & AccessContext
 
     if (!auth) {
       ctx.logger.warn('Azu denied admin access: @adonisjs/auth is not set up for this request')
@@ -43,6 +64,9 @@ export class AdminAccessMiddleware {
     }
 
     if (!(await auth.use(this.config.guard).check())) {
+      // Remember page navigations, never writes, partial reloads or JSON.
+      // The host app consumes this after successful authentication.
+      if (session && isNavigation(ctx)) session.setIntendedUrl(ctx.request.url(true))
       if (ctx.request.header('x-inertia')) {
         return ctx.inertia.location(this.config.loginUrl)
       }
