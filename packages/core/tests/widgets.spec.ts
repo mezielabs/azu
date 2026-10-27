@@ -20,7 +20,7 @@ import {
   withRange,
 } from '../src/shared/metrics.ts'
 import { addDecimals, decimalResult, roundDecimal } from '../src/widgets/decimals.ts'
-import { formatDecimal } from '../src/shared/format.ts'
+import { formatDecimal, formatFigure } from '../src/shared/format.ts'
 import {
   axisLabel,
   axisTicks,
@@ -183,6 +183,53 @@ test.group('Widget ranges (FR-24)', () => {
 })
 
 test.group('Widget values (FR-24)', () => {
+  test('figures from 1,000,000 up are abbreviated, exact below (U01)', ({ assert }) => {
+    const naira = { style: 'currency', currency: 'NGN' } as const
+    const spaced = (figure: { text: string; exact: string; compact: boolean }) => ({
+      ...figure,
+      text: figure.text.replace(/\u00a0/g, ' '),
+      exact: figure.exact.replace(/\u00a0/g, ' '),
+    })
+    // Either side of the threshold, on the exact digits
+    assert.deepEqual(spaced(formatFigure('999999.99', naira, null, 'en')), {
+      text: 'NGN 999,999.99',
+      exact: 'NGN 999,999.99',
+      compact: false,
+    })
+    assert.deepEqual(spaced(formatFigure('999999.9999', null, null, 'en')), {
+      text: '999,999.9999',
+      exact: '999,999.9999',
+      compact: false,
+    })
+    assert.deepEqual(spaced(formatFigure('1000000.00', naira, null, 'en')), {
+      text: 'NGN 1M',
+      exact: 'NGN 1,000,000.00',
+      compact: true,
+    })
+    assert.equal(spaced(formatFigure('4281750.50', naira, null, 'en')).text, 'NGN 4.28M')
+    // Negatives: the same threshold on the size
+    assert.deepEqual(spaced(formatFigure('-1050000000', naira, null, 'en')), {
+      text: '-NGN 1.05B',
+      exact: '-NGN 1,050,000,000.00',
+      compact: true,
+    })
+    assert.equal(spaced(formatFigure('-999999.99', naira, null, 'en')).text, '-NGN 999,999.99')
+    // compact() forces it, compact(false) turns it off
+    assert.equal(spaced(formatFigure('194000', naira, true, 'en')).text, 'NGN 194K')
+    // Nothing to abbreviate: no hidden copy
+    assert.isFalse(formatFigure('12', null, true, 'en').compact)
+    assert.equal(
+      spaced(formatFigure('1234567890123.45', naira, false, 'en')).text,
+      'NGN 1,234,567,890,123.45'
+    )
+    // A currency with 3 places doesn't pad or throw
+    assert.equal(
+      spaced(formatFigure('1234567.890', { style: 'currency', currency: 'KWD' }, null, 'en')).text,
+      'KWD 1.23M'
+    )
+    assert.deepEqual(formatFigure(null, naira), { text: '', exact: '', compact: false })
+  })
+
   test('comparisons: a change, new, no change, with higher better', ({ assert }) => {
     assert.deepEqual(compareValues('4812500.00', '4281750.00'), {
       kind: 'change',
@@ -394,6 +441,31 @@ test.group('Widgets screens (FR-24)', () => {
     assert.deepInclude(widgetSchema('widget4', metric.table('T').resource(orders).width(4)), {
       width: 4,
     })
+  })
+
+  test('compact() on value, progress and partition widgets only (U01)', ({ assert }) => {
+    const value = metric.value('Revenue').sum(orders, 'total')
+    assert.deepInclude(widgetSchema('widget0', value), { compact: null })
+    assert.deepInclude(widgetSchema('widget0', value.compact()), { compact: true })
+    assert.deepInclude(widgetSchema('widget0', value.compact(false)), { compact: false })
+    const mine = metric
+      .value('Mine')
+      .using(() => 1)
+      .ability(admins)
+      .compact()
+    assert.deepInclude(widgetSchema('widget1', mine), { compact: true })
+    const progress = metric.progress('Goal').sum(orders, 'total').goal(5).compact(false)
+    assert.deepInclude(widgetSchema('widget2', progress), { compact: false })
+    const partition = metric.partition('By status').count(orders).groupBy('status').compact()
+    assert.deepInclude(widgetSchema('widget3', partition), { compact: true })
+    assert.deepInclude(widgetSchema('widget4', metric.table('T').resource(orders)), {
+      compact: null,
+    })
+
+    // @ts-expect-error a table's cells are list cells, not figures
+    metric.table('T').resource(orders).compact
+    // @ts-expect-error a trend's axis is always compact, its tooltip never
+    metric.trend('T').count(orders).date('placedAt').compact
   })
 
   test("a user without the resource's viewList, or the custom ability, doesn't get it", async ({

@@ -206,6 +206,11 @@ export type WidgetSchema = {
   /** Grid columns it spans, of 4 */
   width: 1 | 2 | 3 | 4
   format: NumberFormat
+  /**
+   * Whether value, progress and partition figures are abbreviated
+   * ("NGN 4.28M"): `true` always, `false` never, `null` from 1,000,000 up
+   */
+  compact: boolean | null
   /** Said under the label: "All time" for a widget without a date column */
   note: string | null
   /** Whether it's compared with the previous period */

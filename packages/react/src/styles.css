@@ -2076,7 +2076,8 @@
   .azu-widget-figure {
     @apply m-0 leading-tight font-semibold tracking-tight;
     font-size: clamp(1.125rem, 10cqi, 1.75rem);
-    word-break: break-all;
+    /* Wraps at a space before it splits digits, only when it must */
+    overflow-wrap: anywhere;
     font-variant-numeric: tabular-nums;
   }
 
@@ -2208,16 +2209,31 @@
   }
 
   .azu-partition-value {
-    @apply text-right whitespace-nowrap;
+    @apply text-right;
     font-variant-numeric: tabular-nums;
   }
 
+  /* The figure and its percentage each stay whole; they wrap between */
   .azu-partition-value strong {
-    @apply font-semibold;
+    @apply font-semibold whitespace-nowrap;
   }
 
-  .azu-partition-value span {
+  .azu-partition-value > span {
+    @apply whitespace-nowrap;
     color: var(--azu-muted);
+  }
+
+  /* A narrow card, or enlarged text: the bar goes under the label and value */
+  @container (max-width: 20rem) {
+    .azu-partition-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: 0.375rem;
+    }
+
+    .azu-partition-bar {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
   }
 
   .azu-widget[data-azu-widget='table'] {

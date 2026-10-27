@@ -4,7 +4,7 @@
  * formatted with `Intl` in the admin's timezone; no Luxon in the
  * browser.
  */
-import { formatOptions, type NumberFormat } from './format.ts'
+import { compactNumberFormat, type NumberFormat } from './format.ts'
 import type { BucketUnit } from './metrics.ts'
 
 /** A bucket as the chart gets it: its start and end, ISO instants */
@@ -116,11 +116,7 @@ export function niceTicks(max: number): number[] {
  * write it, in compact notation ("NGN 30K", "$30K", "1.2K", "40%")
  */
 export function compactValue(value: number, format: NumberFormat, locale?: string): string {
-  return new Intl.NumberFormat(locale, {
-    ...formatOptions(format),
-    notation: 'compact',
-    maximumFractionDigits: format?.style === 'percent' ? 0 : 1,
-  }).format(value)
+  return compactNumberFormat(format, format?.style === 'percent' ? 0 : 1, locale).format(value)
 }
 
 /** Where things go: the plot's box inside the chart, in pixels */

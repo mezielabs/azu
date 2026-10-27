@@ -77,7 +77,10 @@ export default defineScreen({
       .date('placedAt')
       .period('month')
       .goal(750_000)
-      .format('currency', 'NGN'),
+      .format('currency', 'NGN')
+      // Short figures beside the bar: "NGN 182K of NGN 750K". From a
+      // million up every widget abbreviates; the exact figure is on hover
+      .compact(),
     metric.partition('Orders by status').count(orders).groupBy('status').date('placedAt').width(2),
     metric
       .table('Recent orders')

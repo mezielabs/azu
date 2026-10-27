@@ -1,7 +1,7 @@
 import { Deferred, Link, router, usePage } from '@inertiajs/react'
 import {
   comparisonText,
-  formatDecimal,
+  formatFigure,
   percentOf,
   timeLeft,
   type ListState,
@@ -9,6 +9,7 @@ import {
 import type { AzuSharedProps, ScreenSchema, WidgetData, WidgetSchema } from '@mezielabs/azu/types'
 import type { ReactNode } from 'react'
 import { DataTable } from '../list/data_table.tsx'
+import { FigureText, figureTitle } from './figure_text.tsx'
 import { TrendChart } from './trend_chart.tsx'
 
 type Ok<Kind extends string> = Extract<WidgetData, { status: 'ok'; kind: Kind }>
@@ -84,7 +85,7 @@ function WidgetCard(props: {
   const { widget, data } = props
   const id = `azu-${widget.key}-label`
   const href = data?.status === 'ok' && 'href' in data && widget.kind === 'value' ? data.href : null
-  const aside = data?.status === 'ok' ? cardAside(data) : null
+  const aside = data?.status === 'ok' ? cardAside(widget, data) : null
   return (
     <section
       className="azu-widget"
@@ -135,7 +136,7 @@ function WidgetCard(props: {
 }
 
 /** What sits beside a card's label: "386 orders", "12 days left", "View all" */
-function cardAside(data: Extract<WidgetData, { status: 'ok' }>): ReactNode {
+function cardAside(widget: WidgetSchema, data: Extract<WidgetData, { status: 'ok' }>): ReactNode {
   if (data.kind === 'trend') {
     return <span className="azu-widget-aside">By {data.unit}</span>
   }
@@ -143,10 +144,10 @@ function cardAside(data: Extract<WidgetData, { status: 'ok' }>): ReactNode {
     return <span className="azu-widget-aside">{timeLeft(data.remaining)}</span>
   }
   if (data.kind === 'partition' && data.unit) {
-    const count = formatDecimal(data.total, null)
+    const count = formatFigure(data.total, null, widget.compact)
     return (
-      <span className="azu-widget-aside">
-        {count} {data.total === '1' ? data.unit.one : data.unit.other}
+      <span className="azu-widget-aside" title={figureTitle(count)}>
+        <FigureText figure={count} /> {data.total === '1' ? data.unit.one : data.unit.other}
       </span>
     )
   }
@@ -183,10 +184,13 @@ function WidgetBody(props: {
 function ValueBody(props: { widget: WidgetSchema; data: Ok<'value'> }) {
   const { widget, data } = props
   const { comparison } = data
-  const previous = data.previous === null ? '' : formatDecimal(data.previous, widget.format)
+  const value = formatFigure(data.value, widget.format, widget.compact)
+  const previous = formatFigure(data.previous, widget.format, widget.compact)
   return (
     <>
-      <p className="azu-widget-figure">{formatDecimal(data.value, widget.format)}</p>
+      <p className="azu-widget-figure" title={figureTitle(value)}>
+        <FigureText figure={value} />
+      </p>
       {comparison && (
         <p
           className="azu-widget-delta"
@@ -204,10 +208,13 @@ function ValueBody(props: { widget: WidgetSchema; data: Ok<'value'> }) {
                 {comparison.percent}
                 <span className="azu-visually-hidden">, {comparison.outcome}</span>
               </span>{' '}
-              from {previous}
+              from{' '}
+              <span title={figureTitle(previous)}>
+                <FigureText figure={previous} />
+              </span>
             </>
           ) : (
-            <span className="azu-widget-change">{comparisonText(comparison, previous)}</span>
+            <span className="azu-widget-change">{comparisonText(comparison, previous.exact)}</span>
           )}
         </p>
       )}
@@ -219,12 +226,20 @@ function ProgressBody(props: { widget: WidgetSchema; data: Ok<'progress'> }) {
   const { widget, data } = props
   const reached = percentOf(data.share)
   const pace = percentOf(data.pace)
-  const value = formatDecimal(data.value, widget.format)
-  const goal = formatDecimal(data.goal, widget.format)
+  const value = formatFigure(data.value, widget.format, widget.compact)
+  const goal = formatFigure(data.goal, widget.format, widget.compact)
   return (
     <>
       <p className="azu-widget-progress-figures">
-        <span className="azu-widget-progress-value">{value}</span> <span>of {goal}</span>
+        <span className="azu-widget-progress-value" title={figureTitle(value)}>
+          <FigureText figure={value} />
+        </span>{' '}
+        <span>
+          of{' '}
+          <span title={figureTitle(goal)}>
+            <FigureText figure={goal} />
+          </span>
+        </span>
       </p>
       <div
         className="azu-progress"
@@ -233,7 +248,7 @@ function ProgressBody(props: { widget: WidgetSchema; data: Ok<'progress'> }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.min(100, Math.round(data.share * 100))}
-        aria-valuetext={`${reached} of ${goal}, ${data.period}`}
+        aria-valuetext={`${reached} of ${goal.exact}, ${data.period}`}
       >
         <span
           className="azu-progress-fill"
@@ -259,7 +274,7 @@ function PartitionBody(props: { widget: WidgetSchema; data: Ok<'partition'> }) {
   return (
     <ul className="azu-partition">
       {data.rows.map((row) => {
-        const value = formatDecimal(row.value, widget.format)
+        const value = formatFigure(row.value, widget.format, widget.compact)
         const unit = data.unit ? (row.value === '1' ? data.unit.one : data.unit.other) : ''
         // Named by its content, with words a screen reader needs and the
         // eye doesn't: "Paid: 3 orders, 33%. Show them"
@@ -274,7 +289,9 @@ function PartitionBody(props: { widget: WidgetSchema; data: Ok<'partition'> }) {
               <span style={{ width: `${row.share * 100}%` }} />
             </span>
             <span className="azu-partition-value">
-              <strong>{value}</strong>
+              <strong title={figureTitle(value)}>
+                <FigureText figure={value} />
+              </strong>
               {hidden(`${unit ? ` ${unit}` : ''}${row.percent !== null ? ', ' : ''}`)}
               {row.percent !== null && (
                 <>

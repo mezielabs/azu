@@ -63,6 +63,57 @@ export function formatDecimal(value: string | null, format: NumberFormat, locale
 }
 
 /**
+ * `Intl.NumberFormat` in compact notation ("NGN 4.28M", "1.2K") with the
+ * format's currency display, so cards, tooltips and chart axes agree.
+ */
+export function compactNumberFormat(
+  format: NumberFormat,
+  maximumFractionDigits: number,
+  locale?: string
+): Intl.NumberFormat {
+  return new Intl.NumberFormat(locale, {
+    ...formatOptions(format),
+    notation: 'compact',
+    // A currency's own minimum (2, or 3 for KWD) would pad "NGN 1.00M" or throw
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  })
+}
+
+/** Widget figures from this size up are abbreviated, unless `compact(false)` */
+export const COMPACT_FROM = 1_000_000
+
+/**
+ * A widget figure as shown, and in full. `compact` is whether `text`
+ * is abbreviated, so `exact` has to be there for screen readers and
+ * the tooltip.
+ */
+export type Figure = { text: string; exact: string; compact: boolean }
+
+/**
+ * Formats a widget figure (U01): in compact notation, at most 2 fraction
+ * digits, from 1,000,000 up ("NGN 4.28M", "-NGN 1.05B"), and in full
+ * below that. `compact: true` abbreviates any figure, `false` none.
+ */
+export function formatFigure(
+  value: string | null,
+  format: NumberFormat,
+  compact: boolean | null = null,
+  locale?: string
+): Figure {
+  const exact = formatDecimal(value, format, locale)
+  const digits = value?.trim() ?? ''
+  if (compact === false || !DECIMAL.test(digits)) return { text: exact, exact, compact: false }
+  // Compared on the digits, so 999,999.9999 isn't rounded up to a million
+  const whole = digits.replace('-', '').split('.')[0].replace(/^0+/, '')
+  if (compact === null && whole.length < String(COMPACT_FROM).length) {
+    return { text: exact, exact, compact: false }
+  }
+  const text = compactNumberFormat(format, 2, locale).format(digits as unknown as number)
+  return { text, exact, compact: text !== exact }
+}
+
+/**
  * Formats an ISO timestamp in the app's timezone.
  */
 export function formatDateTime(
