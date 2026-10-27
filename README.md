@@ -237,6 +237,8 @@ Labels come from names: `isFeatured` reads "Is featured", and common acronyms ar
 | `hasMany` | Table on the detail page | Shows the related resource's columns, except the `belongsTo` back to this record (a category's products table has no Category column) |
 | `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on edit when attachments fall outside the related resource scope or exceed 200 |
 
+> **Uploads need a public disk, for now.** Azu links `file` and `image` fields with Drive's `getUrl()`, which suits public disks only. Private disks and signed, expiring URLs (`getSignedUrl()`) aren't supported yet, so don't use `file` or `image` fields for files that must stay private: anyone with a file's link can open it.
+
 You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree.
 
 ### Form sections
@@ -723,9 +725,19 @@ Pro is licensed per project or for unlimited projects, and is checked at install
 
 ## Roadmap
 
-- [ ] v0.x previews for early testers
-- [ ] v1.0: resources, fields, relationships, permissions, validation, actions, filters, theming
-- [ ] v1.1: bulk actions on all filtered rows, navigation badges, more override slots
+Built, for the first preview:
+
+- [x] Resources, fields and relationships (`belongsTo`, `hasMany`, `manyToMany`), permissions, validation, row and bulk actions (including on all filtered rows), filters, form sections, list column choices, theming, navigation groups and icons, component overrides and `azu:publish`
+- [x] Screens: your own screens, navigation links, a home screen, screen forms, widgets and trends
+
+Next:
+
+- [ ] 0.1.0-preview.0 for early testers
+- [ ] Private disks for uploads, with signed URLs
+- [ ] Soft deletes (a trashed filter and restore) and global search
+- [ ] Azu's own interface in other languages, through AdonisJS i18n (it's English-only for now)
+- [ ] Navigation badges and more override slots
+- [ ] v1.0
 - [ ] Azu Pro
 - [ ] Vue support, if there's demand
 

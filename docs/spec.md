@@ -511,13 +511,16 @@ export default defineConfig({
 
 ## 11. Milestones
 
-| Phase | Scope | Exit criteria |
-| --- | --- | --- |
-| 0. Spike (2–3 days) | Monorepo skeleton, demo app, and three risk checks (below) | Written findings in `docs/spike-findings.md`; owner approves Phase 1 (approved 2026-10-12) |
-| 1. Weeks 1–3 | FR-01 to FR-08: install, access gate, resources, generator, list/forms/detail, core fields, belongsTo/hasMany | Generated Product resource works end to end in the demo app |
-| 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass; v0.x preview published |
-| 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | README quickstart works on a fresh app in under five minutes |
-| v1.1 | P1 items: FR-09, FR-15, FR-16, FR-17. Private Drive disks: `file` and `image` URLs signed through Drive (`getSignedUrl`) instead of `getUrl`, which only suits public disks | |
+| Phase | Scope | Exit criteria | Status |
+| --- | --- | --- | --- |
+| 0. Spike (2–3 days) | Monorepo skeleton, demo app, and three risk checks (below) | Written findings in `docs/spike-findings.md`; owner approves Phase 1 | Done; approved 2026-10-12 |
+| 1. Weeks 1–3 | FR-01 to FR-08: install, access gate, resources, generator, list/forms/detail, core fields, belongsTo/hasMany | Generated Product resource works end to end in the demo app | Done; closed with #15 |
+| 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass | Done |
+| P1 items | FR-09, FR-15, FR-16, FR-17 (planned for v1.1, brought forward) | As each FR's acceptance | Done |
+| Screens | FR-20 to FR-25: custom screens, navigation links, home screen, screen forms, widgets, trends | As each FR's acceptance | Done |
+| Preview | Review fixes (`docs/reviews/2026-10-22-azu-review.md`), packaging, release workflow, then 0.1.0-preview.0 | `docs/release.md`'s checklist on the release commit | Next |
+| 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | README quickstart works on a fresh app in under five minutes | Not started |
+| Later | Private Drive disks (`file` and `image` URLs signed through Drive's `getSignedUrl` instead of `getUrl`, which only suits public disks); FR-18 soft deletes, FR-19 global search (P2); navigation badges; Azu's own UI strings through AdonisJS i18n (English-only in the preview, R03) | | Not started |
 
 **Phase 0 risk checks:**
 
@@ -539,7 +542,7 @@ For each: what works, what doesn't, the recommended approach, and any spec chang
 
    React Aria and Tiptap stay approved only if this check passes (see `docs/decisions.md`).
 
-**P1 planning note (2026-10-15, not started).** Phase 2's P0 items are FR-12, FR-13 and FR-14. These are the P1 items, in the suggested order, for Chimezie to approve before any of them starts:
+**P1 planning note (2026-10-15; kept as history: all four are built).** Phase 2's P0 items are FR-12, FR-13 and FR-14. These are the P1 items, in the suggested order, for Chimezie to approve before any of them starts:
 
 1. **FR-16, navigation groups, icons and order.** The smallest of the four. `group` and `icon` are already on resources and in the navigation props; what's missing is an `order` (for groups and items) and rendering icons from a fixed set. It changes only the navigation. A quick, low-risk start that every admin sees.
 2. **FR-09, `manyToMany` picker.** Builds on what FR-08 and FR-13 settled: the async ComboBox, the policy-checked options endpoint and its `viewList` rule. New work: a multi-select control, and pivot writes (`sync`) in the save transaction, after validation, limited to the declared field. It also takes `manyToMany` out of the "left out of forms" note in §5.
