@@ -41,6 +41,93 @@ async function store() {
   }
 }
 
+/**
+ * Holds back the responses of widget props matching `key`, on URLs
+ * matching `url`, until `release()`
+ */
+async function holdWidget(page: any, key: string | RegExp, url: RegExp) {
+  let release!: () => void
+  let captured!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const seen = new Promise<void>((resolve) => {
+    captured = resolve
+  })
+  await page.route(
+    (target: URL) => url.test(target.pathname + target.search),
+    async (route: any) => {
+      const partial = route.request().headers()['x-inertia-partial-data'] ?? ''
+      const matches = typeof key === 'string' ? partial === key : key.test(partial)
+      if (!matches) return route.continue()
+      const response = await route.fetch()
+      captured()
+      await gate
+      // The browser may have cancelled it meanwhile
+      await route.fulfill({ response }).catch(() => {})
+    }
+  )
+  return { release: () => release(), captured: seen }
+}
+
+/** The range button is pressed, and every widget's request has finished */
+async function settled(page: any, label: string) {
+  await page
+    .getByRole('group', { name: 'Date range' })
+    .locator('[aria-pressed="true"]', { hasText: label })
+    .waitFor()
+  await page.waitForLoadState('networkidle')
+  await loaded(page)
+}
+
+/** Only the digits: "NGN 194,000.00" and "194000.00" both read 19400000 */
+const digits = (text: string | null) => (text === null ? null : text.replace(/\D/g, ''))
+
+/** Each value card's figure, by label, as digits */
+async function figures(page: any) {
+  const cards: [string, string | null][] = await page
+    .locator('[data-azu-widget="value"]')
+    .evaluateAll((items: any[]) =>
+      items.map((card) => [
+        card.querySelector('.azu-widget-label').textContent,
+        card.querySelector('.azu-widget-figure')?.textContent ?? null,
+      ])
+    )
+  return Object.fromEntries(cards.map(([label, figure]) => [label, digits(figure)]))
+}
+
+/** What the server says for the selected range, each value card's figure as digits */
+async function serverFigures(page: any) {
+  const values: Record<string, string | null> = await page.evaluate(async () => {
+    const doc = (globalThis as any).document
+    // Inertia 3 writes the first page in a JSON script tag
+    const element = doc.querySelector('[data-page]')
+    const first = JSON.parse(
+      element.tagName === 'SCRIPT' ? element.textContent : element.dataset.page
+    ) as { version?: string }
+    const version = first.version ?? ''
+    const current = (globalThis as any).location.href
+    const headers = { 'X-Inertia': 'true', 'X-Inertia-Version': version }
+    const pageResponse = await fetch(current, { headers })
+    const { props } = (await pageResponse.json()) as { props: any }
+    const result: Record<string, string | null> = {}
+    for (const widget of props.widgets.filter((item: any) => item.kind === 'value')) {
+      const partial = await fetch(current, {
+        headers: {
+          ...headers,
+          'X-Inertia-Partial-Component': 'azu/screen',
+          'X-Inertia-Partial-Data': widget.key,
+        },
+      })
+      const body = (await partial.json()) as { props: Record<string, any> }
+      const data = body.props[widget.key]
+      result[widget.label] = data.status === 'ok' ? data.value : null
+    }
+    return result
+  })
+  return Object.fromEntries(Object.entries(values).map(([label, value]) => [label, digits(value)]))
+}
+
 /** Every widget's card, once its data is in (or it failed) */
 async function loaded(page: any) {
   await page.waitForFunction(
@@ -60,8 +147,13 @@ async function loaded(page: any) {
 test.group('Widgets', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
+  /**
+   * C01: the figures always belong to the selected range. Each test holds
+   * an old response back, changes the range, then lets it go: the cards
+   * must end up with what the server says for the range that's selected.
+   */
   for (const initialLoad of [false, true]) {
-    test(`an old ${initialLoad ? 'deferred load' : 'range reload'} cannot overwrite the selected range`, async ({
+    test(`C01: an old ${initialLoad ? 'deferred load' : 'range reload'} cannot overwrite the selected range`, async ({
       visit,
       browserContext,
       assert,
@@ -71,44 +163,123 @@ test.group('Widgets', (group) => {
       await browserContext.loginAs(await createUser('admin'))
       const page = await visit('/admin')
       await loaded(page)
-      let release!: () => void
-      let captured!: () => void
-      const hold = new Promise<void>((resolve) => {
-        release = resolve
-      })
-      const ready = new Promise<void>((resolve) => {
-        captured = resolve
-      })
-      cleanup(() => release())
-      const oldUrl = initialLoad ? '**/admin' : '**/admin?range=7d'
-      await page.route(oldUrl, async (route: any) => {
-        if (route.request().headers()['x-inertia-partial-data'] !== 'widget1')
-          return route.continue()
-        const response = await route.fetch()
-        captured()
-        await hold
-        await route.fulfill({ response })
-      })
+      const held = await holdWidget(page, 'widget1', initialLoad ? /\/admin$/ : /range=7d/)
+      cleanup(() => held.release())
+
       const switcher = page.getByRole('group', { name: 'Date range' })
       if (initialLoad) await page.goto('/admin')
       else await switcher.getByRole('button', { name: '7 days' }).click()
-      await ready
-      const cancelled = page.waitForEvent('requestfailed', {
-        predicate: (request: any) => request.headers()['x-inertia-partial-data'] === 'widget1',
-      })
+      await held.captured
       const selected = initialLoad ? '7 days' : '30 days'
       await switcher.getByRole('button', { name: selected }).click()
-      await cancelled
-      release()
-      await loaded(page)
-      const figure = page.locator('[data-azu-widget="value"]').nth(1).locator('.azu-widget-figure')
-      await figure.filter({ hasText: initialLoad ? /^3$/ : /^13$/ }).waitFor()
-      assert.equal(
-        await switcher.getByRole('button', { name: selected }).getAttribute('aria-pressed'),
-        'true'
-      )
+      await settled(page, selected)
+      // The old response arrives last, and changes nothing
+      held.release()
+      await page.waitForTimeout(300)
+      await settled(page, selected)
+      assert.deepEqual(await figures(page), await serverFigures(page))
     })
   }
+
+  test('C01: rapid repeated switches end on the last range, with its figures', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await store()
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await loaded(page)
+    // Every 7-day and 90-day widget response is slow
+    const slow = await holdWidget(page, /^widget/, /range=(7d|90d)/)
+    cleanup(() => slow.release())
+    const switcher = page.getByRole('group', { name: 'Date range' })
+    for (const label of ['7 days', '90 days', 'This month', '7 days', 'Today']) {
+      await switcher.getByRole('button', { name: label }).click()
+    }
+    await settled(page, 'Today')
+    slow.release()
+    await page.waitForTimeout(300)
+    await settled(page, 'Today')
+    assert.match(page.url(), /range=today$/)
+    assert.deepEqual(await figures(page), await serverFigures(page))
+  })
+
+  test('C01: switching away and straight back ends on the range clicked last', async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await store()
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await loaded(page)
+    // The 7-day range visit is slow, so 30 days is clicked while it's in flight
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    cleanup(() => release())
+    await page.route(
+      (target: URL) => /range=7d/.test(target.search),
+      async (route: any) => {
+        if (route.request().headers()['x-inertia-partial-data'] !== 'range') return route.continue()
+        await gate
+        await route.continue().catch(() => {})
+      }
+    )
+    const switcher = page.getByRole('group', { name: 'Date range' })
+    await switcher.getByRole('button', { name: '7 days' }).click()
+    await switcher.getByRole('button', { name: '30 days' }).click()
+    release()
+    await settled(page, '30 days')
+    assert.match(page.url(), /\/admin$/)
+    assert.deepEqual(await figures(page), await serverFigures(page))
+  })
+
+  test("C01: a retry still loading when the range changes doesn't corrupt the cards", async ({
+    visit,
+    browserContext,
+    assert,
+    cleanup,
+  }) => {
+    await store()
+    // Average order fails its first load, so it offers Try again
+    const azu = await app.container.make('azu')
+    const average = azu.screens.get('overview')!.widgets![2]
+    const where = average.state.where!
+    let calls = 0
+    average.state.where = (query) => {
+      calls++
+      if (calls === 1) throw new Error('Test: the first load fails')
+      return where(query)
+    }
+    cleanup(() => {
+      average.state.where = where
+    })
+    await browserContext.loginAs(await createUser('admin'))
+    const page = await visit('/admin')
+    await loaded(page)
+    const card = page.locator('[data-azu-widget="value"]').nth(2)
+    await card.getByText("Couldn't load this").waitFor()
+
+    // The 30-day retry is held back while the range changes to 7 days
+    const held = await holdWidget(page, 'widget2', /\/admin$/)
+    cleanup(() => held.release())
+    await card.getByRole('button', { name: /Try again/ }).click()
+    await held.captured
+    await page
+      .getByRole('group', { name: 'Date range' })
+      .getByRole('button', { name: '7 days' })
+      .click()
+    await settled(page, '7 days')
+    held.release()
+    await page.waitForTimeout(300)
+    await settled(page, '7 days')
+    assert.deepEqual(await figures(page), await serverFigures(page))
+  })
 
   test('the Overview renders its widgets and switches range', async ({
     visit,
