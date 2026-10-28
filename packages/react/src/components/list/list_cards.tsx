@@ -6,8 +6,8 @@ import { ImageIcon } from '../shell_icons.tsx'
 
 /**
  * The list below 768px: a card per row. The first image column is the
- * card's picture, the title column its heading, the next two columns a
- * line under it, and the first badge column sits on the right. A row the
+ * card's picture, the title column its heading, the next two columns on
+ * separate lines below it, then the first badge column. A row the
  * user may view is a link to its detail page; its menu (View, Edit, row
  * actions) is a 44px button beside it, outside the link.
  */
@@ -18,7 +18,7 @@ export function ListCards(props: {
   rows: ListRow[]
   timezone: string
   rowHref?: (row: ListRow) => string | undefined
-  /** The row's menu, a 44px button beside the badge, outside the card's link */
+  /** The row's menu, a 44px button beside the content, outside the card's link */
   rowMenu?: (row: ListRow) => ReactNode
   /** Shown when there are no rows. Defaults to "No records" */
   emptyState?: ReactNode
@@ -62,22 +62,25 @@ export function ListCards(props: {
               </span>
             )}
             <span className="azu-card-text">
-              <span className="azu-card-title">
-                {title ? cell(title) : (row.title ?? String(row.id))}
+              <span className="azu-card-title" title={row.title ?? undefined}>
+                {title
+                  ? title.kind === 'text' && !title.component
+                    ? String(row.cells[title.name] ?? row.title ?? row.id)
+                    : cell(title)
+                  : (row.title ?? String(row.id))}
               </span>
               {details.length > 0 && (
                 <span className="azu-card-details">
-                  {details.map((column, index) => (
+                  {details.map((column) => (
                     <span key={column.name}>
-                      {index > 0 && <span aria-hidden="true"> · </span>}
                       <span className="azu-visually-hidden">{column.label}: </span>
                       {cell(column)}
                     </span>
                   ))}
                 </span>
               )}
+              {badge && <span className="azu-card-badge">{cell(badge)}</span>}
             </span>
-            {badge && <span className="azu-card-badge">{cell(badge)}</span>}
           </>
         )
         const href = props.rowHref?.(row)

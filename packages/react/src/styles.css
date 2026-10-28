@@ -1712,7 +1712,7 @@
 
   /* The link covers all but the menu button, which sits outside it */
   .azu-card-link {
-    @apply flex min-w-0 flex-1 items-center gap-3 rounded-xl p-3;
+    @apply flex min-w-0 flex-1 items-start gap-3 rounded-xl p-3;
     color: var(--azu-text);
   }
 
@@ -1730,12 +1730,23 @@
   }
 
   .azu-card-title {
-    @apply truncate font-medium;
+    @apply line-clamp-2 font-medium;
+    overflow-wrap: anywhere;
   }
 
   .azu-card-details {
-    @apply truncate text-[13px] tabular-nums;
+    @apply flex flex-col gap-0.5 text-[13px] tabular-nums;
+    overflow-wrap: anywhere;
     color: var(--azu-muted);
+  }
+
+  .azu-card-badge {
+    @apply mt-1 max-w-full self-start;
+  }
+
+  .azu-card-badge .azu-badge {
+    @apply max-w-full whitespace-normal;
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 1023px) {
