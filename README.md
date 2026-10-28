@@ -110,9 +110,9 @@ The generated resource is a starting point. Open it and adjust what's wrong.
 
 ## List columns
 
-The **Columns** control on resource lists lets administrators show or hide columns, including those marked `.hiddenByDefault()`, and reset to the resource defaults. At least one column remains visible. Choices stay while sorting, filtering, searching and paging on the current list; a full reload or leaving the list resets them. They are not stored in the browser or shared between users.
+The **Columns** control, beside the list's filters (beside Sort by on phones), shows or hides columns, including those marked `.hiddenByDefault()`, and resets to the resource's defaults. At least one column stays visible. The choice is in the URL, as `?columns=name,price`, like the rest of the list's state: paging, sorting, filtering and searching keep it, and it survives a reload, opening a record and coming back, and a shared link. Reset to defaults removes it. Names the resource doesn't list are ignored, so a stale or edited link still shows a list.
 
-Phone cards show every selected detail column on separate lines. The selector only offers columns present in the server-provided schema; visibility choices cannot recover omitted data. Hiding a column is a presentation preference, not an authorization rule.
+On phones, a card shows two details by default. Once columns are chosen, it shows every chosen one, each on its own line. Hiding a column is a presentation choice, not an authorisation rule: the server still decides which columns exist.
 
 ## Resources
 
@@ -338,7 +338,7 @@ Each filter is a URL query parameter named after it, so a filtered view can be b
 - `filter.belongsTo(relation)` picks a related record from a searchable list. It shows only to users who pass the related resource's `viewList`, like a `belongsTo` field.
 - `filter.custom(label, query)` is an on/off filter with your own query, typed against the model. Its parameter is the label in kebab case (`low-stock`).
 
-A filter can't be named after the list's own parameters (`page`, `perPage`, `sort`, `direction`, `search`), and values that don't fit a filter are ignored rather than failing the page.
+A filter can't be named after the list's own parameters (`page`, `perPage`, `sort`, `direction`, `search`, `columns`): Azu refuses to boot, and values that don't fit a filter are ignored rather than failing the page.
 
 ## Actions
 

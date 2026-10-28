@@ -14,7 +14,7 @@ import type { FilterKind, FilterSchema } from '../schema.ts'
  */
 
 /** The list's own query parameters, which no filter may use */
-export const LIST_PARAMS = ['page', 'perPage', 'sort', 'direction', 'search'] as const
+export const LIST_PARAMS = ['page', 'perPage', 'sort', 'direction', 'search', 'columns'] as const
 
 export type FilterValues = Record<string, string>
 

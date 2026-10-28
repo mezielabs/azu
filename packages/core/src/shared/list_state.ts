@@ -3,7 +3,7 @@ import { parseFilterValue, type FilterValues } from './list_filters.ts'
 
 /**
  * The list screen's state, as it lives in the URL: page, page size,
- * sort, search and filters (`list_filters.ts`). Plain TypeScript with no server or UI imports
+ * sort, search, filters (`list_filters.ts`) and the columns shown. Plain TypeScript with no server or UI imports
  * (non-negotiable 11), so the server parses requests and the front end
  * builds URLs with the same rules.
  */
@@ -22,6 +22,12 @@ export type ListState = {
   search: string
   /** Filter name → its URL value, only for filters that are on */
   filters: FilterValues
+  /**
+   * The columns the user chose to show, `?columns=name,price`, or `null`
+   * for the resource's defaults. A presentation choice only: the server
+   * still decides which columns exist (`visibleListColumns()`).
+   */
+  columns: string[] | null
 }
 
 export type ListStateOptions = {
@@ -31,6 +37,8 @@ export type ListStateOptions = {
   sortable: readonly string[]
   /** The filters this user may use. Other parameters are ignored. */
   filters?: readonly Pick<FilterSchema, 'name' | 'kind' | 'options'>[]
+  /** The list's column names. Other names in `?columns=` are ignored. */
+  columns?: readonly string[]
 }
 
 /** Longest search term kept; the rest is dropped */
@@ -42,6 +50,20 @@ function read(query: QueryInput, key: string): string | undefined {
   const value = query instanceof URLSearchParams ? query.get(key) : query[key]
   const first = Array.isArray(value) ? value[0] : value
   return typeof first === 'string' ? first : typeof first === 'number' ? String(first) : undefined
+}
+
+/**
+ * A comma-separated list parameter, `?columns=name,price`: a string from
+ * `URLSearchParams`, or already split, since AdonisJS parses query
+ * strings with `comma: true` by default
+ */
+function readList(query: QueryInput, key: string): string[] {
+  const value = query instanceof URLSearchParams ? query.get(key) : query[key]
+  const parts = Array.isArray(value) ? value : [value]
+  return parts
+    .filter((part): part is string => typeof part === 'string')
+    .flatMap((part) => part.split(','))
+    .map((name) => name.trim())
 }
 
 export function isPageSize(value: number): value is PageSize {
@@ -59,6 +81,8 @@ export function parseListState(query: QueryInput, options: ListStateOptions): Li
   const sort = read(query, 'sort') ?? null
   const direction = read(query, 'direction') === 'desc' ? 'desc' : 'asc'
   const search = (read(query, 'search') ?? '').trim().slice(0, MAX_SEARCH_LENGTH)
+  const known = options.columns ?? []
+  const columns = [...new Set(readList(query, 'columns').filter((name) => known.includes(name)))]
   const filters: FilterValues = {}
   for (const filter of options.filters ?? []) {
     const value = parseFilterValue(filter, read(query, filter.name))
@@ -72,12 +96,14 @@ export function parseListState(query: QueryInput, options: ListStateOptions): Li
     direction: sort !== null && options.sortable.includes(sort) ? direction : 'asc',
     search,
     filters,
+    columns: columns.length > 0 ? columns : null,
   }
 }
 
 /**
  * Query parameters for a list state, leaving out defaults so URLs stay
- * short: page 1, the default page size, no sort, no search, no filters.
+ * short: page 1, the default page size, no sort, no search, no filters,
+ * the default columns.
  */
 export function listStateToQuery(
   state: ListState,
@@ -90,6 +116,7 @@ export function listStateToQuery(
     query.sort = state.sort
     query.direction = state.direction
   }
+  if (state.columns?.length) query.columns = state.columns.join(',')
   if (state.perPage !== options.defaultPerPage) query.perPage = String(state.perPage)
   if (state.page > 1) query.page = String(state.page)
   return query
@@ -103,14 +130,20 @@ export function listStateUrl(
   state: ListState,
   options: Pick<ListStateOptions, 'defaultPerPage'>
 ): string {
-  const query = new URLSearchParams(listStateToQuery(state, options)).toString()
+  const { columns, ...rest } = listStateToQuery(state, options)
+  const params = [new URLSearchParams(rest).toString()]
+  // Raw commas in `?columns=name,price` only. Anywhere else a comma stays
+  // escaped: AdonisJS would split a search for "a,b" into two values
+  if (columns) params.push(`columns=${columns.split(',').map(encodeURIComponent).join(',')}`)
+  const query = params.filter(Boolean).join('&')
   return query ? `${path}?${query}` : path
 }
 
 /**
  * The next state after a user action. Changing the search, a filter,
  * the sort or the page size goes back to page 1, so the user never
- * lands past the end.
+ * lands past the end. The columns shown stay through all of them;
+ * choosing columns keeps the page.
  */
 export function nextListState(state: ListState, change: Partial<ListState>): ListState {
   const resetsPage =

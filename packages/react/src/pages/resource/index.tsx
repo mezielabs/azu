@@ -57,12 +57,6 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   const [cleared, setCleared] = useState(0)
   const table = useRef<HTMLElement>(null)
   const path = `${azu.path}/resources/${resource.name}`
-  const [columnChoice, setColumnChoice] = useState<{ path: string; names: string[] } | null>(null)
-  const columns = useMemo(
-    () =>
-      visibleListColumns(resource.columns, columnChoice?.path === path ? columnChoice.names : null),
-    [resource.columns, columnChoice, path]
-  )
   const slot = { resource, page: 'index', record: null, path } as const
 
   const actions = useActions({
@@ -89,6 +83,20 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   useEffect(() => setRequested(null), [list.state])
   useEffect(() => setAllMatching(false), [list.state])
   const current = requested ?? list.state
+  // The columns shown, from ?columns= (U09): names the server's schema doesn't have never count
+  const columns = useMemo(
+    () => visibleListColumns(resource.columns, current.columns),
+    [resource.columns, current.columns]
+  )
+  // In the URL like the rest of the list's state, so it survives a reload,
+  // a shared link, and opening a record and coming back
+  const columnControl = (
+    <ColumnVisibility
+      columns={resource.columns}
+      visible={columns.map((column) => column.name)}
+      onChange={(names) => go({ columns: names }, true)}
+    />
+  )
 
   function go(change: Partial<ListState>, replace = false) {
     const next = nextListState(current, change)
@@ -194,11 +202,6 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         actions={
           <>
             <Slot name="toolbar" {...slot} />
-            <ColumnVisibility
-              columns={resource.columns}
-              visible={columns.map((column) => column.name)}
-              onChange={(names) => setColumnChoice(names === null ? null : { path, names })}
-            />
             {abilities.create && (
               <Link
                 href={`${path}/create`}
@@ -278,6 +281,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               label={resource.label}
               onChange={(filters) => go({ filters })}
             />
+            {/* On phones it sits beside Sort by instead */}
+            {!phone && columnControl}
           </div>
         )}
         {phone && (
@@ -292,6 +297,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               ).length > 0
             }
             selecting={selectingCards}
+            columnControl={columnControl}
             onSort={(sort, direction) => go({ sort, direction })}
             onSelect={() => setSelectingCards(true)}
             onSelectPage={() => {
@@ -310,7 +316,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
           <ListCards
             label={resource.label}
             columns={columns}
-            showAllDetails
+            // Every chosen detail once columns are chosen; the default card keeps two
+            showAllDetails={current.columns !== null}
             titleColumn={resource.title}
             rows={list.rows}
             timezone={azu.timezone}

@@ -507,6 +507,7 @@ async function tableData(
       direction: state.orderBy?.direction ?? 'desc',
       search: '',
       filters: {},
+      columns: null,
     },
     {
       scope: (query) => {
