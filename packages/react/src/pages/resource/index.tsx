@@ -21,6 +21,7 @@ import {
   Link,
   ListCards,
   ListToolbar,
+  MobileListControls,
   PageHeader,
   Pagination,
   RowActionsMenu,
@@ -52,7 +53,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   // or another page, search or filter, ends it
   const [allMatching, setAllMatching] = useState(false)
   const [cleared, setCleared] = useState(0)
-  const table = useRef<HTMLDivElement>(null)
+  const table = useRef<HTMLElement>(null)
   const path = `${azu.path}/resources/${resource.name}`
   const slot = { resource, page: 'index', record: null, path } as const
 
@@ -65,7 +66,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
       setCleared((count) => count + 1)
       router.reload({
         only: ['list'],
-        onFinish: () => table.current?.querySelector<HTMLElement>('[role="grid"]')?.focus(),
+        onFinish: () =>
+          table.current?.querySelector<HTMLElement>('[role="grid"], .azu-list-cards')?.focus(),
       })
     },
   })
@@ -112,8 +114,19 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
     !allMatching &&
     bulkActions.length > 0 &&
     offersAllMatching(selected.length, list.rows.length, list.meta.total)
-  // Below 768px, rows are cards, without selection
   const phone = useMediaQuery(PHONE_QUERY)
+  const [selectingCards, setSelectingCards] = useState(false)
+  useEffect(() => {
+    setSelected([])
+    setAllMatching(false)
+    setSelectingCards(false)
+  }, [list.rows, cleared, phone])
+  function selectCard(id: string | number, checked: boolean) {
+    setSelected((ids) =>
+      checked ? [...ids.filter((item) => item !== id), id] : ids.filter((item) => item !== id)
+    )
+    setAllMatching(false)
+  }
   // The bar keeps one line: some actions in a menu, all of them below 1024px
   const compact = useMediaQuery(COMPACT_QUERY)
   const arranged = splitActions(bulkActions, { narrow: compact })
@@ -189,7 +202,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
       />
       <Slot name="header" {...slot} />
       <Slot name="beforeTable" {...slot} />
-      <section className="azu-list" aria-label={resource.label}>
+      <section ref={table} className="azu-list" aria-label={resource.label}>
         {/* Always rendered, so a change in the selection is announced */}
         <p className="azu-visually-hidden" role="status" data-azu-selection-status>
           {selectionSummary(selected.length, allMatching ? list.meta.total : null)}
@@ -254,6 +267,31 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
             />
           </div>
         )}
+        {phone && (
+          <MobileListControls
+            columns={resource.columns}
+            state={current}
+            canSelect={
+              bulkActionsFor(
+                resource.actions,
+                list.rows,
+                list.rows.map((row) => row.id)
+              ).length > 0
+            }
+            selecting={selectingCards}
+            onSort={(sort, direction) => go({ sort, direction })}
+            onSelect={() => setSelectingCards(true)}
+            onSelectPage={() => {
+              setSelected(list.rows.map((row) => row.id))
+              setAllMatching(false)
+            }}
+            onDone={() => {
+              setSelectingCards(false)
+              setSelected([])
+              setAllMatching(false)
+            }}
+          />
+        )}
         {/* One or the other, so each row is in the page once */}
         {phone ? (
           <ListCards
@@ -263,11 +301,12 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
             rows={list.rows}
             timezone={azu.timezone}
             rowHref={rowHref}
+            selection={selectingCards ? { ids: selected, onChange: selectCard } : undefined}
             rowMenu={(row) => rowMenu(row, 'azu-icon-button azu-touch azu-card-menu')}
             emptyState={emptyState}
           />
         ) : (
-          <div ref={table} className="azu-list-table">
+          <div className="azu-list-table">
             <DataTable
               label={resource.label}
               columns={resource.columns}

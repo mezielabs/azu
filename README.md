@@ -167,7 +167,7 @@ The fields become the create and edit forms, checked by your validators. Saving 
   <img alt="The demo's product edit form: name, SKU, price, a category select, tags, status and a rich text description" src="./docs/screenshots/form-light.png">
 </picture>
 
-The list screen pages, sorts, searches and filters on the server, and keeps it all in the URL, so a reload, a bookmark or a shared link shows the same list. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
+The list screen pages, sorts, searches and filters on the server, and keeps it all in the URL, so a reload, a bookmark or a shared link shows the same list. On phones, Sort by offers each sortable column in both directions. Select records switches cards to checkbox selection; select individual records or this page, then use the same bulk actions and “Select all N matching” flow. Done selecting, paging, sorting, filtering, resizing between table and cards, or completing an action clears the selection. Relations shown in `belongsTo` columns are preloaded for you. Search uses `ILIKE '%term%'` on the `search` columns: on a large Postgres table, give those columns trigram indexes (`CREATE EXTENSION pg_trgm`, then `CREATE INDEX ... USING gin (name gin_trgm_ops)`), or every search scans the table.
 
 Files in `app/admin/resources` load automatically and appear in the admin navigation, grouped by `group`, for users whose policy allows `viewList`. Prefer explicit registration? Turn off autoload in `config/azu.ts` and register resources in `start/azu.ts`:
 

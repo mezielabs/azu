@@ -22,6 +22,11 @@ export function ListCards(props: {
   rowMenu?: (row: ListRow) => ReactNode
   /** Shown when there are no rows. Defaults to "No records" */
   emptyState?: ReactNode
+  /** Controlled selection replaces navigation while selecting records. */
+  selection?: {
+    ids: (string | number)[]
+    onChange: (id: string | number, selected: boolean) => void
+  }
 }) {
   const visible = props.columns.filter((column) => !column.hiddenByDefault)
   const image = visible.find((column) => column.kind === 'image')
@@ -38,7 +43,7 @@ export function ListCards(props: {
   }
 
   return (
-    <ul className="azu-list-cards" aria-label={props.label}>
+    <ul className="azu-list-cards" aria-label={props.label} tabIndex={-1}>
       {props.rows.map((row) => {
         const cell = (column: ColumnSchema) => (
           <ListCell
@@ -78,14 +83,24 @@ export function ListCards(props: {
         const href = props.rowHref?.(row)
         return (
           <li key={String(row.id)} className="azu-card">
-            {href ? (
+            {props.selection && (
+              <label className="azu-card-selection">
+                <input
+                  type="checkbox"
+                  checked={props.selection.ids.includes(row.id)}
+                  aria-label={`Select ${row.title ?? row.id}`}
+                  onChange={(event) => props.selection!.onChange(row.id, event.target.checked)}
+                />
+              </label>
+            )}
+            {href && !props.selection ? (
               <Link href={href} className="azu-card-link">
                 {body}
               </Link>
             ) : (
               <div className="azu-card-link">{body}</div>
             )}
-            {props.rowMenu?.(row)}
+            {!props.selection && props.rowMenu?.(row)}
           </li>
         )
       })}
