@@ -457,6 +457,11 @@ export type FieldProps<Value = unknown> = {
   value: Value | null
   onChange: (value: Value | null) => void
   errors: string[]
-  field: { name: string; label: string }
+  field: {
+    name: string
+    label: string
+    /** Required state inferred from the host validator. */
+    required?: boolean
+  }
   record?: Record<string, unknown>
 }

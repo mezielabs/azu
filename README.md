@@ -553,20 +553,39 @@ column.custom('stock', 'StockBar'),
 
 ```tsx
 // inertia/admin/components/sku_input.tsx
+import { useId } from 'react'
 import type { FieldProps } from '@mezielabs/azu-react'
 
 export default function SkuInput({ field, value, onChange, errors }: FieldProps<string>) {
+  const id = useId()
+  const errorId = `${id}-error`
   return (
-    <label className="azu-field">
-      <span className="azu-label">{field.label}</span>
+    <div className="azu-field">
+      <label className="azu-label" htmlFor={id}>
+        {field.label}
+        {field.required && (
+          <span className="azu-required" aria-hidden>
+            {' '}
+            *
+          </span>
+        )}
+      </label>
       <input
+        id={id}
+        name={field.name}
         className="azu-input"
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
+        required={field.required}
         aria-invalid={errors.length > 0}
+        aria-describedby={errors.length > 0 ? errorId : undefined}
       />
-      {errors.length > 0 && <span className="azu-field-error">{errors.join(' ')}</span>}
-    </label>
+      {errors.length > 0 && (
+        <span id={errorId} className="azu-field-error">
+          {errors.join(' ')}
+        </span>
+      )}
+    </div>
   )
 }
 ```
@@ -583,7 +602,7 @@ export default function StockBar({ value }: CellProps<number>) {
 }
 ```
 
-Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. Each one loads only when a page that uses it opens, so they add nothing to the admin's initial JavaScript. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
+Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`. Each one loads only when a page that uses it opens, so they add nothing to the admin's initial JavaScript. A field component gets `FieldProps`: the `value`, `onChange`, the field's `errors`, the `field` itself (including `name`, `label` and the validator's `required` hint) and the form's other values as `record`. A cell gets `CellProps`: its `value`, the row as `record`, and the `column`. `.component()` works on every column kind, and `column.custom()` is a column with no formatting of its own.
 
 **Slots.** To add something to a page without replacing it, name a component for one of a resource's slots. A Print button for an order:
 
