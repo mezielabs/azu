@@ -2,6 +2,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises'
 import { test } from '@japa/runner'
 import ace from '@adonisjs/core/services/ace'
 import app from '@adonisjs/core/services/app'
+import ts from 'typescript'
 
 const README = new URL('../../../../../README.md', import.meta.url)
 
@@ -16,6 +17,26 @@ async function customisingExamples() {
     lang: match[1],
     source: match[2],
   }))
+}
+
+/**
+ * Type errors in one file of the app's front end, checked against the
+ * whole `inertia/tsconfig.json` program, as `pnpm typecheck` checks it
+ */
+function typeErrors(path: string): string[] {
+  const configPath = app.makePath('inertia/tsconfig.json')
+  const { config } = ts.readConfigFile(configPath, ts.sys.readFile)
+  const parsed = ts.parseJsonConfigFileContent(config, ts.sys, app.makePath('inertia'))
+  const program = ts.createProgram({
+    rootNames: parsed.fileNames,
+    options: { ...parsed.options, noEmit: true },
+  })
+  const source = program.getSourceFile(path)
+  if (!source) return [`${path} isn't part of inertia/tsconfig.json`]
+  return [
+    ...program.getSyntacticDiagnostics(source),
+    ...program.getSemanticDiagnostics(source),
+  ].map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
 }
 
 async function run(name: string, args: string[] = []) {
@@ -99,6 +120,8 @@ test.group('README "Customising" examples (FR-15)', (group) => {
       /^\/\/ Published from @mezielabs\/azu-react \S+ by `node ace azu:publish resource\/index`\./
     )
     assert.isTrue(content.endsWith(source))
+    // The copy compiles in the app unchanged: no relative imports into the package
+    assert.deepEqual(typeErrors(copy), [])
 
     // The older spelling names the same page
     const again = await run('azu:publish', ['Resource/Index', '--force'])
@@ -110,5 +133,5 @@ test.group('README "Customising" examples (FR-15)', (group) => {
     const doctor = await run('azu:doctor')
     doctor.assertSucceeded()
     doctor.assertLogMatches(/inertia\/admin\/pages\/resource\/index\.tsx drifted/)
-  })
+  }).timeout(60_000)
 })

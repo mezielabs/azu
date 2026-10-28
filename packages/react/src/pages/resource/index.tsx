@@ -21,6 +21,7 @@ import {
   Link,
   ListCards,
   ListToolbar,
+  MobileListControls,
   PageHeader,
   Pagination,
   RowActionsMenu,
@@ -31,7 +32,6 @@ import {
   useMediaQuery,
   type ResourceIndexPageProps,
 } from '@mezielabs/azu-react'
-import { MobileListControls } from '../../components/list/mobile_list_controls.tsx'
 import type { ActionSchema, ListRow } from '@mezielabs/azu/types'
 
 /**

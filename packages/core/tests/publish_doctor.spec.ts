@@ -1,3 +1,4 @@
+import { readdir, readFile } from 'node:fs/promises'
 import { test } from '@japa/runner'
 import { IgnitorFactory } from '@adonisjs/core/factories'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
@@ -14,6 +15,7 @@ import {
   type ConfigFacts,
 } from '../src/doctor/checks.ts'
 import {
+  PAGE_NAMES,
   pageName,
   publishedSource,
   readStamp,
@@ -88,6 +90,29 @@ test.group('Published pages (FR-15)', () => {
 
 test.group('azu:publish (FR-15)', (group) => {
   group.each.timeout(30_000)
+
+  test('no package page imports by relative path, so a published copy compiles', async ({
+    assert,
+  }) => {
+    const pages = new URL('../../react/src/pages/', import.meta.url)
+    const entries = await readdir(pages, { recursive: true })
+    // Every file but the registry, which lazy-loads the pages by path and is never published
+    const files = entries.filter((file) => /\.tsx?$/.test(file) && file !== 'index.ts')
+    assert.includeMembers(
+      files,
+      PAGE_NAMES.map((name) => `${name}.tsx`)
+    )
+    // `from '../x'`, `import './x'`, `import('./x')`, `export … from './x'`
+    const relative = /(?:\bfrom|\bimport)\s*\(?\s*['"]\.{1,2}\//
+    for (const file of files) {
+      const source = await readFile(new URL(file, pages), 'utf8')
+      const line = source.split('\n').find((text) => relative.test(text))
+      assert.isUndefined(
+        line,
+        `${file} imports by relative path; import it from @mezielabs/azu-react: ${line}`
+      )
+    }
+  })
 
   test('copies a page into inertia/admin/pages with a version stamp', async ({ assert, fs }) => {
     const ace = await createAce(fs)
