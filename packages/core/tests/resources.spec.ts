@@ -172,6 +172,12 @@ test.group('ResourceRegistry', () => {
       () => new ResourceRegistry().register(reserved),
       /filter named "search", which the list uses/
     )
+    // ?columns= is the list's too (U09)
+    const columns = resource('Product', { filters: [filter.custom('Columns', (q) => q)] })
+    assert.throws(
+      () => new ResourceRegistry().register(columns),
+      /filter named "columns", which the list uses/
+    )
     const twice = resource('Product', {
       filters: [filter.select('status', {}), filter.boolean('status')],
     })

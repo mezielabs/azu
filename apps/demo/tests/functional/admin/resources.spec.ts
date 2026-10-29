@@ -156,6 +156,7 @@ test.group('Admin / resources (FR-03)', (group) => {
         'belongsTo:category',
         'badge:status',
         'custom:stock',
+        'text:sku',
       ]
     )
     // A badge column reads its values' labels from the select field of the same name

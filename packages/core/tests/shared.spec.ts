@@ -42,7 +42,11 @@ import {
 } from '../shared.ts'
 import type { ActionSchema, FormFieldSchema, ListRow } from '../src/schema.ts'
 
-const options = { defaultPerPage: 25 as const, sortable: ['name', 'price'] }
+const options = {
+  defaultPerPage: 25 as const,
+  sortable: ['name', 'price'],
+  columns: ['name', 'price', 'sku'],
+}
 const base: ListState = {
   page: 1,
   perPage: 25,
@@ -50,9 +54,46 @@ const base: ListState = {
   direction: 'asc',
   search: '',
   filters: {},
+  columns: null,
 }
 
 test.group('List state (URL)', () => {
+  test('keeps the chosen columns in ?columns=, only names the list has (U09)', ({ assert }) => {
+    const chosen = parseListState({ columns: 'price,name,price, forged,sku' }, options)
+    assert.deepEqual(chosen.columns, ['price', 'name', 'sku'])
+    // Nothing the list has: the defaults
+    assert.isNull(parseListState({ columns: 'forged,,' }, options).columns)
+    assert.isNull(parseListState({}, options).columns)
+    // Written as it reads, and read back
+    const url = listStateUrl(
+      '/admin/resources/products',
+      { ...base, columns: ['name', 'price'] },
+      options
+    )
+    assert.equal(url, '/admin/resources/products?columns=name,price')
+    assert.deepEqual(parseListState(new URL(url, 'http://x').searchParams, options), {
+      ...base,
+      columns: ['name', 'price'],
+    })
+    // Paging, sorting, filtering and searching keep it; choosing columns keeps the page
+    const shown = { ...base, page: 3, columns: ['name'] }
+    for (const change of [
+      { page: 2 },
+      { sort: 'price' },
+      { filters: { status: 'draft' } },
+      { search: 'pot' },
+    ]) {
+      assert.deepEqual(nextListState(shown, change).columns, ['name'])
+    }
+    assert.equal(nextListState(shown, { columns: ['name', 'sku'] }).page, 3)
+    // AdonisJS parses `?columns=a,b` into an array (qs `comma: true`)
+    assert.deepEqual(parseListState({ columns: ['name', 'sku'] }, options).columns, ['name', 'sku'])
+    // A search term's comma stays escaped, so the server doesn't split it
+    const comma = listStateUrl('/p', { ...base, search: 'a,b', columns: ['name'] }, options)
+    assert.equal(comma, '/p?search=a%2Cb&columns=name')
+    assert.equal(parseListState(new URL(comma, 'http://x').searchParams, options).search, 'a,b')
+  })
+
   test('reads a full state from the query string', ({ assert }) => {
     const state = parseListState(
       new URLSearchParams('page=3&perPage=50&sort=price&direction=desc&search=%20pot%20'),
@@ -65,6 +106,7 @@ test.group('List state (URL)', () => {
       direction: 'desc',
       search: 'pot',
       filters: {},
+      columns: null,
     })
   })
 
@@ -95,6 +137,7 @@ test.group('List state (URL)', () => {
       direction: 'desc',
       search: 'a b',
       filters: {},
+      columns: null,
     }
     const url = listStateUrl('/admin/resources/products', state, options)
 

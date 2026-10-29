@@ -1,7 +1,7 @@
 /**
  * The README's Product resource, verbatim apart from the actions (from
  * the README's "Actions" section, plus a restock action), validator metadata (from its
- * "Validation" section), a boolean filter, and the thumbnail's disk: the README stores it
+ * "Validation" section), a hidden SKU column, a boolean filter, and the thumbnail's disk: the README stores it
  * on S3, the demo on Drive's default local disk so it runs offline.
  * Loaded by convention from app/admin/resources.
  */
@@ -39,6 +39,7 @@ export default defineResource(Product, {
     column.badge('status').colors({ draft: 'gray', published: 'green' }),
     // From the README's "Customising" section: inertia/admin/components/stock_bar.tsx
     column.custom('stock', 'StockBar').label('In stock'),
+    column.text('sku').hiddenByDefault(),
   ],
 
   fields: [

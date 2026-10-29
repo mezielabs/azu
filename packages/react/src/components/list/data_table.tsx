@@ -107,6 +107,8 @@ export function DataTable(props: {
   const element = useRef<HTMLTableElement>(null)
   const tableId = useId()
   const [widths, setWidths] = useState<number[] | null>(null)
+  const columnKey = visible.map((column) => column.name).join(',')
+  const [measuredColumns, setMeasuredColumns] = useState('')
   useLayoutEffect(() => {
     const table = element.current
     if (rows.length === 0 || !table) return
@@ -116,6 +118,7 @@ export function DataTable(props: {
       const cells = [...table.querySelectorAll<HTMLElement>('thead th')]
       if (cells.length === 0) return
       const measured = cells.map((cell) => Math.round(cell.getBoundingClientRect().width))
+      setMeasuredColumns(columnKey)
       setWidths((current) => (current?.join() === measured.join() ? current : measured))
     }
     measure()
@@ -123,7 +126,7 @@ export function DataTable(props: {
     observer.observe(table)
     return () => observer.disconnect()
   }, [rowKey, columns])
-  const held = rows.length === 0 && widths !== null
+  const held = rows.length === 0 && widths !== null && measuredColumns === columnKey
 
   const sortDescriptor: SortDescriptor | undefined = state.sort
     ? { column: state.sort, direction: state.direction === 'desc' ? 'descending' : 'ascending' }
@@ -201,6 +204,7 @@ export function DataTable(props: {
         </TableHeader>
         <TableBody
           items={rows}
+          dependencies={[columns]}
           renderEmptyState={() => (
             <div className="azu-table-empty">{props.emptyState ?? 'No records'}</div>
           )}

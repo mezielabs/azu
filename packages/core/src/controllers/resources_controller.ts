@@ -130,6 +130,7 @@ export class ResourcesController {
       defaultPerPage: config.perPage,
       sortable: schema.columns.filter((column) => column.sortable).map((column) => column.name),
       filters,
+      columns: schema.columns.map((column) => column.name),
     }
     const parsed = parseListState(ctx.request.qs(), options)
     const relations = await selectedRelations(this.context, resource, filters, parsed.filters)

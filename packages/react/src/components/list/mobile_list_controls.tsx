@@ -1,13 +1,18 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import type { ColumnSchema } from '@mezielabs/azu/types'
 import type { ListState } from '@mezielabs/azu/shared'
 
-/** Sorting and explicit selection mode for the phone card view. */
+/**
+ * The phone card view's controls: Sort by, the Columns control beside
+ * it, and Select records, or the selection mode's own buttons.
+ */
 export function MobileListControls(props: {
   columns: ColumnSchema[]
   state: ListState
   canSelect: boolean
   selecting: boolean
+  /** Shown beside Sort by, such as the list's Columns control (U09) */
+  columnControl?: ReactNode
   onSort: (sort: string | null, direction: 'asc' | 'desc') => void
   onSelect: () => void
   onSelectPage: () => void
@@ -61,6 +66,7 @@ export function MobileListControls(props: {
               </select>
             </div>
           )}
+          {props.columnControl}
           {props.canSelect && (
             <button type="button" className="azu-button" onClick={props.onSelect}>
               Select records

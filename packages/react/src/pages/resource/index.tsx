@@ -1,7 +1,8 @@
 import { router } from '@inertiajs/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   actionKey,
+  visibleListColumns,
   splitActions,
   bulkActionsFor,
   listStateUrl,
@@ -14,6 +15,7 @@ import {
 } from '@mezielabs/azu/shared'
 import {
   ActionsMenu,
+  ColumnVisibility,
   AdminLayout,
   DataTable,
   FilterBar,
@@ -81,6 +83,20 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
   useEffect(() => setRequested(null), [list.state])
   useEffect(() => setAllMatching(false), [list.state])
   const current = requested ?? list.state
+  // The columns shown, from ?columns= (U09): names the server's schema doesn't have never count
+  const columns = useMemo(
+    () => visibleListColumns(resource.columns, current.columns),
+    [resource.columns, current.columns]
+  )
+  // In the URL like the rest of the list's state, so it survives a reload,
+  // a shared link, and opening a record and coming back
+  const columnControl = (
+    <ColumnVisibility
+      columns={resource.columns}
+      visible={columns.map((column) => column.name)}
+      onChange={(names) => go({ columns: names }, true)}
+    />
+  )
 
   function go(change: Partial<ListState>, replace = false) {
     const next = nextListState(current, change)
@@ -265,6 +281,8 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               label={resource.label}
               onChange={(filters) => go({ filters })}
             />
+            {/* On phones it sits beside Sort by instead */}
+            {!phone && columnControl}
           </div>
         )}
         {phone && (
@@ -279,6 +297,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
               ).length > 0
             }
             selecting={selectingCards}
+            columnControl={columnControl}
             onSort={(sort, direction) => go({ sort, direction })}
             onSelect={() => setSelectingCards(true)}
             onSelectPage={() => {
@@ -296,7 +315,9 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
         {phone ? (
           <ListCards
             label={resource.label}
-            columns={resource.columns}
+            columns={columns}
+            // Every chosen detail once columns are chosen; the default card keeps two
+            showAllDetails={current.columns !== null}
             titleColumn={resource.title}
             rows={list.rows}
             timezone={azu.timezone}
@@ -309,7 +330,7 @@ export default function ResourceIndex({ azu, resource, list, abilities }: Resour
           <div className="azu-list-table">
             <DataTable
               label={resource.label}
-              columns={resource.columns}
+              columns={columns}
               titleColumn={resource.title}
               rows={list.rows}
               state={list.state}

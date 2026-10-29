@@ -21,6 +21,7 @@ const TABLE_STATE: ListState = {
   direction: 'asc',
   search: '',
   filters: {},
+  columns: null,
 }
 
 /**

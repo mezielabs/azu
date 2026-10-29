@@ -421,7 +421,15 @@ export async function hasManyTables(
     const list = await listRecords(
       ctx,
       related,
-      { page, perPage: RELATION_PAGE_SIZE, sort: null, direction: 'asc', search: '', filters: {} },
+      {
+        page,
+        perPage: RELATION_PAGE_SIZE,
+        sort: null,
+        direction: 'asc',
+        search: '',
+        filters: {},
+        columns: null,
+      },
       {
         scope: (query) => query.where(keys.foreignKeyColumnName, parentKey as never),
         defaultDisk: context.config.defaultDisk,

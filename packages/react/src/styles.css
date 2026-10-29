@@ -2556,3 +2556,28 @@
     }
   }
 }
+
+@layer components {
+  .azu-column-options {
+    @apply min-w-48 overflow-y-auto p-3 outline-none;
+    max-height: min(32rem, calc(100dvh - 100px));
+    max-width: calc(100vw - 32px);
+  }
+  .azu-column-heading {
+    @apply mb-2 text-sm font-semibold;
+  }
+  .azu-column-choice {
+    @apply flex min-h-11 items-center gap-3 text-sm;
+  }
+  .azu-column-choice input {
+    accent-color: var(--azu-brand);
+  }
+  .azu-column-options > .azu-button {
+    @apply mt-2 min-h-11 w-full;
+  }
+  @media (max-width: 767px), (pointer: coarse) {
+    .azu-columns-button {
+      min-height: 44px;
+    }
+  }
+}
