@@ -37,6 +37,12 @@ If your API rejects a request, Azu rejects it too. There's one source of truth, 
 - Node.js 24.21 or later
 - PostgreSQL, MySQL, or SQLite
 
+## Language support
+
+The preview's built-in interface is English-only. Azu does not yet route its UI strings through AdonisJS i18n or provide a panel-wide locale/translation setting. Custom resource, field, column and action labels, plus your validator's messages, are displayed as supplied; they do not translate built-in buttons, status messages or counts. Date and number formatting does not imply full interface translation support.
+
+AdonisJS i18n integration is deferred. Until it is implemented, a fully translated admin requires app-owned component or page overrides.
+
 ## Installation
 
 Azu's access gate is a Bouncer ability. The AdonisJS starter kits don't include Bouncer, so add it first if your app doesn't have it:
