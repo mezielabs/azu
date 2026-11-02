@@ -54,7 +54,7 @@ P0 is required for v1.0. P1 ships in v1.0 if the schedule holds, otherwise v1.1.
 | Bundle | Admin JS loads only on `/admin` routes via a separate Vite entry; zero added weight on public pages. Budget, checked in CI against the demo's production build: ≤ 120 kB gz of initial admin JS (the admin entry and its static imports), ≤ 160 kB gz per page's lazy chunk (what a page loads beyond the initial JS), and ≤ 200 kB gz per optional-feature chunk (an `azu()` optional feature such as the Tiptap editor, loaded only when a form uses it; measured like a page, beyond the initial JS). |
 | Upgrades | Semver. Published components carry a version stamp; `azu:doctor` flags drift. |
 | i18n | Preview built-in UI is English-only. AdonisJS i18n integration, a panel-wide locale, translation catalogs and pluralization are deferred; current English literals do not satisfy a translation-ready requirement. App-supplied labels and validation messages render as supplied. Date/number formatting is separate from interface translation. |
-| Mobile | Usable at 375 px: tables scroll horizontally, forms stack. |
+| Mobile | Usable at 375 px. Below 768px, lists render as cards, with Sort by and a Select records mode for bulk actions (U05, U06); forms stack; touch controls are at least 44px on narrow screens and coarse pointers (U07). A table widget scrolls sideways inside its card. |
 
 ## 3. Architecture
 
