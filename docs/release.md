@@ -1,6 +1,6 @@
 # Release checklist: 0.1.0-preview
 
-The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early testers. This is the checklist, with what's already true today (2026-10-16) and what's left.
+The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early testers. Packaging preparation updated 2026-10-26. Local package checks do not establish release-commit verification; the remaining gates below must still be completed.
 
 **Nothing here has been published.** Publishing, the `mezielabs` npm org and its trusted-publisher settings are Chimezie's to approve and do. The items marked **(Chimezie)** need him; the rest can be done in a PR.
 
@@ -12,7 +12,7 @@ The preview ships an English built-in UI. There is no panel-wide locale or trans
 
 ## 1. Version and tag
 
-- ⬜ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm publish` rewrites to `^0.1.0-preview.0`.
+- ✅ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm pack` rewrites to `^0.1.0-preview.0`.
 - ⬜ **npm dist-tag `preview`.** Publish with `--tag preview`. Without it, npm points `latest` at the prerelease, and `npm install @mezielabs/azu` would install a preview for everyone.
 - ⬜ **Git tag** `v0.1.0-preview.0` on the release commit, and a GitHub release (marked pre-release) with the changelog entry.
 - ⬜ **Later previews** bump the last number (`0.1.0-preview.1`). `0.1.0` itself is the Phase 3 release.
@@ -22,22 +22,26 @@ The preview ships an English built-in UI. There is no panel-wide locale or trans
 | Field | `@mezielabs/azu` | `@mezielabs/azu-react` | Needed |
 | --- | --- | --- | --- |
 | `name` | ✅ | ✅ | |
-| `version` | ⬜ `0.0.0` | ⬜ `0.0.0` | `0.1.0-preview.0` |
+| `version` | ✅ `0.1.0-preview.0` | ✅ `0.1.0-preview.0` | Coordinated preview |
 | `description` | ✅ | ✅ | |
 | `license` | ✅ MIT, `LICENSE.md` shipped | ✅ MIT, `LICENSE.md` shipped | |
 | `author` | ✅ Mezie Labs | ✅ Mezie Labs | |
-| `repository` | ⬜ missing | ⬜ missing | **Required for provenance**: npm checks it against the repo that built the package. `{ "type": "git", "url": "git+https://github.com/mezielabs/azu.git", "directory": "packages/core" }` (and `packages/react`) |
-| `homepage` | ⬜ missing | ⬜ missing | `https://github.com/mezielabs/azu#readme` |
-| `bugs` | ⬜ missing | ⬜ missing | `https://github.com/mezielabs/azu/issues` |
-| `keywords` | ⬜ missing | ⬜ missing | e.g. `adonisjs`, `adonis`, `admin`, `admin-panel`, `inertia`, `react`, `lucid` |
+| `repository` | ✅ | ✅ | **Required for provenance**: npm checks it against the repo that built the package. `{ "type": "git", "url": "git+https://github.com/mezielabs/azu.git", "directory": "packages/core" }` (and `packages/react`) |
+| `homepage` | ✅ | ✅ | `https://github.com/mezielabs/azu#readme` |
+| `bugs` | ✅ | ✅ | `https://github.com/mezielabs/azu/issues` |
+| `keywords` | ✅ | ✅ | e.g. `adonisjs`, `adonis`, `admin`, `admin-panel`, `inertia`, `react`, `lucid` |
 | `engines` | ✅ `node >=24.21.0` | ✅ `node >=24.21.0` | |
 | `type` | ✅ `module` | ✅ `module` | |
 | `publishConfig` | ✅ `access: public`, `provenance: true` | ✅ same | |
 | `peerDependencies` | ✅ AdonisJS 7 ranges; Drive and Vite optional | ✅ React 19, Inertia 3; Tiptap and `lucide-react` optional | |
 | `sideEffects` | not set (server package) | ✅ `["*.css"]` | |
-| README | ⬜ none in the package | ⬜ none in the package | npm shows a package's own README. A short one per package that links to the repo README, so the two can't drift. Images need absolute URLs (`https://raw.githubusercontent.com/mezielabs/azu/main/docs/screenshots/list-light.png`): npmjs.com doesn't resolve relative paths like the repo README's `./docs/screenshots/…`, and its sanitiser may not keep `<picture>` sources (unverified), so a plain `<img>` with the light capture is the safe choice. Check the rendered page after publishing |
+| README | ✅ Package guide | ✅ Package guide | Short package-specific READMEs link to the repository guide, changelog and issue tracker. Verify rendering on npm after publication. |
 
 ## 3. Files and exports
+
+`pnpm pack:check` builds both packages, packs them with pnpm, and inspects the actual tarballs with `scripts/check_release_packages.mjs`. It checks versions, metadata, exports, templates, page sources, README/license files, excluded development files and the rewritten React peer range. It writes `artifacts/packages/verification.json` with the source commit, dirty-tree flag, file counts, sizes and SHA-256 hashes. CI rejects a dirty source tree. React's build clears its output first to prevent stale files from an earlier checkout entering a release.
+
+The following 2026-10-16 results are historical evidence, not counts or checks for the current candidate:
 
 - ✅ **Tarballs** from `pnpm pack` (`0.0.0`, today):
   - `@mezielabs/azu`: 135 files, 103 kB. `build/` with the provider, commands and their `commands.json` index, the stubs, services, `shared`, `vite` and `types`, plus `LICENSE.md`.
@@ -55,40 +59,29 @@ The preview ships an English built-in UI. There is no panel-wide locale or trans
 
 `provenance: true` means npm must be able to verify where each tarball was built, which only works from a supported CI (GitHub Actions here). A `pnpm publish` from a laptop fails with this setting, which is the point.
 
-- ⬜ **Workflow** `.github/workflows/release.yml`, run by hand (`workflow_dispatch`) or on a `v*` tag:
-  - `permissions: { contents: read, id-token: write }`, the OIDC token npm uses for provenance and trusted publishing
-  - Node 24.21 and pnpm 11, `pnpm install --frozen-lockfile`
-  - the same checks as `ci.yml` (lint, typecheck, tests on SQLite, Postgres and MySQL, `pnpm budget`)
-  - `pnpm -r publish --tag preview --access public --no-git-checks`, core first: pnpm publishes in dependency order, and it is what rewrites `workspace:^`. Plain `npm publish` wouldn't rewrite it.
+- ✅ **Workflow prepared:** `.github/workflows/release.yml`, manual `workflow_dispatch` only. It calls the same CI workflow (lint/typecheck, database tests with the full browser suite in Chromium, budget, generator proof) and `smoke.yml`, the smoke subset in Firefox and WebKit (below). Only when both pass does it rebuild and inspect both packages from that commit.
+- ✅ **Smoke subset in Firefox and WebKit (R02):** `apps/demo/tests/browser/smoke.spec.ts` signs in through the app's login page, then checks a list (rows, search, sort), a form save, a row action with a dialog field (Restock), and the Overview's widgets and range switch. `smoke.yml` runs it on SQLite in both engines (`node ace test browser --files tests/browser/smoke.spec.ts --browser=firefox`); the same file runs in Chromium with the full suite. Pull requests run `smoke.yml` only when the workflow or the spec changes.
+- **Prepare without publishing:** dispatch on the intended branch with `version: 0.1.0-preview.0` and `publish: false` (default). It uploads `preview-packages-<commit>` containing both tarballs and the verification report. Stale tarballs or a mismatched version fail the check.
+- **Publish only after owner approval:** dispatch from `main` with the matching version and `publish: true`. The publish job uses the `npm-preview` environment, requires a GitHub-hosted runner and an npm CLI supporting OIDC, and grants `id-token: write` only to that job. Configure environment protection/reviewers before enabling publication.
+- It downloads and rechecks the inspected artifacts, then runs `npm publish <tarball> --tag preview --access public --provenance`, core first. pnpm has already rewritten workspace peers during packing; plain npm publishing of the source folders is not supported. No Git tag or GitHub release is created automatically.
+- **If only core publishes:** the packages release together but registry operations are not atomic. Inspect the run and registry state before recovery; do not assume rerunning both publish commands succeeds over an existing version.
+- Implementation references: [pnpm packing](https://pnpm.io/cli/pack), [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), and [npm publish](https://docs.npmjs.com/cli/v11/commands/npm-publish/).
 - ⬜ **(Chimezie)** **The `mezielabs` org on npm** exists, and the two package names are free or already in it.
-- ⬜ **(Chimezie)** **Trusted publishing** set up on npmjs.com for both packages, pointing at `mezielabs/azu` and `release.yml`, so the workflow needs no long-lived `NPM_TOKEN`. If a package must exist before it can be configured, the first publish uses a short-lived granular token instead, removed afterwards.
+- **The first publish needs a token.** A trusted publisher is set on the package's own settings page on npmjs.com (Packages → the package → Settings → Trusted publishing), which exists only once the package does, so trusted publishing can't make a package's first release. The publish step therefore takes an optional `NODE_AUTH_TOKEN` secret from the `npm-preview` environment and uses it only when it's set: it writes a temporary `.npmrc` for that run and publishes with the token (`--provenance` still applies, since the job runs in GitHub Actions with `id-token: write`). When the secret isn't set, the step unsets the empty variable and npm publishes through OIDC. npm tries OIDC first and falls back to a token, so a leftover token would also work, but it shouldn't be left there.
+- ⬜ **(Chimezie)** **First publish (0.1.0-preview.0):** create a short-lived granular access token on npmjs.com that can publish `@mezielabs/azu` and `@mezielabs/azu-react` (2FA bypass for automation where npm asks for it), add it to the `npm-preview` environment as the secret `NODE_AUTH_TOKEN`, and run the workflow with `publish: true`. Delete the secret and revoke the token as soon as both packages are on npm.
+- ⬜ **(Chimezie)** **Trusted publishing** then set up on npmjs.com for both packages, pointing at `mezielabs/azu`, `release.yml` and environment `npm-preview`. Later previews publish through OIDC with no token in the environment.
 - ⬜ **(Chimezie)** Approve and run the workflow.
 - ⬜ **After publishing:** both packages show a provenance badge on npmjs.com linking to the workflow run, and `npm view @mezielabs/azu dist-tags` shows `preview: 0.1.0-preview.0` with `latest` unset.
 
 ## 5. Changelog
 
-- ⬜ **`CHANGELOG.md`** at the repo root, one file for both packages since they version together, in the Keep a Changelog style. Draft for this release:
-
-  ```md
-  ## 0.1.0-preview.0 (YYYY-MM-DD)
-
-  First preview. The API will change based on feedback.
-
-  - Install with `node ace add @mezielabs/azu`: provider, `config/azu.ts` and `start/azu.ts`, routes at `/admin`, a separate admin Vite entry, and an `accessAdmin` Bouncer ability that denies everyone until you change it (FR-01, FR-02)
-  - Resources from your Lucid models, typed so misspelled names fail `tsc` (FR-03), generated by `azu:resource` with validators and an optional policy (FR-04)
-  - List with server-side paging, sort, search and filters in the URL (FR-05, FR-13); create, edit and detail pages (FR-06)
-  - Field types including rich text, files and images through Drive (FR-07), `belongsTo`, `hasMany` (FR-08) and `manyToMany` (FR-09)
-  - Your VineJS validators and Bouncer policies, checked on the server for every route, field and action (FR-10, FR-11)
-  - Row and bulk actions with confirmation, dialog fields and a built-in Delete (FR-12), and bulk actions on all matching rows in chunks (FR-17)
-  - Brand colour, logo and name, with light and dark mode (FR-14); navigation groups, icons and order (FR-16)
-  - Component swaps, slots, `azu:publish` and `azu:doctor` (FR-15)
-  ```
+- ✅ **`CHANGELOG.md`** has the unreleased `0.1.0-preview.0` entry for both packages, written from the merged PRs: the features (#37–#45, the earlier phases, and what came out of the 22 October review), with one line linking the review rather than a list of fixes to code no one has installed. Date it only after actual publication.
 
 - ⬜ **README:** update the pre-release note at the top to say the preview is on npm, with `--tag preview` in the install command until `0.1.0`.
 
 ## 6. Checks before publishing
 
-- ⬜ CI green on the release commit (`ci.yml`: lint, typecheck, SQLite, Postgres 18, MySQL 8.4).
+- ⬜ CI green on the release commit (`ci.yml`: lint, typecheck, SQLite, Postgres 18, MySQL 8.4), and the smoke subset in Firefox and WebKit (`smoke.yml`); the release workflow runs both.
 - ⬜ `pnpm budget`: within budget (initial admin JS was 111.6 kB of 120 on #24).
 - ⬜ `pnpm bench:list` on Postgres with 100,000 products, against the 200 ms p95 target (spec §2 asks for it before each release).
 - ⬜ `pnpm bench:widgets` on Postgres with 100,000 orders (`node ace bench:orders --count=100000`), against the 100 ms p95 per widget target (spec §2).

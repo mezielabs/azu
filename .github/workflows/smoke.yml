@@ -1,0 +1,55 @@
+name: Smoke
+
+# The release smoke subset (R02) in Firefox and WebKit: login, a list, a
+# form save, an action and the Overview (apps/demo/tests/browser/smoke.spec.ts).
+# The full browser suite runs in Chromium in ci.yml. The release workflow
+# calls this one; pull requests run it only when the subset itself changes.
+on:
+  workflow_call:
+  pull_request:
+    paths:
+      - .github/workflows/smoke.yml
+      - apps/demo/tests/browser/smoke.spec.ts
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Installs the pnpm version pinned in package.json "packageManager"
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      # The demo's adonisrc.ts loads Azu's commands from the built package
+      - run: pnpm build
+
+      # SQLite, from .env.example
+      - name: Create demo .env
+        working-directory: apps/demo
+        run: cp .env.example .env && node ace generate:key
+
+      - name: Install ${{ matrix.browser }}
+        working-directory: apps/demo
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Smoke tests in ${{ matrix.browser }}
+        working-directory: apps/demo
+        run: node ace test browser --files tests/browser/smoke.spec.ts --browser=${{ matrix.browser }}
