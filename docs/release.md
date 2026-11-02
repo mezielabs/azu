@@ -75,7 +75,7 @@ The following 2026-10-16 results are historical evidence, not counts or checks f
 
 ## 5. Changelog
 
-- ✅ **`CHANGELOG.md`** has the unreleased `0.1.0-preview.0` entry for both packages, written from the merged PRs: the features (#41–#45 and earlier phases) and every fix from the 22 October review, by review ID. Date it only after actual publication.
+- ✅ **`CHANGELOG.md`** has the unreleased `0.1.0-preview.0` entry for both packages, written from the merged PRs: the features (#37–#45, the earlier phases, and what came out of the 22 October review), with one line linking the review rather than a list of fixes to code no one has installed. Date it only after actual publication.
 
 - ⬜ **README:** update the pre-release note at the top to say the preview is on npm, with `--tag preview` in the install command until `0.1.0`.
 
