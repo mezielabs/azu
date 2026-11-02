@@ -10,6 +10,13 @@ Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval o
 
 The preview ships an English built-in UI. There is no panel-wide locale or translation catalog, and the built-in strings do not pass through AdonisJS i18n. Supplied labels and validation messages can use the app's wording. Release notes must not claim full localization or translation-ready UI; that integration remains deferred.
 
+## Known limits in the preview
+
+Recorded from the compatibility pass and the benchmarks; both issues stay open for after the preview. The README lists them too.
+
+- **Vue starter kit** ([#66](https://github.com/mezielabs/azu/issues/66)): Azu's admin is React beside the app's Vue pages, without `@vitejs/plugin-react`. In dev, admin pages log `GET /@react-refresh 404` and reload in full on an edit instead of hot-swapping, and the kit's `npm run typecheck` doesn't cover the admin's TSX (custom components and screen components). The admin works, and builds alongside the Vue app.
+- **A search that matches every row** ([#67](https://github.com/mezielabs/azu/issues/67)): on 100,000 rows, p95 246.8 ms against the 200 ms target. Narrower searches, sorting, filtering and paging are well under it (section 6).
+
 ## 1. Version and tag
 
 - ✅ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm pack` rewrites to `^0.1.0-preview.0`.

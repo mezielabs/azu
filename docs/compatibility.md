@@ -18,7 +18,7 @@ Fresh installs of `0.1.0-preview.0`, from the tarballs packed on `61dde23` (#59'
 - [#63](https://github.com/mezielabs/azu/issues/63): configure doesn't check for Vite, Edge, Inertia or a session guard before writing files. It reports success on the Hypermedia kit, and fails halfway on the API kit.
 - [#65](https://github.com/mezielabs/azu/issues/65): under a strict CSP, React Aria's runtime styles are blocked, because the admin view has no `csp-nonce` meta. One inline style from the React DOM chunk is blocked too. Nothing visible broke.
 
-**Should fix, not blocking**
+**Known limits in the preview** (recorded in the README and `docs/release.md`; fixed after the preview)
 
 - [#66](https://github.com/mezielabs/azu/issues/66): on the Vue kit there's no React Fast Refresh for the admin (`/@react-refresh` 404s in dev), and `npm run typecheck` skips the admin's TSX.
 - [#67](https://github.com/mezielabs/azu/issues/67): a list search matching all 100,000 rows has a p95 of 246.8 ms, against the 200 ms target ([release checklist](release.md), section 6).
