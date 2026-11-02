@@ -69,6 +69,13 @@ const scans: Scan[] = [
       await page.click('[aria-label="Actions for Clay pot"]')
       await page.click('[role="menuitem"]:has-text("Restock")')
       await page.getByRole('region', { name: 'Stock adjustment' }).getByLabel('Quantity').waitFor()
+      // The dialog's title is its h2; its form sections are h3s under it
+      const dialog = page.getByRole('alertdialog')
+      await dialog.getByRole('heading', { level: 2, name: /Restock/ }).waitFor()
+      await dialog.getByRole('heading', { level: 3, name: 'Stock adjustment' }).waitFor()
+      if ((await dialog.getByRole('heading', { level: 2 }).count()) !== 1) {
+        throw new Error('The Restock dialog has a second h2: its sections should be h3s')
+      }
       await page.click('[role="alertdialog"] button[type="submit"]')
       await page.waitForSelector('[role="alertdialog"] .azu-field-error')
     },

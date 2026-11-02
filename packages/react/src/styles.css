@@ -667,7 +667,7 @@
     border-color: var(--azu-border);
   }
 
-  .azu-form-section > h2 {
+  .azu-form-section-heading {
     @apply mb-4 text-base font-semibold;
   }
 

@@ -46,12 +46,10 @@ test.group('Form page', (group) => {
     assert.isAbove(status.y, category.y)
     assert.approximately(status.x, category.x, 1)
     assert.approximately(name.width, category.width * 2, 24)
-    assert.deepEqual(await page.locator('.azu-form-section > h2').allTextContents(), [
-      'Details',
-      'Pricing',
-      'Organisation',
-      'Media',
-    ])
+    assert.deepEqual(
+      await page.locator('.azu-form-section > h2.azu-form-section-heading').allTextContents(),
+      ['Details', 'Pricing', 'Organisation', 'Media']
+    )
     await page.getByRole('region', { name: 'Pricing', exact: true }).getByLabel('Price').waitFor()
     // The form keeps to its reading width
     const form = (await page.locator('.azu-form-body').boundingBox())!

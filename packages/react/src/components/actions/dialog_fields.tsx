@@ -28,7 +28,7 @@ export function DialogFields(props: {
 
   return (
     <div ref={container} className="azu-dialog-fields">
-      <FormSections fields={props.fields}>
+      <FormSections fields={props.fields} level={3}>
         {(field) => (
           <FormField
             key={field.name}
