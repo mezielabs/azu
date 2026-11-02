@@ -730,6 +730,11 @@ Built, for the first preview:
 - [x] Resources, fields and relationships (`belongsTo`, `hasMany`, `manyToMany`), permissions, validation, row and bulk actions (including on all filtered rows), filters, form sections, list column choices, theming, navigation groups and icons, component overrides and `azu:publish`
 - [x] Screens: your own screens, navigation links, a home screen, screen forms, widgets and trends
 
+Known limits in the preview, fixed after it:
+
+- On the Vue starter kit, the admin has no hot reload in dev (an edit reloads the page) and `npm run typecheck` doesn't check its TSX ([#66](https://github.com/mezielabs/azu/issues/66)).
+- A list search that matches almost every row of a very large table is slower than the rest of the list: about 250 ms at p95 on 100,000 rows ([#67](https://github.com/mezielabs/azu/issues/67)).
+
 Next:
 
 - [ ] 0.1.0-preview.0 for early testers
