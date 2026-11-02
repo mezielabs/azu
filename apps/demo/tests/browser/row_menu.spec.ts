@@ -21,7 +21,12 @@ async function clayPot() {
   })
 }
 
-const items = (page: any) => page.getByRole('menu').getByRole('menuitem').allInnerTexts()
+/** The open menu's items, once it has rendered: allInnerTexts() doesn't wait */
+const items = async (page: any) => {
+  const menu = page.getByRole('menu')
+  await menu.waitFor()
+  return menu.getByRole('menuitem').allInnerTexts()
+}
 
 /**
  * The row "⋯" menu: View and Edit when the server allows them for that

@@ -33,6 +33,8 @@ test.group('Save and come back', (group) => {
     await browserContext.loginAs(await createUser('admin'))
     const page = await visit(`${CATEGORIES}/create`)
     const bar = page.locator('.azu-save-bar')
+    // allInnerTexts() doesn't wait: let the bar render first (#69)
+    await bar.getByRole('button', { name: 'Create', exact: true }).waitFor()
     assert.deepEqual(await bar.locator('.azu-save-actions > *').allInnerTexts(), [
       'Cancel',
       'Create & add another',
@@ -55,10 +57,14 @@ test.group('Save and come back', (group) => {
       await bar.getByRole('button', { name: 'Create & add another' }).click()
       const toast = page.locator('.azu-toast', { hasText: 'Category created' }).last()
       await toast.waitFor()
-      await page.waitForFunction(
-        () =>
-          (globalThis as any).document.querySelector('[data-azu-field="name"] input')?.value === ''
-      )
+      // A fresh form, then focus on its first field: focus moves in an effect after the reset
+      await page.waitForFunction(() => {
+        const document = (globalThis as any).document
+        return (
+          document.querySelector('[data-azu-field="name"] input')?.value === '' &&
+          Boolean(document.activeElement?.closest('[data-azu-field="name"]'))
+        )
+      })
       assert.match(page.url(), /\/categories\/create$/)
       assert.deepEqual(await focused(page), { field: 'name', after: null })
       assert.equal(await page.evaluate(() => (globalThis as any).scrollY), 0)

@@ -175,6 +175,7 @@ test.group('Detail page', (group) => {
     ])
     await actions.getByRole('button', { name: 'More' }).click()
     const more = page.getByRole('menu', { name: 'More' })
+    await more.waitFor()
     assert.deepEqual(await more.getByRole('menuitem').allInnerTexts(), [
       'Export',
       'Duplicate',
@@ -190,6 +191,7 @@ test.group('Detail page', (group) => {
     await oneLine(900)
     assert.deepEqual(await actions.locator(':scope > *').allInnerTexts(), ['Actions', 'Edit'])
     await actions.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menu', { name: 'Actions' }).waitFor()
     assert.deepEqual(
       await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
       ['Restock', 'Archive', 'Export', 'Duplicate', 'Purge', 'Delete']
