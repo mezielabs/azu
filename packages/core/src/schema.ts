@@ -59,6 +59,8 @@ export type FieldKind =
   | 'manyToMany'
 
 export type FieldSchema = {
+  /** Optional form section heading; omitted fields remain unheaded. */
+  section?: string | null
   kind: FieldKind
   /** The model attribute, or the relation for relation fields */
   name: string

@@ -108,12 +108,6 @@ Azu reads the model's columns, casts, and relationships, then writes `app/admin/
 
 The generated resource is a starting point. Open it and adjust what's wrong.
 
-## List columns
-
-The **Columns** control, beside the list's filters (beside Sort by on phones), shows or hides columns, including those marked `.hiddenByDefault()`, and resets to the resource's defaults. At least one column stays visible. The choice is in the URL, as `?columns=name,price`, like the rest of the list's state: paging, sorting, filtering and searching keep it, and it survives a reload, opening a record and coming back, and a shared link. Reset to defaults removes it. Names the resource doesn't list are ignored, so a stale or edited link still shows a list.
-
-On phones, a card shows two details by default. Once columns are chosen, it shows every chosen one, each on its own line. Hiding a column is a presentation choice, not an authorisation rule: the server still decides which columns exist.
-
 ## Resources
 
 A resource is one file that points at a Lucid model and borrows its policy and validators:
@@ -190,6 +184,12 @@ import productResource from '#admin/resources/product_resource'
 azu.register(productResource)
 ```
 
+### List columns
+
+The **Columns** control, beside the list's filters (beside Sort by on phones), shows or hides columns, including those marked `.hiddenByDefault()`, and resets to the resource's defaults. At least one column stays visible. The choice is in the URL, as `?columns=name,price`, like the rest of the list's state: paging, sorting, filtering and searching keep it, and it survives a reload, opening a record and coming back, and a shared link. Reset to defaults removes it. Names the resource doesn't list are ignored, so a stale or edited link still shows a list.
+
+On phones, a card shows two details by default. Once columns are chosen, it shows every chosen one, each on its own line. Hiding a column is a presentation choice, not an authorisation rule: the server still decides which columns exist.
+
 ### Navigation
 
 The sidebar holds your brand, the dashboard and your resources, and at the bottom the signed-in user's account button. Its menu holds the theme (Light, Dark or System), "View site" (your `siteUrl`, `/` by default) and Sign out. Sign out posts to `/admin/logout`, which signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`. On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer, with the same choices as full-width rows.
@@ -232,6 +232,20 @@ Labels come from names: `isFeatured` reads "Is featured", and common acronyms ar
 | `manyToMany` | Searchable picker that adds and removes related records | Submits the related records' keys (`tags` → `tagIds`). Read-only for users who can't list the related resource, and on edit when attachments fall outside the related resource scope or exceed 200 |
 
 You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree.
+
+### Form sections
+
+Use `.section('Details')` on a field to group resource, screen, or action form fields under a heading:
+
+```ts
+fields: [
+  field.text('name').section('Details'),
+  field.text('sku').section('Details'),
+  field.decimal('price').section('Pricing'),
+]
+```
+
+Groups follow the first appearance of each heading; fields keep declaration order within their group. Fields without a section form an unheaded group. Blank headings reset a field to that group. Groups only exist when they contain visible, authorized fields. Headings stay visible (level 2 on a page, level 3 under an action dialog's title), fields stack on phones, and validation focuses the first invalid control in displayed order. Ungrouped forms keep their existing layout; detail pages are unchanged.
 
 ## Permissions
 
