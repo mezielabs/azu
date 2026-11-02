@@ -90,6 +90,7 @@ All on `61dde23`, 2026-11-02.
   - Core: 275 passed on each of SQLite, Postgres 18 and MySQL 8.4.
   - Demo: 329 passed, 1 skipped (README screenshots) on each database, the full browser suite in Chromium included; the generator proof's own run, 9 of 9, on each.
   - Smoke subset (`smoke.yml`): 5 of 5 in Firefox and 5 of 5 in WebKit.
+  - One flaky browser test turned up afterwards, on SQLite in this PR's own CI: `save_and_continue.spec.ts` reads the save bar before the lazy form renders. Tracked in [#69](https://github.com/mezielabs/azu/issues/69).
 - ✅ **`pnpm budget`:** initial admin JS 112.3 kB of 120 kB gz; the largest lazy page chunks are create and edit at 144.3 kB of 160 kB.
 - ✅ **`pnpm prove:generator`:** passed for all 8 demo models (Category, Coupon, Order, OrderItem, Product, Setting, Tag, User) on each database in CI.
 - ✅ **`node ace azu:doctor`** in the demo: 5 resources and 1 published page, 0 errors, 0 warnings.
