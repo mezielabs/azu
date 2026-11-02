@@ -323,6 +323,7 @@ test.group('List page', (group) => {
     ])
     await wide.getByRole('button', { name: 'More' }).click()
     const more = page.getByRole('menu', { name: 'More' })
+    await more.waitFor()
     assert.deepEqual(await more.getByRole('menuitem').allInnerTexts(), [
       'Archive',
       'Export',
@@ -338,6 +339,7 @@ test.group('List page', (group) => {
     const narrow = await oneLine(900)
     assert.equal(await narrow.locator('.azu-bulk-action:not(.azu-bulk-menu)').count(), 0)
     await narrow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menu', { name: 'Actions' }).waitFor()
     assert.deepEqual(
       await page.getByRole('menu', { name: 'Actions' }).getByRole('menuitem').allInnerTexts(),
       ['Publish', 'Feature', 'Archive', 'Export', 'Purge', 'Delete']
