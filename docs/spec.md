@@ -215,6 +215,8 @@ How an action runs (FR-12):
 
 **Auth:** `config/azu.ts` names the guard (default: app default) and `loginUrl` (default `/login`). The installer adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`. If the app has no Bouncer yet, the installer doesn't install it (AdonisJS presets don't install their dependencies either); it explains how to add it, and the gate denies everyone until then.
 
+Admin routes render through Azu's own Inertia instance: a copy of `config/inertia.ts` with Azu's root view (`azu::admin`), none of the app's shared props, and server-side rendering always off, because the app's SSR bundle renders the app's pages, not Azu's (`ssr.enabled` and `ssr.pages` in the app's config don't apply to admin pages).
+
 The access gate runs on every admin route, after the admin root view is set up:
 
 - With session middleware, a guest's page navigation saves its local URL and query string with the session package's `setIntendedUrl()`: a GET that's an Inertia visit but not a partial reload (no `X-Inertia-Partial-Component`, which Inertia sends with `only` and `except`), or that asks for HTML (`request.accepts(['html']) === 'html'`). Writes, partial reloads and the JSON options endpoints (`fields/:field/options`, `filters/:filter/options`, excluded by route name whatever their headers) never replace it. The host login flow consumes the destination after authentication with a fallback route, and the destination still checks authorization.

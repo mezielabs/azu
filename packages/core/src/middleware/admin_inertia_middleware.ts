@@ -18,7 +18,8 @@ export const ADMIN_ROOT_VIEW = 'azu::admin'
  * Inertia middleware has already created `ctx.inertia` by the time admin
  * routes run. This middleware replaces it with an instance that renders
  * `azu::admin`, without editing the app's `config/inertia.ts` or layout.
- * The app's shared props don't reach admin pages.
+ * The app's shared props don't reach admin pages, and neither does its
+ * server-side rendering: `ssr` is always off for admin pages.
  */
 export class AdminInertiaMiddleware {
   constructor(protected app: ApplicationService) {}
@@ -26,7 +27,17 @@ export class AdminInertiaMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const config = this.app.config.get<InertiaConfig>('inertia')
     const vite = await this.app.container.make('vite')
-    ctx.inertia = new Inertia(ctx, { ...config, rootView: ADMIN_ROOT_VIEW }, vite)
+    ctx.inertia = new Inertia(
+      ctx,
+      {
+        ...config,
+        rootView: ADMIN_ROOT_VIEW,
+        // The app's SSR bundle renders the app's pages, not Azu's: admin
+        // pages always render in the browser
+        ssr: { ...config.ssr, enabled: false },
+      },
+      vite
+    )
     return next()
   }
 }
