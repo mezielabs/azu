@@ -723,6 +723,8 @@ Dark mode follows the user's system setting (System, the default). Light or Dark
 
 The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 
+**Content Security Policy:** the panel works under Shield's CSP with a strict nonce-only policy (`scriptSrc` and `styleSrc` of `'self'` and `'@nonce'`, no `'unsafe-inline'`). The admin view puts the request's nonce on its theme style and script, and on a `<meta property="csp-nonce">` tag that the styles added at runtime (React Aria, Inertia's progress bar, the rich text editor) read.
+
 ## Commands
 
 | Command | What it does |
@@ -752,6 +754,11 @@ Built, for the first preview:
 
 - [x] Resources, fields and relationships (`belongsTo`, `hasMany`, `manyToMany`), permissions, validation, row and bulk actions (including on all filtered rows), filters, form sections, list column choices, theming, navigation groups and icons, component overrides and `azu:publish`
 - [x] Screens: your own screens, navigation links, a home screen, screen forms, widgets and trends
+
+Known limits in the preview, fixed after it:
+
+- On the Vue starter kit, the admin has no hot reload in dev (an edit reloads the page) and `npm run typecheck` doesn't check its TSX ([#66](https://github.com/mezielabs/azu/issues/66)).
+- A list search that matches almost every row of a very large table is slower than the rest of the list: about 250 ms at p95 on 100,000 rows ([#67](https://github.com/mezielabs/azu/issues/67)).
 
 Next:
 

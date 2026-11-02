@@ -1,6 +1,6 @@
 # Release checklist: 0.1.0-preview
 
-The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early testers. Packaging preparation updated 2026-10-26. Local package checks do not establish release-commit verification; the remaining gates below must still be completed.
+The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early testers. **Verified on `61dde23`** (#59's merge into `main`), 2026-11-02: the figures below are from that commit, and replace earlier ones. Compatibility with each official starter kit is in [`docs/compatibility.md`](compatibility.md).
 
 **Nothing here has been published.** Publishing, the `mezielabs` npm org and its trusted-publisher settings are Chimezie's to approve and do. The items marked **(Chimezie)** need him; the rest can be done in a PR.
 
@@ -9,6 +9,13 @@ Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval o
 ## Language scope
 
 The preview ships an English built-in UI. There is no panel-wide locale or translation catalog, and the built-in strings do not pass through AdonisJS i18n. Supplied labels and validation messages can use the app's wording. Release notes must not claim full localization or translation-ready UI; that integration remains deferred.
+
+## Known limits in the preview
+
+Recorded from the compatibility pass and the benchmarks; both issues stay open for after the preview. The README lists them too.
+
+- **Vue starter kit** ([#66](https://github.com/mezielabs/azu/issues/66)): Azu's admin is React beside the app's Vue pages, without `@vitejs/plugin-react`. In dev, admin pages log `GET /@react-refresh 404` and reload in full on an edit instead of hot-swapping, and the kit's `npm run typecheck` doesn't cover the admin's TSX (custom components and screen components). The admin works, and builds alongside the Vue app.
+- **A search that matches every row** ([#67](https://github.com/mezielabs/azu/issues/67)): on 100,000 rows, p95 246.8 ms against the 200 ms target. Narrower searches, sorting, filtering and paging are well under it (section 6).
 
 ## 1. Version and tag
 
@@ -41,24 +48,26 @@ The preview ships an English built-in UI. There is no panel-wide locale or trans
 
 `pnpm pack:check` builds both packages, packs them with pnpm, and inspects the actual tarballs with `scripts/check_release_packages.mjs`. It checks versions, metadata, exports, templates, page sources, README/license files, excluded development files and the rewritten React peer range. It writes `artifacts/packages/verification.json` with the source commit, dirty-tree flag, file counts, sizes and SHA-256 hashes. CI rejects a dirty source tree. React's build clears its output first to prevent stale files from an earlier checkout entering a release.
 
-The following 2026-10-16 results are historical evidence, not counts or checks for the current candidate:
+On `61dde23` (`pnpm pack:check` locally, and the release workflow's `packages` job in [run 41453957618](https://github.com/mezielabs/azu/actions/runs/41453957618), with identical sizes):
 
-- ✅ **Tarballs** from `pnpm pack` (`0.0.0`, today):
-  - `@mezielabs/azu`: 135 files, 103 kB. `build/` with the provider, commands and their `commands.json` index, the stubs, services, `shared`, `vite` and `types`, plus `LICENSE.md`.
-  - `@mezielabs/azu-react`: 124 files, 66 kB. `build/` with `azu.css`, and `src/`, which `azu:publish` copies pages from (`docs/decisions.md`, FR-15), plus `LICENSE.md`.
-  - No tests, coverage, source maps or `tsbuildinfo` in either.
+- ✅ **Tarballs:**
+  - `@mezielabs/azu` `0.1.0-preview.0`: 194 files, 213,227 bytes, sha256 `23629f92cff209b4…`.
+  - `@mezielabs/azu-react` `0.1.0-preview.0`: 173 files, 125,087 bytes, sha256 `58e20828219b4685…`.
+  - Source tree clean; `verification.json` records the commit and full hashes.
 - ✅ **Exports** (each with `types` and `default`):
   - core: `.`, `./azu_provider`, `./services/main`, `./shared`, `./vite`, `./types`, `./commands`, `./package.json`
   - react: `.`, `./styles.css`, `./rich-text`, `./rich-text-fallback`, `./icons`, `./package.json`
-- ✅ **`publint --strict`** (0.3.12): "All good" for both.
-- ⬜ **`@arethetypeswrong/cli`** (0.18.2) crashed on both tarballs ("Cannot read properties of undefined (reading 'filename')") before checking anything. Try a newer release before publishing. Meanwhile, the quickstart's fresh app typechecked against the packed types (`docs/quickstart.md`).
-- ✅ **Installed from the tarballs into a fresh app** (`docs/quickstart.md`): configure, `azu:resource`, the dev server and the panel all worked.
-- ⬜ **Re-check after versioning:** `pnpm pack` again and confirm `@mezielabs/azu-react`'s peer on `@mezielabs/azu` reads `^0.1.0-preview.0`, not `workspace:^`.
+- ✅ **Peer rewritten:** `@mezielabs/azu-react`'s peer on `@mezielabs/azu` reads `^0.1.0-preview.0` in the tarball, not `workspace:^`.
+- ✅ **`publint --strict`** (0.3.12): passed for both, in CI's "Strict package export lint" step on this commit.
+- ✅ **Tarball tests** (`scripts/tests/release_packages.spec.mjs`): 4 of 4.
+- ⬜ **`@arethetypeswrong/cli`:** not run for this commit (0.18.2 crashed on both tarballs on 2026-10-16). Try a newer release before publishing.
+- ✅ **Installed from these tarballs** into fresh apps from all four official starter kits: see [`docs/compatibility.md`](compatibility.md).
 
 ## 4. Provenance and the publish workflow
 
 `provenance: true` means npm must be able to verify where each tarball was built, which only works from a supported CI (GitHub Actions here). A `pnpm publish` from a laptop fails with this setting, which is the point.
 
+- ✅ **Workflow run without publishing** on `61dde23` with `version: 0.1.0-preview.0`, `publish: false`: [run 41453957618](https://github.com/mezielabs/azu/actions/runs/41453957618), all jobs green, publish skipped, artifact `preview-packages-61dde23…` uploaded (339,209 bytes).
 - ✅ **Workflow prepared:** `.github/workflows/release.yml`, manual `workflow_dispatch` only. It calls the same CI workflow (lint/typecheck, database tests with the full browser suite in Chromium, budget, generator proof) and `smoke.yml`, the smoke subset in Firefox and WebKit (below). Only when both pass does it rebuild and inspect both packages from that commit.
 - ✅ **Smoke subset in Firefox and WebKit (R02):** `apps/demo/tests/browser/smoke.spec.ts` signs in through the app's login page, then checks a list (rows, search, sort), a form save, a row action with a dialog field (Restock), and the Overview's widgets and range switch. `smoke.yml` runs it on SQLite in both engines (`node ace test browser --files tests/browser/smoke.spec.ts --browser=firefox`); the same file runs in Chromium with the full suite. Pull requests run `smoke.yml` only when the workflow or the spec changes.
 - **Prepare without publishing:** dispatch on the intended branch with `version: 0.1.0-preview.0` and `publish: false` (default). It uploads `preview-packages-<commit>` containing both tarballs and the verification report. Stale tarballs or a mismatched version fail the check.
@@ -81,13 +90,21 @@ The following 2026-10-16 results are historical evidence, not counts or checks f
 
 ## 6. Checks before publishing
 
-- ⬜ CI green on the release commit (`ci.yml`: lint, typecheck, SQLite, Postgres 18, MySQL 8.4), and the smoke subset in Firefox and WebKit (`smoke.yml`); the release workflow runs both.
-- ⬜ `pnpm budget`: within budget (initial admin JS was 111.6 kB of 120 on #24).
-- ⬜ `pnpm bench:list` on Postgres with 100,000 products, against the 200 ms p95 target (spec §2 asks for it before each release).
-- ⬜ `pnpm bench:widgets` on Postgres with 100,000 orders (`node ace bench:orders --count=100000`), against the 100 ms p95 per widget target (spec §2).
-- ⬜ `pnpm prove:generator`: passes for every demo model.
-- ⬜ `node ace azu:doctor` in the demo: 0 errors, 0 warnings.
-- ⬜ The quickstart again, with the tarballs from the release commit (`docs/quickstart.md`).
+All on `61dde23`, 2026-11-02.
+
+- ✅ **CI and the release workflow green** ([run 41453957618](https://github.com/mezielabs/azu/actions/runs/41453957618)):
+  - Lint and typecheck: passed.
+  - Core: 275 passed on each of SQLite, Postgres 18 and MySQL 8.4.
+  - Demo: 329 passed, 1 skipped (README screenshots) on each database, the full browser suite in Chromium included; the generator proof's own run, 9 of 9, on each.
+  - Smoke subset (`smoke.yml`): 5 of 5 in Firefox and 5 of 5 in WebKit.
+  - One flaky browser test turned up afterwards, on SQLite in this PR's own CI: `save_and_continue.spec.ts` reads the save bar before the lazy form renders. Tracked in [#69](https://github.com/mezielabs/azu/issues/69).
+- ✅ **`pnpm budget`:** initial admin JS 112.3 kB of 120 kB gz; the largest lazy page chunks are create and edit at 144.3 kB of 160 kB.
+- ✅ **`pnpm prove:generator`:** passed for all 8 demo models (Category, Coupon, Order, OrderItem, Product, Setting, Tag, User) on each database in CI.
+- ✅ **`node ace azu:doctor`** in the demo: 5 resources and 1 published page, 0 errors, 0 warnings.
+- ✅ **`pnpm pack:check`:** passed (section 3).
+- ⬜ **`pnpm bench:list`** on Postgres 18.6 with 100,040 products (seed plus `node ace bench:products --count=100000`), the demo built with `node ace build` and run with `NODE_ENV=production`, 200 sequential requests per scenario: 13 of 14 scenarios under the 200 ms p95 target (first page 54.2 ms, sort by price 55.4 ms, 100 per page 90.7 ms, five filters with a search 69.9 ms, page 1,000 of 3,000 103.7 ms). **One misses:** a search matching every row ("product"), p95 246.8 ms. Tracked in [#67](https://github.com/mezielabs/azu/issues/67).
+- ✅ **`pnpm bench:widgets`** on the same database with 100,060 orders (`node ace bench:orders --count=100000`), 100 sequential requests per widget and range: worst p95 89.9 ms (Revenue over time, 90 days), under the 100 ms target; a second run's worst was 83.0 ms. The trend over 90 days has the least headroom.
+- ✅ **The quickstart, with the tarballs from the release commit:** on the React starter kit, see [`docs/compatibility.md`](compatibility.md).
 
 ## 7. After publishing
 

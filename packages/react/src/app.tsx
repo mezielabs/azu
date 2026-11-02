@@ -10,6 +10,7 @@ import {
   type ComponentModules,
 } from './components/registry.tsx'
 import { ToastRegion } from './components/toast.tsx'
+import { cspNonce } from './csp.ts'
 
 declare module 'react-aria-components' {
   interface RouterConfig {
@@ -58,6 +59,9 @@ export function createAzuApp(options: CreateAzuAppOptions = {}) {
   return createInertiaApp({
     // The theme's brand colour, so the bar reads in light and dark
     progress: { color: 'var(--azu-brand)' },
+    // Inertia's progress bar and dialog insert their own <style>: under a
+    // strict CSP they need the page's nonce (#65)
+    nonce: cspNonce(),
     // The app's name (`brand.name` in config/azu.ts), from the root view
     title: (title) => {
       const name =

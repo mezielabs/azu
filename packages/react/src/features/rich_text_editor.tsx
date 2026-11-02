@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import type { RichTextEditorProps } from './rich_text.ts'
+import { cspNonce } from '../csp.ts'
 
 type Mark = {
   /** The button's accessible name and tooltip */
@@ -108,6 +109,8 @@ const TOOLS: Mark[] = [
 export default function RichTextEditor(props: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [StarterKit.configure({ link: { openOnClick: false } })],
+    // Tiptap inserts its own <style>: under a strict CSP it needs the page's nonce (#65)
+    injectNonce: cspNonce(),
     content: props.value,
     editable: !props.readOnly,
     editorProps: {
