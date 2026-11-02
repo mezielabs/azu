@@ -12,6 +12,7 @@ import { existsSync } from 'node:fs'
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import type Configure from '@adonisjs/core/commands/configure'
 import { stubsRoot } from './stubs/main.ts'
+import { checkPrerequisites, sessionGuardToUse } from './src/setup/prerequisites.ts'
 
 /**
  * Appended to app/abilities/main.ts. Denies everyone until the app
@@ -77,7 +78,48 @@ async function isListed(command: Configure, name: string): Promise<boolean> {
   }
 }
 
+async function readIfExists(path: string): Promise<string | null> {
+  return existsSync(path) ? readFile(path, 'utf8') : null
+}
+
+/**
+ * Checks the app has what the admin panel needs (#63). When something's
+ * missing, says exactly what to add and returns false, before anything
+ * is written or installed. A provider it can't find in adonisrc.ts but
+ * whose config file exists gets a warning instead.
+ */
+async function ensurePrerequisites(command: Configure): Promise<boolean> {
+  const { missing, warnings } = checkPrerequisites({
+    rcFile: await readIfExists(command.app.makePath('adonisrc.ts')),
+    viteConfig: existsSync(command.app.makePath('vite.config.ts')),
+    viteProviderConfig: existsSync(command.app.makePath('config/vite.ts')),
+    inertiaConfig: existsSync(command.app.makePath('config/inertia.ts')),
+    authConfig: await readIfExists(command.app.makePath('config/auth.ts')),
+  })
+  if (missing.length === 0) {
+    for (const warning of warnings) command.logger.warning(warning)
+    return true
+  }
+
+  command.logger.error(
+    `Azu needs ${missing.length === 1 ? 'one more thing' : `${missing.length} more things`} in this app. Nothing was changed:`
+  )
+  for (const item of missing) {
+    command.logger.log(`\n  ${item.problem}`)
+    for (const step of item.fix) {
+      command.logger.log(step.replace(/^/gm, '    '))
+    }
+  }
+  command.logger.log(
+    '\nThen run "node ace configure @mezielabs/azu" again. See "Starter kits" in the README.'
+  )
+  command.exitCode = 1
+  return false
+}
+
 export async function configure(command: Configure) {
+  if (!(await ensurePrerequisites(command))) return
+
   let shouldInstallPackages: boolean | undefined = command.parsedFlags.install
   // Already a dependency: nothing to install, ask about or list
   const alreadyListed = await isListed(command, FRONT_END_PACKAGE.name)
@@ -127,6 +169,17 @@ export async function configure(command: Configure) {
    * The access gate's ability (FR-02)
    */
   await addAccessAbility(command)
+
+  /**
+   * The API starter kit's default guard is access tokens: the panel
+   * needs the session one
+   */
+  const guard = sessionGuardToUse(await readIfExists(command.app.makePath('config/auth.ts')))
+  if (guard) {
+    command.logger.warning(
+      `Your default auth guard isn't a session guard. Set guard: '${guard}' in config/azu.ts so the admin panel uses "${guard}"`
+    )
+  }
 
   if (alreadyListed) return
   if (shouldInstallPackages) {

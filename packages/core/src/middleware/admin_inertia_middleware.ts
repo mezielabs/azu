@@ -1,9 +1,11 @@
 import '@adonisjs/inertia/inertia_middleware'
-import { Inertia } from '@adonisjs/inertia'
+import { RuntimeException } from '@adonisjs/core/exceptions'
+import { Inertia, InertiaManager } from '@adonisjs/inertia'
 import type { InertiaConfig } from '@adonisjs/inertia/types'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import type { ApplicationService } from '@adonisjs/core/types'
+import { runtimeSetupProblem } from '../setup/prerequisites.ts'
 
 /**
  * The Edge view admin pages render into. The provider mounts the
@@ -25,6 +27,15 @@ export class AdminInertiaMiddleware {
   constructor(protected app: ApplicationService) {}
 
   async handle(ctx: HttpContext, next: NextFn) {
+    // An app without Inertia or Vite (the Hypermedia and API starter
+    // kits) gets the steps to add them, not a TypeError (#64)
+    const problem = runtimeSetupProblem({
+      hasInertiaConfig: this.app.config.has('inertia'),
+      hasInertiaProvider: this.app.container.hasBinding(InertiaManager),
+      hasVite: this.app.container.hasBinding('vite'),
+    })
+    if (problem) throw new RuntimeException(problem, { code: 'E_AZU_SETUP' })
+
     const config = this.app.config.get<InertiaConfig>('inertia')
     const vite = await this.app.container.make('vite')
     ctx.inertia = new Inertia(

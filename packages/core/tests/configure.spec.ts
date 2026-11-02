@@ -5,6 +5,30 @@ import type { FileSystem } from '@japa/file-system'
 
 const PACKAGE_ENTRY = new URL('../index.ts', import.meta.url).href
 
+type Piece =
+  'vite provider' | 'vite config' | 'edge' | 'inertia config' | 'inertia provider' | 'session guard'
+
+const SESSION_AUTH = `import { defineConfig } from '@adonisjs/auth'
+import { sessionGuard, sessionUserProvider } from '@adonisjs/auth/session'
+
+export default defineConfig({
+  default: 'web',
+  guards: {
+    web: sessionGuard({ provider: sessionUserProvider({ model: () => import('#models/user') }) }),
+  },
+})
+`
+
+/** The API starter kit's: access tokens by default, a session guard beside it */
+const TOKENS_AUTH = `export default defineConfig({
+  default: 'api',
+  guards: {
+    api: tokensGuard({ provider: tokensUserProvider({ tokens: 'accessTokens' }) }),
+    web: sessionGuard({ provider: sessionUserProvider({ model: () => import('#models/user') }) }),
+  },
+})
+`
+
 /**
  * A minimal app on disk with a booted container, so the real Configure
  * command runs the hook and its codemods.
@@ -12,13 +36,34 @@ const PACKAGE_ENTRY = new URL('../index.ts', import.meta.url).href
 async function createApp(
   fs: FileSystem,
   viteConfig: string,
-  dependencies: Record<string, string> = {}
+  dependencies: Record<string, string> = {},
+  without: Piece[] = [],
+  authConfig = SESSION_AUTH
 ) {
+  const providers = [
+    without.includes('edge') ? null : `() => import('@adonisjs/core/providers/edge_provider')`,
+    without.includes('vite provider') ? null : `() => import('@adonisjs/vite/vite_provider')`,
+    without.includes('inertia provider')
+      ? null
+      : `() => import('@adonisjs/inertia/inertia_provider')`,
+  ].filter(Boolean)
   await fs.create('.env', '')
   await fs.createJson('tsconfig.json', {})
   await fs.createJson('package.json', { name: 'app', type: 'module', dependencies })
-  await fs.create('adonisrc.ts', `export default defineConfig({})`)
-  await fs.create('vite.config.ts', viteConfig)
+  await fs.create(
+    'adonisrc.ts',
+    `export default defineConfig({\n  providers: [${providers.join(', ')}],\n})`
+  )
+  if (!without.includes('vite config')) await fs.create('vite.config.ts', viteConfig)
+  if (!without.includes('inertia config')) {
+    await fs.create('config/inertia.ts', `export default defineConfig({ ssr: { enabled: false } })`)
+  }
+  await fs.create(
+    'config/auth.ts',
+    without.includes('session guard')
+      ? authConfig.replace(/sessionGuard/g, 'tokensGuard')
+      : authConfig
+  )
 
   const ignitor = new IgnitorFactory()
     .withCoreProviders()
@@ -181,5 +226,170 @@ test.group('configure / accessAdmin ability (FR-02)', (group) => {
     const logs = command.logger.getLogs().map((log) => log.message)
     assert.notInclude(logs.join('\n'), 'Please install')
     await assert.fileExists('config/azu.ts')
+  })
+})
+
+test.group('configure / prerequisites (#63)', (group) => {
+  group.each.timeout(30_000)
+
+  const VITE = `export default { plugins: [] }`
+
+  /** Nothing written: no config, no admin entry, adonisrc untouched */
+  async function assertNothingWritten(fs: FileSystem, assert: any, rcBefore: string) {
+    assert.isFalse(await fs.exists('config/azu.ts'))
+    assert.isFalse(await fs.exists('start/azu.ts'))
+    assert.isFalse(await fs.exists('inertia/admin/app.tsx'))
+    assert.equal(await fs.contents('adonisrc.ts'), rcBefore)
+  }
+
+  for (const [pieces, expected] of [
+    [['vite provider'], 'node ace add @adonisjs/vite'],
+    [['vite config'], 'node ace add @adonisjs/vite'],
+    [['edge'], 'node ace add edge'],
+    // The Vite provider alone refuses here because the fixture has no config/vite.ts.
+    // The Inertia provider alone warns (config/inertia.ts exists); the Hypermedia
+    // test below covers it refusing without its config.
+    [['inertia config'], 'Add config/inertia.ts'],
+    [['session guard'], 'Add a session guard to config/auth.ts'],
+  ] as [Piece[], string][]) {
+    test(`without ${pieces.join(', ')}: writes nothing, fails, and says what to add`, async ({
+      assert,
+      fs,
+    }) => {
+      const ace = await createApp(fs, VITE, {}, pieces)
+      const rcBefore = await fs.contents('adonisrc.ts')
+
+      const command = await ace.create(Configure, [PACKAGE_ENTRY, '--no-install'])
+      await command.exec()
+
+      assert.equal(command.exitCode, 1)
+      await assertNothingWritten(fs, assert, rcBefore)
+      const logs = ace.ui.logger
+        .getLogs()
+        .map((log) => log.message)
+        .join('\n')
+      assert.include(logs, 'Nothing was changed')
+      assert.include(logs, expected)
+    })
+  }
+
+  test('the Hypermedia kit: names both Inertia steps', async ({ assert, fs }) => {
+    const ace = await createApp(fs, VITE, {}, ['inertia config', 'inertia provider'])
+    const rcBefore = await fs.contents('adonisrc.ts')
+
+    const command = await ace.create(Configure, [PACKAGE_ENTRY, '--no-install'])
+    await command.exec()
+
+    assert.equal(command.exitCode, 1)
+    await assertNothingWritten(fs, assert, rcBefore)
+    const logs = ace.ui.logger
+      .getLogs()
+      .map((log) => log.message)
+      .join('\n')
+    assert.include(logs, '2 more things')
+    assert.include(logs, `import { defineConfig } from '@adonisjs/inertia'`)
+    assert.include(logs, "() => import('@adonisjs/inertia/inertia_provider')")
+    assert.notInclude(logs, 'node ace add edge')
+  })
+
+  /** The logs of a configure run that succeeded */
+  async function configureSucceeds(fs: FileSystem, rcFile: string, assert: any) {
+    const ace = await createApp(fs, VITE)
+    await fs.create('adonisrc.ts', rcFile)
+
+    const command = await ace.create(Configure, [PACKAGE_ENTRY, '--no-install'])
+    await command.exec()
+
+    command.assertSucceeded()
+    await assert.fileExists('config/azu.ts')
+    await assert.fileContains('adonisrc.ts', '@mezielabs/azu/azu_provider')
+    return ace.ui.logger
+      .getLogs()
+      .map((log) => log.message)
+      .join('\n')
+  }
+
+  test('a double-quoted adonisrc.ts', async ({ assert, fs }) => {
+    const logs = await configureSucceeds(
+      fs,
+      `import { defineConfig } from "@adonisjs/core/app"
+
+export default defineConfig({
+  providers: [
+    () => import("@adonisjs/core/providers/edge_provider"),
+    () => import("@adonisjs/vite/vite_provider"),
+    () => import("@adonisjs/inertia/inertia_provider"),
+  ],
+})
+`,
+      assert
+    )
+    assert.notInclude(logs, "Couldn't find")
+  })
+
+  test('a reformatted adonisrc.ts, with providers split across lines', async ({ assert, fs }) => {
+    const logs = await configureSucceeds(
+      fs,
+      `import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  providers: [
+    () =>
+      import(
+        '@adonisjs/core/providers/edge_provider'
+      ),
+    {
+      file: () => import( "@adonisjs/vite/vite_provider" ),
+      environment: ['web', 'test'],
+    },
+    () =>
+      import(
+        '@adonisjs/inertia/inertia_provider',
+      ),
+  ],
+})
+`,
+      assert
+    )
+    assert.notInclude(logs, "Couldn't find")
+  })
+
+  test("a provider it can't find, but whose config file exists: warns and carries on", async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create('config/vite.ts', 'export default defineConfig({})')
+    const logs = await configureSucceeds(
+      fs,
+      `import { defineConfig } from '@adonisjs/core/app'
+import { providers } from './providers.js'
+
+export default defineConfig({
+  providers: [() => import('@adonisjs/core/providers/edge_provider'), ...providers],
+})
+`,
+      assert
+    )
+    assert.include(logs, "Couldn't find @adonisjs/vite/vite_provider in adonisrc.ts")
+    assert.include(logs, "Couldn't find @adonisjs/inertia/inertia_provider in adonisrc.ts")
+    assert.notInclude(logs, 'Nothing was changed')
+  })
+
+  test('the API kit: a session guard beside the default one is enough, with a note to use it', async ({
+    assert,
+    fs,
+  }) => {
+    const ace = await createApp(fs, VITE, {}, [], TOKENS_AUTH)
+
+    const command = await ace.create(Configure, [PACKAGE_ENTRY, '--no-install'])
+    await command.exec()
+
+    command.assertSucceeded()
+    await assert.fileExists('config/azu.ts')
+    const logs = ace.ui.logger
+      .getLogs()
+      .map((log) => log.message)
+      .join('\n')
+    assert.include(logs, "Set guard: 'web' in config/azu.ts")
   })
 })

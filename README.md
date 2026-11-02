@@ -51,6 +51,27 @@ Azu's access gate is a Bouncer ability. The AdonisJS starter kits don't include 
 node ace add @adonisjs/bouncer
 ```
 
+Azu's panel is an Inertia React app inside your AdonisJS app, so it needs Vite, Edge, `@adonisjs/inertia` (its config and provider) and a session guard. The configure step checks for them first, and when something's missing it changes nothing and says what to add.
+
+**Starter kits:**
+
+- **React** and **Vue** (Inertia): supported. On the Vue kit, Azu's admin is React beside your Vue pages; see the preview limits in the [release notes](docs/release.md).
+- **Hypermedia** (Edge): supported after two steps that add Inertia for `/admin` alone, without touching your pages. `@adonisjs/inertia` has no configure step, so do them by hand:
+  1. Add `config/inertia.ts`:
+
+     ```ts
+     import { defineConfig } from '@adonisjs/inertia'
+
+     export default defineConfig({
+       ssr: { enabled: false, entrypoint: 'inertia/ssr.tsx' },
+     })
+     ```
+
+  2. Register the provider in `adonisrc.ts`: `() => import('@adonisjs/inertia/inertia_provider')`.
+- **API:** not supported in the preview. It has no browser sign-in for the panel (its login issues access tokens).
+
+Details for each kit are in [docs/compatibility.md](docs/compatibility.md).
+
 Then install and configure Azu with one command:
 
 ```sh
@@ -113,6 +134,8 @@ node ace azu:resource Product --policy
 Azu reads the model's columns, casts, and relationships, then writes `app/admin/resources/product_resource.ts`, plus a create and update validator derived from the model's columns. The validator goes in `app/validators/product.ts`, or `product_admin.ts` if you already have that file; pass `--no-validator` to skip it. `--policy` writes `app/policies/product_policy.ts` if Product doesn't have a policy yet. It lets everyone who can open the admin panel list, view, create and update products, and it has no delete method; narrow it to your roles. Start your dev server and open `/admin`. You'll see a Products page with a list, search, and create, edit, and detail screens.
 
 The generated resource is a starting point. Open it and adjust what's wrong.
+
+To typecheck, run `node ace codegen` first (the dev server runs it too): Bouncer's middleware imports `#generated/policies`, which codegen writes, so `npm run typecheck` on a fresh app fails until it has run once.
 
 ## Resources
 
