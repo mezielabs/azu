@@ -20,11 +20,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Lint, typecheck, the three databases and the full browser suite in Chromium
   verify:
     uses: ./.github/workflows/ci.yml
 
+  # The smoke subset in Firefox and WebKit (R02)
+  smoke:
+    uses: ./.github/workflows/smoke.yml
+
   packages:
-    needs: verify
+    needs: [verify, smoke]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -71,9 +76,25 @@ jobs:
           node -e "const {execFileSync}=require('node:child_process'); const [major,minor,patch]=execFileSync('npm',['--version'],{encoding:'utf8'}).trim().split('.').map(Number); if (major<11 || (major===11 && (minor<5 || (minor===5 && patch<1)))) throw Error('npm 11.5.1+ required for trusted publishing')"
       # pnpm pack already rewrites workspace:^ to the coordinated preview version.
       # Publish exactly the inspected tarballs, core first, never the source folders.
+      #
+      # Trusted publishing (OIDC) needs each package's trusted-publisher
+      # setting on npmjs.com, which exists only once the package does, so
+      # the first publish can't use it. For that one, set a short-lived
+      # granular token as the npm-preview environment's NODE_AUTH_TOKEN
+      # secret, then delete it (docs/release.md). Unset, npm uses OIDC.
       - name: Publish preview packages
         env:
           AZU_RELEASE_VERSION: ${{ inputs.version }}
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: |
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "Publishing with the npm-preview environment's NODE_AUTH_TOKEN"
+            printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$RUNNER_TEMP/.npmrc"
+            export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc"
+          else
+            # An unset secret arrives as an empty string: leave nothing for npm to read
+            unset NODE_AUTH_TOKEN
+            echo "Publishing with npm trusted publishing (OIDC)"
+          fi
           npm publish "artifacts/packages/mezielabs-azu-${AZU_RELEASE_VERSION}.tgz" --tag preview --access public --provenance
           npm publish "artifacts/packages/mezielabs-azu-react-${AZU_RELEASE_VERSION}.tgz" --tag preview --access public --provenance
