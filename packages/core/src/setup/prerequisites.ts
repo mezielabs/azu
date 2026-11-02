@@ -20,6 +20,8 @@ export type AppFiles = {
   rcFile: string | null
   /** Whether `vite.config.ts` exists */
   viteConfig: boolean
+  /** Whether `config/vite.ts`, the Vite provider's config, exists */
+  viteProviderConfig: boolean
   /** Whether `config/inertia.ts` exists */
   inertiaConfig: boolean
   /** `config/auth.ts` */
@@ -44,24 +46,50 @@ export const INERTIA_STEPS = {
   provider: `Register the provider in adonisrc.ts: () => import('${INERTIA_PROVIDER}')`,
 }
 
-function registers(rcFile: string | null, provider: string) {
-  return rcFile !== null && rcFile.includes(`'${provider}'`)
+/** What `configure` found: pieces to add first, and things it couldn't confirm */
+export type PrerequisiteCheck = {
+  /** Configure refuses while any of these are missing */
+  missing: MissingPrerequisite[]
+  /** Providers not found in adonisrc.ts whose config file exists: configure warns and carries on */
+  warnings: string[]
 }
 
 /**
- * The prerequisites an app is missing, from its files. Empty when Azu
- * can be configured.
+ * Whether adonisrc.ts imports a provider: `import('…')` with either
+ * quote style (or a backtick) and any whitespace or line breaks inside
+ * the parentheses. Lines commented out with `//` don't count.
  */
-export function missingPrerequisites(files: AppFiles): MissingPrerequisite[] {
+export function registersProvider(rcFile: string | null, provider: string): boolean {
+  if (rcFile === null) return false
+  const source = rcFile.replace(/^\s*\/\/.*$/gm, '')
+  const name = provider.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+  return new RegExp(`\\bimport\\s*\\(\\s*(['"\`])${name}\\1\\s*,?\\s*\\)`).test(source)
+}
+
+function unconfirmed(provider: string, configFile: string) {
+  return `Couldn't find ${provider} in adonisrc.ts, but ${configFile} exists, so carrying on. If /admin fails to load, register it: () => import('${provider}')`
+}
+
+/**
+ * Checks an app's files for what the admin panel needs. `missing` is
+ * empty when Azu can be configured.
+ */
+export function checkPrerequisites(files: AppFiles): PrerequisiteCheck {
   const missing: MissingPrerequisite[] = []
-  if (!registers(files.rcFile, VITE_PROVIDER) || !files.viteConfig) {
+  const warnings: string[] = []
+
+  const viteProvider = registersProvider(files.rcFile, VITE_PROVIDER)
+  if (!files.viteConfig || (!viteProvider && !files.viteProviderConfig)) {
     missing.push({
       name: 'vite',
       problem: 'Vite is not set up: Azu adds the admin panel as its own Vite entry',
       fix: ['node ace add @adonisjs/vite'],
     })
+  } else if (!viteProvider) {
+    warnings.push(unconfirmed(VITE_PROVIDER, 'config/vite.ts'))
   }
-  if (!registers(files.rcFile, EDGE_PROVIDER)) {
+  // Edge has no config file to fall back on
+  if (!registersProvider(files.rcFile, EDGE_PROVIDER)) {
     missing.push({
       name: 'edge',
       problem: "Edge is not set up: the admin panel's root view is an Edge template",
@@ -75,14 +103,18 @@ export function missingPrerequisites(files: AppFiles): MissingPrerequisite[] {
       fix: [INERTIA_STEPS.config],
     })
   }
-  if (!registers(files.rcFile, INERTIA_PROVIDER)) {
-    missing.push({
-      name: 'inertia provider',
-      problem: "@adonisjs/inertia's provider is not registered",
-      fix: [INERTIA_STEPS.provider],
-    })
+  if (!registersProvider(files.rcFile, INERTIA_PROVIDER)) {
+    if (files.inertiaConfig) {
+      warnings.push(unconfirmed(INERTIA_PROVIDER, 'config/inertia.ts'))
+    } else {
+      missing.push({
+        name: 'inertia provider',
+        problem: "@adonisjs/inertia's provider is not registered",
+        fix: [INERTIA_STEPS.provider],
+      })
+    }
   }
-  if (!files.authConfig?.includes('sessionGuard(')) {
+  if (!/\bsessionGuard\s*\(/.test(files.authConfig ?? '')) {
     missing.push({
       name: 'session guard',
       problem:
@@ -92,7 +124,7 @@ export function missingPrerequisites(files: AppFiles): MissingPrerequisite[] {
       ],
     })
   }
-  return missing
+  return { missing, warnings }
 }
 
 /**

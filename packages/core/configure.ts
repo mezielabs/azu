@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs'
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import type Configure from '@adonisjs/core/commands/configure'
 import { stubsRoot } from './stubs/main.ts'
-import { missingPrerequisites, sessionGuardToUse } from './src/setup/prerequisites.ts'
+import { checkPrerequisites, sessionGuardToUse } from './src/setup/prerequisites.ts'
 
 /**
  * Appended to app/abilities/main.ts. Denies everyone until the app
@@ -85,16 +85,21 @@ async function readIfExists(path: string): Promise<string | null> {
 /**
  * Checks the app has what the admin panel needs (#63). When something's
  * missing, says exactly what to add and returns false, before anything
- * is written or installed.
+ * is written or installed. A provider it can't find in adonisrc.ts but
+ * whose config file exists gets a warning instead.
  */
-async function checkPrerequisites(command: Configure): Promise<boolean> {
-  const missing = missingPrerequisites({
+async function ensurePrerequisites(command: Configure): Promise<boolean> {
+  const { missing, warnings } = checkPrerequisites({
     rcFile: await readIfExists(command.app.makePath('adonisrc.ts')),
     viteConfig: existsSync(command.app.makePath('vite.config.ts')),
+    viteProviderConfig: existsSync(command.app.makePath('config/vite.ts')),
     inertiaConfig: existsSync(command.app.makePath('config/inertia.ts')),
     authConfig: await readIfExists(command.app.makePath('config/auth.ts')),
   })
-  if (missing.length === 0) return true
+  if (missing.length === 0) {
+    for (const warning of warnings) command.logger.warning(warning)
+    return true
+  }
 
   command.logger.error(
     `Azu needs ${missing.length === 1 ? 'one more thing' : `${missing.length} more things`} in this app. Nothing was changed:`
@@ -113,7 +118,7 @@ async function checkPrerequisites(command: Configure): Promise<boolean> {
 }
 
 export async function configure(command: Configure) {
-  if (!(await checkPrerequisites(command))) return
+  if (!(await ensurePrerequisites(command))) return
 
   let shouldInstallPackages: boolean | undefined = command.parsedFlags.install
   // Already a dependency: nothing to install, ask about or list
