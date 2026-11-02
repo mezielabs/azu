@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="azu-app-name" content="{{ azu.appName }}" />
+    {{-- With Shield's CSP on, the request's nonce: React Aria and Azu's runtime styles read it --}}
+    @if(cspNonce)
+      <meta property="csp-nonce" nonce="{{ cspNonce }}" />
+    @end
     <title data-inertia>{{ azu.appName }}</title>
     {{-- The brand palettes (FR-14), then the stored light/dark choice, before the first paint --}}
     <style id="azu-theme" nonce="{{ cspNonce ?? '' }}">{{{ azu.themeCss }}}</style>

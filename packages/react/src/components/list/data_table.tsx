@@ -16,6 +16,7 @@ import type { ListState } from '@mezielabs/azu/shared'
 import { Link } from '@inertiajs/react'
 import { ListCell } from './cell.tsx'
 import { SortIcon } from '../shell_icons.tsx'
+import { cspNonce } from '../../csp.ts'
 
 const cx = (...classes: (string | false | undefined)[]) => classes.filter(Boolean).join(' ')
 
@@ -106,6 +107,8 @@ export function DataTable(props: {
   // `style`, and it re-creates its cells, so writing to them is lost.
   const element = useRef<HTMLTableElement>(null)
   const tableId = useId()
+  // Under a strict CSP, the stylesheet needs the page's nonce (#65)
+  const nonce = useMemo(() => cspNonce(), [])
   const [widths, setWidths] = useState<number[] | null>(null)
   const columnKey = visible.map((column) => column.name).join(',')
   const [measuredColumns, setMeasuredColumns] = useState('')
@@ -135,7 +138,7 @@ export function DataTable(props: {
   return (
     <div className="azu-table-container">
       {held && (
-        <style>
+        <style nonce={nonce}>
           {widths
             .map(
               (width, index) =>

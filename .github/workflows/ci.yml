@@ -151,6 +151,13 @@ jobs:
       # The tests roll their migrations back; also prove the seeder runs
       - run: pnpm demo:seed
 
+      # #65: the admin panel under a strict, nonce-only CSP, on a
+      # production build of the seeded demo
+      - name: Strict CSP on a production build
+        if: matrix.db == 'sqlite'
+        working-directory: apps/demo
+        run: node ace build && node ../../scripts/check_csp.mjs
+
       # On Postgres, migration:fresh regenerates database/schema.ts. The
       # committed file must match the primary database's types.
       - name: Check database/schema.ts matches Postgres

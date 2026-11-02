@@ -27,6 +27,12 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // Database (SQLite by default; DB_CONNECTION=pg or mysql for the others)
   DB_CONNECTION: Env.schema.enum.optional(['sqlite', 'pg', 'mysql'] as const),
+
+  /**
+   * A strict nonce-only Content Security Policy, to check the admin
+   * panel under one (#65, scripts/check_csp.mjs). Off by default.
+   */
+  STRICT_CSP: Env.schema.boolean.optional(),
   DB_HOST: Env.schema.string.optional({ format: 'host' }),
   DB_PORT: Env.schema.number.optional(),
   DB_USER: Env.schema.string.optional(),
