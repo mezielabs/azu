@@ -59,6 +59,8 @@ function focusAfterSave(destination: 'create' | 'edit') {
   })
 }
 
+const NO_EDITS: ReadonlySet<string> = new Set()
+
 function sameValues(a: Values, b: Values) {
   return Object.keys(a).every((name) => comparable(a[name]) === comparable(b[name]))
 }
@@ -100,9 +102,14 @@ export function ResourceForm(props: {
   const [initial] = useState(form.values)
   const [values, setValues] = useState(form.values)
   const [processing, setProcessing] = useState(false)
-  // Fields edited since the last submit: their old errors no longer apply
-  const [edited, setEdited] = useState<ReadonlySet<string>>(new Set())
-  useEffect(() => setEdited(new Set()), [errors])
+  // Fields edited since these errors came back: their errors no longer
+  // apply. Kept with the errors they're for, so new errors show in the
+  // same render they arrive in, not one render later
+  const [edits, setEdits] = useState<{ errors: FormErrors; names: ReadonlySet<string> }>({
+    errors,
+    names: new Set(),
+  })
+  const edited = edits.errors === errors ? edits.names : NO_EDITS
   const element = useRef<HTMLFormElement>(null)
   const summary = useRef<HTMLDivElement>(null)
   // Set by the secondary button for the submit it starts
@@ -122,14 +129,16 @@ export function ResourceForm(props: {
 
   /**
    * After a 422, focus the first invalid field, or the summary when
-   * only errors without a field came back.
+   * only errors without a field came back. From an effect, so it runs
+   * once the errors are in the page (U08: a frame callback could run
+   * before they rendered, and focus nothing)
    */
-  function focusFirstError() {
-    requestAnimationFrame(() => {
-      const invalid = element.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
-      ;(invalid ?? summary.current)?.focus()
-    })
-  }
+  const [focusRequest, setFocusRequest] = useState(0)
+  useEffect(() => {
+    if (focusRequest === 0) return
+    const invalid = element.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
+    ;(invalid ?? summary.current)?.focus()
+  }, [focusRequest])
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -182,7 +191,7 @@ export function ResourceForm(props: {
         )
         if (destination !== 'show') focusAfterSave(destination)
       },
-      onError: focusFirstError,
+      onError: () => setFocusRequest((count) => count + 1),
     })
   }
 
@@ -205,7 +214,10 @@ export function ResourceForm(props: {
                 value={values[field.name] ?? null}
                 onChange={(value) => {
                   setValues((current) => ({ ...current, [field.name]: value }))
-                  setEdited((current) => new Set(current).add(field.name))
+                  setEdits((current) => ({
+                    errors,
+                    names: new Set(current.errors === errors ? current.names : []).add(field.name),
+                  }))
                 }}
                 errors={shownErrors(field.name, field.input)}
                 timezone={timezone}
