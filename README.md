@@ -700,6 +700,8 @@ Dark mode follows the user's system setting (System, the default). Light or Dark
 
 The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu-text` and so on), set on `<html>`.
 
+**Content Security Policy:** the panel works under Shield's CSP with a strict nonce-only policy (`scriptSrc` and `styleSrc` of `'self'` and `'@nonce'`, no `'unsafe-inline'`). The admin view puts the request's nonce on its theme style and script, and on a `<meta property="csp-nonce">` tag that the styles added at runtime (React Aria, Inertia's progress bar, the rich text editor) read.
+
 ## Commands
 
 | Command | What it does |

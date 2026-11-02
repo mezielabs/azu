@@ -1,4 +1,12 @@
 import { defineConfig } from '@adonisjs/shield'
+import env from '#start/env'
+
+/**
+ * STRICT_CSP=true sends a nonce-only policy: no 'unsafe-inline' for
+ * scripts or styles. scripts/check_csp.mjs loads the admin panel under
+ * it on a production build (#65).
+ */
+const strictCsp = env.get('STRICT_CSP') === true
 
 const shieldConfig = defineConfig({
   /**
@@ -9,12 +17,21 @@ const shieldConfig = defineConfig({
     /**
      * Enable the Content-Security-Policy header.
      */
-    enabled: false,
+    enabled: strictCsp,
 
     /**
      * Per-resource CSP directives.
      */
-    directives: {},
+    directives: strictCsp
+      ? {
+          defaultSrc: [`'self'`],
+          scriptSrc: [`'self'`, '@nonce'],
+          styleSrc: [`'self'`, '@nonce'],
+          imgSrc: [`'self'`, 'data:', 'blob:'],
+          fontSrc: [`'self'`, 'data:'],
+          connectSrc: [`'self'`],
+        }
+      : {},
 
     /**
      * Report violations without blocking resources.
