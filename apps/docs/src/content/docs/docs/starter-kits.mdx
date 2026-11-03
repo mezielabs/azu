@@ -47,7 +47,7 @@ The Hypermedia kit has no Inertia, and `@adonisjs/inertia` has no configure step
    () => import('@adonisjs/inertia/inertia_provider')
    ```
 
-Then follow [Installation](/docs/installation/). Without these steps, `node ace configure @mezielabs/azu` changes nothing and lists them for you. If you skip it, `/admin` throws [`E_AZU_SETUP`](/docs/reference/errors/#e_azu_setup) with the same steps.
+Then follow [Installation](/docs/installation/). Without the config file, configure stops before making changes. If you add the config but skip the provider, configure warns and continues. Opening `/admin` then raises [`E_AZU_SETUP`](/docs/reference/errors/#e_azu_setup).
 
 ## API
 

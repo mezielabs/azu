@@ -5,37 +5,38 @@ description: Generate a resource from a model you already have, then open it at 
 
 import { Steps } from '@astrojs/starlight/components'
 
-You have Azu installed and `accessAdmin` lets you in. Now give the panel something to show: a resource for one of your models.
+Generate a resource for the starter kit's `User` model. In an existing app, you can use another model with a migrated table.
 
 <Steps>
 
-1. Generate a resource from an existing model. On a fresh starter kit, use `User`.
+1. Run your migrations and generate the resource. The generator reads the model and its database table.
 
    ```sh
-   node ace azu:resource Product --policy
+   node ace migration:run
+   node ace azu:resource User --policy
    ```
 
-2. Start your dev server and open `/admin`.
+2. Start your dev server.
 
    ```sh
    npm run dev
    ```
 
-   You'll see a Products page with a list, search, and create, edit, and detail screens.
+3. Sign up at `/signup` with the email you allowed in [`accessAdmin`](/docs/installation/#let-people-in). If you already have that account, sign in at `/login`.
 
-3. Open the generated resource and fix what's wrong. It's a starting point, not a finished page.
+4. Open `/admin` and choose **Users**. You can search the list, open a user, and edit their details. Use the app's signup page to create users. The generated policy omits `create` because the required password has no generated admin field.
 
 </Steps>
 
 ## What the generator writes
 
-`azu:resource` reads the model's columns, casts, and relationships. Then it writes:
+For `User`, `azu:resource` writes these files:
 
-- `app/admin/resources/product_resource.ts`, the resource.
-- A create and an update validator, derived from the model's columns, in `app/validators/product.ts`. If that file exists, it writes `product_admin.ts` instead. Pass `--no-validator` to skip it.
-- With `--policy`, `app/policies/product_policy.ts`, if Product doesn't have a policy yet.
+- The resource in `app/admin/resources/user_resource.ts`.
+- Create and update validators in `app/validators/user_admin.ts`. The starter kit already has `app/validators/user.ts`. Pass `--no-validator` to skip generating validators.
+- With `--policy`, a policy in `app/policies/user_policy.ts` if that file is missing.
 
-The generated policy lets everyone who can open the panel list, view, create, and update products. It has no `delete` method, so no one can delete. Narrow it to your roles before you ship.
+Anyone who passes `accessAdmin` can list, view, and edit users under the generated policy. It denies deletion by omitting `delete`. Review the resource and restrict the policy to the roles you want before deploying.
 
 ## Typecheck
 

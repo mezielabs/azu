@@ -5,9 +5,9 @@ description: What Azu is, why it reuses your app's own rules, and where to start
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components'
 
-Azu is an admin panel for AdonisJS 7. It reads the models, policies, and validators you already wrote. Your team or client gets a back office the same day.
+Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and forms using your existing Lucid models, Bouncer policies, and VineJS validators.
 
-_Azụ_ is Igbo for "back". It's the part of your app your users never see, and the part your team lives in.
+_Azụ_ means "back" in Igbo, as in your app's back office.
 
 :::note[Azu is in preview]
 The current release is `0.1.0-preview.0`. The API may change based on your feedback, so tell us what you'd change in [Discussions](https://github.com/mezielabs/azu/discussions). [Preview limits](/docs/preview-limits/) lists what doesn't work yet.
@@ -15,7 +15,7 @@ The current release is `0.1.0-preview.0`. The API may change based on your feedb
 
 ## Why Azu
 
-Every client app needs an admin sooner or later. You can hand-build one, and write the same tables, forms, filters, and permission checks on every project. Or you can bolt on a generic tool with its own config, permissions, and validation. Those slowly drift from your app's real rules.
+Building an admin panel from scratch often means writing the same tables, forms, filters, and permission checks again. Or you can bolt on a generic tool with its own config, permissions, and validation. Those slowly drift from your app's real rules.
 
 Azu takes a different route. It doesn't add a second set of rules. It uses the ones you already have:
 
@@ -25,7 +25,7 @@ Azu takes a different route. It doesn't add a second set of rules. It uses the o
 - **Drive** for file and image uploads.
 - **Inertia and React** for the UI, so you can replace every page and field with your own component.
 
-If your API rejects a request, Azu rejects it too. There's one source of truth, and it's your code.
+When a rule changes, update the policy or validator your app already uses.
 
 ## What you write
 

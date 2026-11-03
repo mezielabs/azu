@@ -2,7 +2,7 @@
 
 **The back of your AdonisJS app.**
 
-Azu is an admin panel for AdonisJS 7. It reads the Lucid models, Bouncer policies, and VineJS validators you already wrote. Your team or client gets a back office the same day, with no second set of rules.
+Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and forms using your existing Lucid models, Bouncer policies, and VineJS validators.
 
 > [!NOTE]
 > **Azu is in preview (0.1.0-preview.0).** The API may change based on feedback; tell us in [Discussions](https://github.com/mezielabs/azu/discussions).
@@ -31,13 +31,15 @@ npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
 node ace configure @mezielabs/azu
 ```
 
-Configuring adds an `accessAdmin` ability to `app/abilities/main.ts` that lets no one in. Change it to decide who gets in, then generate a resource and open `/admin`:
+Configuring adds an `accessAdmin` ability to `app/abilities/main.ts` that lets no one in. Update it to allow your account. On a fresh starter kit, generate a resource for `User`:
 
 ```sh
-node ace azu:resource Product --policy
+node ace migration:run
+node ace azu:resource User --policy
+npm run dev
 ```
 
-The [installation guide](https://azuadmin.com/docs/installation/) has the details.
+Sign in with the account you allowed, then open `/admin`. The [installation guide](https://azuadmin.com/docs/installation/) and [quick start](https://azuadmin.com/docs/quick-start/) have the details.
 
 ## A resource
 

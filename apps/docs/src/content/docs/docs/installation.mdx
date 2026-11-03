@@ -15,7 +15,7 @@ Azu runs inside your AdonisJS app, at `/admin`. You'll add Bouncer, install Azu,
 - Node.js 24.21 or later.
 - PostgreSQL, MySQL, or SQLite.
 
-Azu's panel is an Inertia React app inside your AdonisJS app. So it also needs Vite, Edge, `@adonisjs/inertia` (its config and provider), and a session guard. The configure step checks for all of them first. If something's missing, it changes nothing and tells you what to add.
+The panel also needs Vite, Edge, an Inertia config and provider, and a session guard. Configure checks your app's files before it makes changes. If it finds a Vite or Inertia config but can't confirm its provider, it warns you and continues. See [Ace commands](/docs/reference/commands/#configure) for the checks.
 
 Note: the React and Vue starter kits have everything but Bouncer. The Hypermedia kit needs two more steps, and the API kit isn't supported yet. [Starter kits](/docs/starter-kits/) has the details.
 
@@ -57,16 +57,18 @@ Configuring Azu:
 
 <DemoCode file="app/abilities/main.ts" region="access-admin" />
 
-The starter kits' `User` model has no `role` column, and their signup page is public. So don't let every signed-in user in. While you try Azu on a fresh app, let yourself in by email:
+On a fresh starter kit, allow your email while you try Azu locally. Add the `User` import and replace the generated `accessAdmin` ability:
 
 ```ts title="app/abilities/main.ts"
+import type User from '#models/user'
+
 export const accessAdmin = Bouncer.ability((user: User) => {
   return user.email === 'you@example.com'
 })
 ```
 
 :::caution
-Narrow this rule before the app goes anywhere. Anyone who passes `accessAdmin` reaches the panel, and then your policies decide what they can see and do.
+Before deploying, use a rule tied to a trusted account or role. With public signup, someone else can register an allowlisted email unless your app verifies ownership.
 :::
 
 Note: if you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` again to add the ability. Without Bouncer, Azu denies everyone.
