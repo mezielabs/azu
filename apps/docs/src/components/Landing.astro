@@ -1,0 +1,76 @@
+---
+/**
+ * The landing page's body, under Starlight's splash hero.
+ */
+import { Image } from 'astro:assets'
+import { Card, CardGrid, Code } from '@astrojs/starlight/components'
+import listDark from '../../../../docs/screenshots/list-dark.png'
+import listLight from '../../../../docs/screenshots/list-light.png'
+
+const install = `npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+node ace configure @mezielabs/azu`
+
+const alt =
+  "Azu's product list in the demo store: search, filters, thumbnails, prices, status badges, and stock levels"
+---
+
+<section class="install" aria-labelledby="install-heading">
+  <h2 id="install-heading">Install the preview</h2>
+  <Code code={install} lang="sh" title="Terminal" />
+  <p>
+    Azu needs Bouncer first. <a href="/docs/installation/">Installation</a> walks you through it.
+  </p>
+</section>
+
+<figure class="shot">
+  <Image src={listLight} alt={alt} class="dark:sl-hidden" widths={[640, 1280, 2560]} sizes="(min-width: 72rem) 68rem, 100vw" loading="eager" />
+  <Image src={listDark} alt={alt} class="light:sl-hidden" widths={[640, 1280, 2560]} sizes="(min-width: 72rem) 68rem, 100vw" loading="eager" />
+</figure>
+
+<section class="points" aria-label="What Azu does">
+  <CardGrid>
+    <Card title="Your models, policies, and validators" icon="seti:db">
+      Azu reads your Lucid models, asks your Bouncer policies, and saves through your VineJS
+      validators. There's one set of rules, and it's yours.
+    </Card>
+    <Card title="Screens and widgets" icon="seti:html">
+      Add your own pages, forms, key figures, and trends to the panel, each behind its own Bouncer
+      ability.
+    </Card>
+    <Card title="Typed, so typos fail tsc" icon="seti:typescript">
+      Resources are typed against the model. A misspelled column fails <code>tsc</code>, not your
+      client's demo.
+    </Card>
+  </CardGrid>
+</section>
+
+<style>
+  .install {
+    max-width: 44rem;
+    margin-inline: auto;
+  }
+
+  .install h2 {
+    font-size: var(--sl-text-h4);
+  }
+
+  .install p {
+    color: var(--sl-color-gray-2);
+  }
+
+  .shot {
+    margin-block: 3rem;
+  }
+
+  .shot :global(img) {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.75rem;
+    box-shadow: var(--sl-shadow-lg);
+  }
+
+  .points {
+    margin-block-end: 2rem;
+  }
+</style>

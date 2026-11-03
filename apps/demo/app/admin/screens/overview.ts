@@ -39,6 +39,7 @@ export default defineScreen({
       .where((query) => query.whereIn('status', SOLD))
       .date('placedAt')
       .format('currency', 'NGN'),
+    // #region using
     // No customers resource: a value from a query, behind its own ability
     metric
       .value('New customers')
@@ -53,6 +54,8 @@ export default defineScreen({
         return Number(row.total)
       })
       .ability(viewReports),
+    // #endregion
+    // #region trend
     // A trend (FR-25), full width: days for 30 days, hours today, months
     // for the year, against the period before
     metric
@@ -62,6 +65,8 @@ export default defineScreen({
       .date('placedAt')
       .format('currency', 'NGN')
       .compare(),
+    // #endregion
+    // #region lower-is-better
     // Down is good: fewer cancellations read as better
     metric
       .value('Cancelled orders')
@@ -70,6 +75,7 @@ export default defineScreen({
       .date('placedAt')
       .lowerIsBetter()
       .link({ status: 'cancelled' }),
+    // #endregion
     metric
       .progress('Monthly revenue goal')
       .sum(orders, 'total')

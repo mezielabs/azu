@@ -1,0 +1,60 @@
+---
+title: config/azu.ts
+description: Every option in config/azu.ts, its default, and the azu() Vite plugin's options.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+`node ace configure @mezielabs/azu` writes `config/azu.ts`. Every option is optional. This is the demo's:
+
+<DemoCode file="config/azu.ts" />
+
+## Options
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `path` | `'/admin'` | The URL prefix the panel is mounted at. It can't be `/`. |
+| `entry` | `'inertia/admin/app.tsx'` | The admin Vite entry. Must match the `azu()` plugin's `entry`. |
+| `guard` | Your app's default guard | The auth guard admin routes authenticate with. |
+| `loginUrl` | `'/login'` | Where guests are sent. |
+| `siteUrl` | `'/'` | The account menu's "View site" link, as a path or a full URL. `false` hides it. |
+| `resources.autoload` | `'app/admin/resources'` | The folder resources load from at boot. `false` to [register them yourself](/docs/guides/resources/#loading-resources). |
+| `screens.autoload` | `'app/admin/screens'` | The folder screens load from at boot. `false` to [register them yourself](/docs/guides/screens/#loading-screens). |
+| `home` | The welcome page | A screen name, or `{ resource: 'orders' }`. See [the home screen](/docs/guides/home-and-navigation/#the-home-screen). |
+| `perPage` | `25` | Rows per list page when the URL doesn't say: 10, 25, 50, or 100. |
+| `defaultDisk` | Drive's default disk | The disk `file` and `image` fields store on, unless a field sets `disk()`. |
+| `timezone` | The server's timezone (`TZ`) | The IANA timezone admins enter and read dates in, such as `'Africa/Lagos'`. Set it when your server runs in UTC. |
+| `navigation.groups` | `[]` | Group labels in the order the navigation shows them. Groups you leave out follow, alphabetically. |
+| `navigation.links` | `[]` | Links in the navigation. See [Links](#navigation-links). |
+| `brand.name` | `'Admin'` | Shown in the sidebar and page titles. |
+| `brand.logo` | None | An image URL shown before the name. |
+| `brand.color` | `'#2563eb'` | A hex colour, `#2563eb` or `#26e`. See [Theming](/docs/guides/theming/#colour). |
+
+A bad value for `perPage`, `timezone`, `brand.color`, `siteUrl`, `home`, or `navigation` stops the app from booting. The message names the option. See [Errors](/docs/reference/errors/#boot-errors).
+
+## Navigation links
+
+Each link in `navigation.links` takes:
+
+| Key | Required | What it does |
+| --- | --- | --- |
+| `label` | Yes | The link's text. |
+| `url` | Yes | A path, like `/admin/resources/orders?status=paid`, or an absolute URL. Absolute `http(s)` URLs open in a new tab. |
+| `group` | No | Its navigation group. |
+| `icon` | No | A Lucide icon name. |
+| `order` | No | Its position within its group, lower first. |
+| `ability` | No | A Bouncer ability object. It hides the link from users who fail it, but doesn't protect the page it opens. |
+
+## The azu() Vite plugin
+
+Configure adds `azu()` to `vite.config.ts`. It adds the separate admin entry and bundles only the icons you use.
+
+<DemoCode file="vite.config.ts" />
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `entry` | `'inertia/admin/app.tsx'` | The admin entry. Must match `entry` in `config/azu.ts`. |
+| `resources` | `'app/admin/resources'` | Where it reads resources' `icon:` names. Must match `resources.autoload`. |
+| `screens` | `'app/admin/screens'` | Where it reads screens' `icon:` names. Must match `screens.autoload`. |
+| `icons` | `[]` | More icon names to bundle, for icons set in a way the plugin can't read. |
+| `dedupe` | The front-end package's peers | Packages Vite loads once, such as `react`, so the admin and your app never have two copies. |

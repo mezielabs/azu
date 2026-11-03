@@ -1,9 +1,7 @@
 /**
- * The README's Product resource, verbatim apart from the actions (from
- * the README's "Actions" section, plus a restock action), validator metadata (from its
- * "Validation" section), a hidden SKU column, named form sections, a boolean filter, and the thumbnail's disk: the README stores it
- * on S3, the demo on Drive's default local disk so it runs offline.
- * Loaded by convention from app/admin/resources.
+ * Products in the demo store, loaded by convention from
+ * app/admin/resources. The thumbnail uses Drive's default local disk, so
+ * the demo runs offline.
  */
 import { defineResource, column, field, filter, action } from '@mezielabs/azu'
 import Product from '#models/product'
@@ -16,6 +14,7 @@ import {
 } from '#validators/product'
 
 export default defineResource(Product, {
+  // #region options
   label: 'Products',
   group: 'Catalog',
   icon: 'package',
@@ -23,29 +22,39 @@ export default defineResource(Product, {
   title: 'name',
   search: ['name', 'sku'],
   policy: ProductPolicy,
+  // #region validators
   validators: {
     create: createProductValidator,
     update: updateProductValidator,
-    // From the README's "Validation" section: the update validator reads productId
+    // The update validator's unique rule reads productId
     meta: ({ record }) => ({ productId: record?.id }),
   },
+  // #endregion
   query: (q) => q.preload('category'),
+  // #endregion
 
+  // #region columns
   columns: [
     column.image('thumbnail'),
     column.text('name').sortable(),
     column.decimal('price').format('currency', 'NGN').sortable(),
     column.belongsTo('category', 'name'),
     column.badge('status').colors({ draft: 'gray', published: 'green' }),
-    // From the README's "Customising" section: inertia/admin/components/stock_bar.tsx
+    // #region stock-column
+    // inertia/admin/components/stock_bar.tsx
     column.custom('stock', 'StockBar').label('In stock'),
+    // #endregion
     column.text('sku').hiddenByDefault(),
   ],
+  // #endregion
 
+  // #region fields
   fields: [
     field.text('name').section('Details'),
-    // From the README's "Customising" section: inertia/admin/components/sku_input.tsx
+    // #region sku-field
+    // inertia/admin/components/sku_input.tsx
     field.text('sku').component('SkuInput').section('Details'),
+    // #endregion
     field.decimal('price').section('Pricing').min(0),
     field.belongsTo('category').section('Organisation').searchable('name'),
     field.manyToMany('tags').section('Organisation').searchable('name'),
@@ -56,17 +65,19 @@ export default defineResource(Product, {
     field.richText('description').section('Media'),
     field.image('thumbnail').section('Media').maxSize('2mb'),
   ],
+  // #endregion
 
+  // #region filters
   filters: [
     filter.select('status', { draft: 'Draft', published: 'Published' }),
     filter.belongsTo('category'),
     filter.dateRange('createdAt'),
     filter.custom('Low stock', (q) => q.where('stock', '<', 10)),
-    // Not in the README: a boolean filter (FR-13)
     filter.boolean('isFeatured').label('Featured'),
   ],
+  // #endregion
 
-  // From the README's "Actions" section. FR-12 runs it; FR-03 only defines it.
+  // #region actions
   actions: [
     action
       .bulk('publish')
@@ -98,4 +109,5 @@ export default defineResource(Product, {
     // A reusable action from azu:action
     feature,
   ],
+  // #endregion
 })

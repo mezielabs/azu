@@ -1,0 +1,26 @@
+---
+/**
+ * Shows a file from apps/demo, or a region marked in it, with the file's
+ * path as the title. See src/lib/demo_source.ts for the region markers.
+ *
+ * <DemoCode file="app/admin/resources/product_resource.ts" region="columns" />
+ */
+import { Code } from '@astrojs/starlight/components'
+import { demoSource } from '../lib/demo_source'
+
+interface Props {
+  /** Path from apps/demo, e.g. `config/azu.ts` */
+  file: string
+  /** A `// #region <name>` in the file; the whole file without it */
+  region?: string
+  /** Defaults to the file's path */
+  title?: string
+  /** Lines or text to highlight, as Expressive Code's `mark` */
+  mark?: string | string[]
+}
+
+const { file, region, title = file, mark } = Astro.props
+const lang = file.endsWith('.tsx') ? 'tsx' : 'ts'
+---
+
+<Code code={demoSource(file, region)} lang={lang} title={title} mark={mark} />

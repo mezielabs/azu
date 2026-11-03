@@ -10,11 +10,11 @@ import User from '#models/user'
 const OUT = app.makePath('../../docs/screenshots')
 
 /**
- * The README's screenshots, from the seeded demo on Postgres:
+ * The README's and the docs' screenshots, from the seeded demo on Postgres:
  * `pnpm screenshots` with `DB_CONNECTION=pg` and the `DB_*` settings.
  * Skipped in the normal test run, so tests never write to docs/.
  */
-test.group('README screenshots', (group) => {
+test.group('Screenshots', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('captures the list, the form and dark mode', async ({ browser }) => {

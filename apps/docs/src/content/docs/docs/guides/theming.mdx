@@ -1,0 +1,41 @@
+---
+title: Theming
+description: Your brand's name, logo, and colour, with light and dark palettes that stay readable.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+The panel should look like your client's, not like Azu's. Set the brand once, and Azu generates light and dark palettes from it.
+
+<DemoCode file="config/azu.ts" region="brand" title="config/azu.ts (part)" />
+
+## Name and logo
+
+- `brand.name` (default "Admin") shows at the top of the sidebar and in page titles.
+- `brand.logo` is an image shown before the name. Without one, the sidebar shows a tile with the name's first letter.
+
+## Colour
+
+`brand.color` is a hex colour, `#2563eb` by default. Azu uses it as is wherever it's readable.
+
+Where it isn't, Azu shifts only the colour's lightness, so the hue stays. It shifts it until all text reaches WCAG AA (4.5:1) on each theme's backgrounds.
+
+So the exact hex on screen may differ from `brand.color`, and from light mode to dark mode. A very light brand colour gets darker on the light theme, for example. The demo's teal, `#0d9488`, is 3.7:1 on white, so its light palette darkens it.
+
+Text on brand-coloured buttons is white or near-black, whichever reads.
+
+Note: errors, success messages, and badges keep their own colours. A red or yellow brand can't make them unreadable.
+
+## Light and dark
+
+Dark mode follows the user's system setting. That's "System", the default.
+
+Light or Dark in the account menu overrides it, and the browser remembers the choice. System forgets it and follows the system again, live.
+
+## CSS variables
+
+The palettes are Azu's own CSS variables, set on `<html>`: `--azu-brand`, `--azu-surface`, `--azu-text`, and so on. Use them in your own components to match the theme. The demo's stock bar uses `var(--azu-danger)`.
+
+## Content Security Policy
+
+The panel works under a strict, nonce-only CSP. See [Troubleshooting](/docs/troubleshooting/#content-security-policy).

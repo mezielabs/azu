@@ -11,8 +11,10 @@ export default defineResource(Order, {
   search: ['number'],
   policy: OrderPolicy,
   query: (q) => q.preload('user'),
-  // From the README's "Customising" section: inertia/admin/components/print_order.tsx
+  // #region slots
+  // inertia/admin/components/print_order.tsx
   slots: { toolbar: 'PrintOrder' },
+  // #endregion
 
   columns: [
     column.text('number').sortable(),
@@ -46,11 +48,13 @@ export default defineResource(Order, {
       .destructive()
       .handle(async (orders) => {
         for (const order of orders) {
+          // #region refuse
           if (order.status === 'shipped') {
             throw new Exception(`Order ${order.number} has shipped, so it can't be cancelled.`, {
               status: 422,
             })
           }
+          // #endregion
           order.status = 'cancelled'
           await order.save()
         }

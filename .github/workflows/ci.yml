@@ -60,6 +60,28 @@ jobs:
       - name: Admin bundle budget
         run: pnpm budget
 
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      # Static build of apps/docs. starlight-links-validator fails it on a
+      # broken internal link or heading anchor, and DemoCode fails it on a
+      # demo file or #region that doesn't exist
+      - run: pnpm docs:build
+
   test:
     name: Test (${{ matrix.db }})
     runs-on: ubuntu-latest

@@ -59,7 +59,7 @@ export function manyToManyInput(relation: string): string {
 
 /**
  * The validator for an operation. Update falls back to the create
- * validator, as the README describes.
+ * validator, as the Validation docs describe.
  */
 export function validatorFor(resource: Resource<any, any>, mode: FormMode) {
   const validators = resource.options.validators

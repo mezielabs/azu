@@ -32,11 +32,13 @@ const toDecimal = (minor: number) =>
  * switches it with a partial reload of `data`.
  */
 export default defineScreen({
+  // #region options
   label: 'Sales report',
   group: 'Reports',
   icon: 'chart-column',
   ability: viewReports,
   component: 'SalesReport',
+  // #endregion
   data: async (ctx) => {
     const { timezone } = app.config.get<AzuConfig>('azu')
     const days = rangeOf(ctx)

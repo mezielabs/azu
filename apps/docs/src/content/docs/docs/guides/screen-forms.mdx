@@ -1,0 +1,47 @@
+---
+title: Screen forms
+description: A screen with a form Azu renders, for settings and anything else that isn't one record of a model.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Store settings, a profile, or feature switches need a form, but they aren't one record of a model. A screen can have a form instead of a component. Azu renders it like a resource form and saves through your validator.
+
+Where the values live is up to you. `load` reads them, and `save` writes them.
+
+## Generate one
+
+```sh
+node ace azu:screen StoreSettings --form
+```
+
+That writes the screen and a validator in `app/validators/store_settings.ts`. Fill in `load` and `save`. The demo keeps its settings in a key and value table, through its own `Setting` model:
+
+<DemoCode file="app/admin/screens/store_settings.ts" />
+
+And its validator:
+
+<DemoCode file="app/validators/store_settings.ts" />
+
+## Rules
+
+- **`form` or `component`, not both.** No `data` beside a form either: its values come from `load`. Either mistake is a type error and stops the app from booting.
+- **Field names are checked against what `load` returns.** A misspelled field fails `tsc`, as on resources.
+- **Supported fields:** text, textarea, number, decimal, boolean, select, date, datetime, and rich text. File, image, and relation fields aren't supported on screens yet.
+- **The screen's `ability` covers the form**, for opening it and for saving it. So fields have no `.ability()` here. `.readOnly()` works as on resources.
+
+## Saving
+
+Saving works like a resource form.
+
+1. Only the form's writable fields are read from the request.
+2. The validator checks them. Read-only fields reach the validator with `load`'s values.
+3. `save` gets the validator's output and nothing else.
+
+Rich text is sanitised, and datetimes are read in the panel's `timezone`.
+
+A valid save comes back to the screen with a toast: "Store settings saved", or your `successMessage`. Invalid input shows the errors under each field, with the input kept.
+
+## The page
+
+It's the resource form's layout: the same widths, required markers, and limits from the validator. It has the sticky save bar with one "Save changes" button, and the "Leave without saving?" question. See [Forms](/docs/guides/forms/#unsaved-changes).

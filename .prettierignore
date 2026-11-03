@@ -7,3 +7,7 @@ apps/demo/database/schema.ts
 apps/demo/public
 apps/demo/tmp
 .claude
+apps/docs/.astro
+apps/docs/dist
+*.mdx
+*.astro

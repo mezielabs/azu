@@ -1,0 +1,49 @@
+---
+title: Uploads
+description: File and image fields stored with Drive, checked on the server, and why the preview needs a public disk.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Products need photos, and orders need invoices. `file` and `image` fields upload to a Drive disk and store the file's key on the model.
+
+:::caution[Uploads need a public disk, for now]
+Azu links files with Drive's `getUrl()`, which suits public disks only. Private disks and signed, expiring URLs (`getSignedUrl()`) aren't supported yet. Keep private files out of `file` and `image` fields. Anyone with a file's link can open it.
+:::
+
+The demo's product thumbnail:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="fields" mark="field.image('thumbnail')" title="app/admin/resources/product_resource.ts (fields)" />
+
+## Set up Drive
+
+Uploads need Drive. A resource with `file` or `image` fields fails at boot without it.
+
+```sh
+node ace add @adonisjs/drive
+```
+
+## Where files go
+
+- **The disk:** the field's `.disk('s3')`, else `defaultDisk` in `config/azu.ts`, else Drive's default disk.
+- **The key:** `<resource>/<field>/<uuid>.<ext>`. Your validator sees that key, so validate it as a string.
+
+The demo's product validator:
+
+<DemoCode file="app/validators/product.ts" region="thumbnail" title="app/validators/product.ts (part)" />
+
+## Size and type
+
+Both are checked on the server, from the file's contents, not the browser's claim.
+
+- **Size:** `.maxSize('2mb')`. The default is 5mb for images and 10mb for files.
+- **Type:** `.accept('application/pdf')`, with wildcards like `'image/*'`. Images default to JPEG, PNG, WebP, GIF, and AVIF. Files add PDF, text, CSV, Office documents, and ZIP.
+
+Note: SVG and HTML are refused unless you `accept()` them, because they can carry scripts.
+
+## Saving, replacing, and removing
+
+- An upload is checked first. If the save then fails validation, nothing is stored.
+- Leaving a file field out of the request keeps the stored file. Sending it empty removes it.
+- A replaced or removed file is deleted from the disk after the save commits.
+- Deleting a record deletes its stored files after the delete commits.

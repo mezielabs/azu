@@ -1,0 +1,58 @@
+---
+title: Forms
+description: Create and edit forms, form sections, where saving goes, and the unsaved-changes guard.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+import { Image } from 'astro:assets'
+import formLight from '../../../../../../../docs/screenshots/form-light.png'
+import formDark from '../../../../../../../docs/screenshots/form-dark.png'
+
+A resource's fields become its create and edit forms. Your validators check every save, so the form never accepts what your API would refuse.
+
+<Image src={formLight} alt="The demo's product edit form: name, SKU, price, a category select, tags, status, and a rich text description" class="dark:sl-hidden" />
+<Image src={formDark} alt="The demo's product edit form: name, SKU, price, a category select, tags, status, and a rich text description" class="light:sl-hidden" />
+
+## Sections
+
+A long form reads better in groups. Call `.section('Details')` on a field to put it under a heading. It works on resource, screen, and action form fields.
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="fields" />
+
+How sections group:
+
+- Groups follow the first appearance of each heading. Fields keep their declared order within a group.
+- Fields without a section form an unheaded group. A blank heading puts a field back in that group.
+- A group exists only when it has visible fields the user is allowed to see.
+- Headings stay visible: level 2 on a page, level 3 under an action dialog's title.
+- Fields stack on phones.
+- Validation focuses the first invalid control, in displayed order.
+
+Forms without sections keep their usual layout, and detail pages don't change.
+
+## Save modes
+
+The primary button saves and goes to the record's page. Beside it, a second button saves and stays:
+
+- **Create & add another**, on the create form, saves and opens a fresh form. On phones it reads "Add another".
+- **Save & keep editing**, on the edit form, saves and comes back to the edit form. On phones it reads "Keep editing".
+
+After a create, the toast links to the new record when the user may `view` it. That link needs session middleware.
+
+The save bar sticks to the bottom of the window while the form scrolls.
+
+## Unsaved changes
+
+Leaving a form with unsaved changes asks first:
+
+- Inertia visits ask with a "Leave without saving?" dialog. That covers the sidebar, a breadcrumb, Cancel, and Sign out.
+- Reloading, closing the tab, or leaving the app shows the browser's own prompt.
+- The form's own submit never asks, and neither does what follows a successful save.
+
+Note: the browser's Back button, between two pages of the panel, leaves without asking. Inertia can't intercept it.
+
+## What gets saved
+
+Azu reads only the fields the form showed this user from the request. Read-only fields are left out. Then your validator checks the rest, and only its output is written. See [Validation](/docs/guides/validation/).
+
+`beforeSave`, the save, and `afterSave` share one transaction.

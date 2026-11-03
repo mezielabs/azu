@@ -1,0 +1,49 @@
+---
+title: Validation
+description: Forms save through your VineJS validators, with field labels in the messages and context for rules like unique.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Create and edit forms submit through the validators named on the resource. Your API's rules and the admin's rules are the same rules.
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="validators" title="app/admin/resources/product_resource.ts (part)" />
+
+## Only declared fields
+
+Azu passes only the form's declared fields to the validator. So mass assignment stays limited to what you listed.
+
+A resource with no validator for an operation can't save, by design. Azu never writes input that hasn't been through one of your validators. Without an `update` validator, the edit form uses `create`.
+
+Note: validators written for your API don't always fit a form. If update needs different rules from create, an optional password say, give the resource a separate `update` validator.
+
+## What relation fields submit
+
+- A `belongsTo` field submits its foreign key: `category` becomes `categoryId`.
+- A `manyToMany` field submits an array of keys: `tags` becomes `tagIds`.
+
+[Relationships](/docs/guides/relationships/#manytomany) shows the validator rule and how the pivot rows are synced.
+
+## Errors under the field
+
+Validation errors show under the field that caused them, including nested and array fields like `tags.0`.
+
+They read as your validator words them. VineJS's defaults name a field by its key: "The price field must be at least 0". To use the form's labels, give the validator a `SimpleMessagesProvider` with them. Key them by input name: `categoryId`, not `category`.
+
+The demo does this with a small helper. First, its messages:
+
+<DemoCode file="app/validators/messages.ts" region="messages" />
+
+Then a helper that gives a validator those messages and its labels:
+
+<DemoCode file="app/validators/messages.ts" region="labelled" />
+
+A failed `min` rule on `price` then reads "Price must be at least 0". The same file has a `minDecimal` rule for decimals kept as strings. With it, "-5" fails its bound, not its format.
+
+## Validators that need the record
+
+Some validators need context. An update validator's `unique` rule has to skip the record being edited, for example.
+
+Azu passes `{ record }` as VineJS metadata: the record on update, and `undefined` on create. If your validator expects a different shape, map it with `meta`. It receives the record and the HTTP context. The demo's product resource maps it to `productId`, as shown at the top of this page. Its update validator reads it:
+
+<DemoCode file="app/validators/product.ts" region="update-validator" />

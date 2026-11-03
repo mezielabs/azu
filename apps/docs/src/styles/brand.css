@@ -1,0 +1,92 @@
+/*
+ * Azu's brand on Starlight's theme tokens.
+ * Ink #10201D, Mist #F4F6F5, Azu teal #0F766E, Glow #2DD4BF (accent in
+ * dark), Ember #B45309 (warnings). Every text pair here reaches WCAG AA
+ * (4.5:1); the PR that added this file lists the ratios.
+ *
+ * Unlayered, so these override Starlight's `starlight.*` layers.
+ */
+
+:root {
+  --sl-font: 'Instrument Sans', var(--sl-font-system);
+  --sl-font-mono: 'JetBrains Mono', var(--sl-font-system-mono);
+
+  --azu-ink: #10201d;
+  --azu-mist: #f4f6f5;
+  --azu-teal: #0f766e;
+  --azu-glow: #2dd4bf;
+  --azu-ember: #b45309;
+}
+
+/* Dark (Starlight's default) */
+:root,
+::backdrop {
+  --sl-color-white: #f4f6f5;
+  --sl-color-gray-1: #e6edeb;
+  --sl-color-gray-2: #c9d6d2;
+  --sl-color-gray-3: #8fa6a0;
+  --sl-color-gray-4: #4f6b65;
+  --sl-color-gray-5: #22403a;
+  --sl-color-gray-6: #172b27;
+  --sl-color-black: #10201d;
+
+  --sl-color-accent-low: #0b3d37;
+  --sl-color-accent: #2dd4bf;
+  --sl-color-accent-high: #a7f3e6;
+  --sl-color-text-accent: #2dd4bf;
+  --sl-color-text-invert: #10201d;
+  --sl-color-bg-accent: #2dd4bf;
+
+  --sl-color-orange-low: #3b2410;
+  --sl-color-orange: #b45309;
+  --sl-color-orange-high: #fcd5a8;
+
+  --sl-color-backdrop-overlay: hsla(169, 33%, 6%, 0.7);
+
+  --azu-hero-glow: color-mix(in srgb, var(--azu-glow) 14%, transparent);
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-white: #10201d;
+  --sl-color-gray-1: #1e332f;
+  --sl-color-gray-2: #2e4641;
+  --sl-color-gray-3: #4a625d;
+  --sl-color-gray-4: #7d918c;
+  --sl-color-gray-5: #c3cfcc;
+  --sl-color-gray-6: #ebf0ee;
+  --sl-color-gray-7: #f4f6f5;
+  --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: #ccf2ec;
+  --sl-color-accent: #0f766e;
+  --sl-color-accent-high: #0b4f4a;
+  --sl-color-text-accent: #0f766e;
+  --sl-color-text-invert: #ffffff;
+  --sl-color-bg-accent: #0f766e;
+  --sl-color-bg-nav: #f4f6f5;
+  --sl-color-bg-sidebar: #f4f6f5;
+
+  --sl-color-orange-low: #fdf1e4;
+  --sl-color-orange: #b45309;
+  --sl-color-orange-high: #8a3f07;
+
+  --azu-hero-glow: color-mix(in srgb, var(--azu-teal) 9%, transparent);
+}
+
+/* Headings: Instrument Sans is narrow, so tighten slightly */
+.sl-markdown-content :is(h1, h2, h3, h4),
+h1#_top {
+  letter-spacing: -0.015em;
+}
+
+/* Bold is for terms and key warnings only (STYLE.md); keep it calm */
+.sl-markdown-content strong {
+  color: var(--sl-color-white);
+  font-weight: 600;
+}
+
+/* The changelog page renders CHANGELOG.md, whose own "# Changelog" repeats the page title */
+.changelog > h1:first-child {
+  display: none;
+}

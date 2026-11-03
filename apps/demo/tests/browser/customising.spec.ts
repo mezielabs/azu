@@ -8,7 +8,7 @@ import { createUser, withHome } from '../functional/admin/helpers.ts'
 import { axeViolations } from './axe.ts'
 
 /**
- * The README's "Customising" examples (FR-15), in the browser: a field
+ * The docs' Customising examples (FR-15), in the browser: a field
  * component, a cell component, a slot, and a published page.
  */
 test.group('Customising (FR-15)', (group) => {

@@ -1,0 +1,69 @@
+---
+title: Screens
+description: Pages of your own in the panel, with their own ability, your component, and data from the server.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Not every admin page is a list of one model. A sales report, a summary, or a tool needs a page of its own. That's a **screen**.
+
+A screen has its own Bouncer ability, and one of three bodies:
+
+- your React component, with data from the server (this page),
+- a [form](/docs/guides/screen-forms/) Azu renders,
+- [widgets](/docs/guides/widgets/) Azu renders.
+
+## Generate one
+
+```sh
+node ace azu:screen SalesReport
+```
+
+That writes `app/admin/screens/sales_report.ts` and its component, `inertia/admin/components/sales_report.tsx`. Both compile and render as they are. The screen opens at `/admin/screens/sales-report`, named after its file.
+
+## Options
+
+The demo's sales report:
+
+<DemoCode file="app/admin/screens/sales_report.ts" region="options" title="app/admin/screens/sales_report.ts (part)" />
+
+- **`ability`** is required. It's a Bouncer ability object from `app/abilities/main.ts`, not a string. Azu checks it on every request, inside the panel's access gate. A user who fails it, or whose check throws, gets a 403. They don't see the screen in the navigation either.
+- **`component`** names a component in `inertia/admin/components`, as fields and slots do.
+- **`label`**, **`group`**, **`icon`**, and **`order`** place it in the navigation, like a resource's.
+
+The demo's `viewReports` lets admins in, but not staff:
+
+<DemoCode file="app/abilities/main.ts" region="view-reports" />
+
+## Data
+
+`data` runs on the server for each request, after the ability check. Return plain, JSON-serialisable values.
+
+It's a lazy Inertia prop. So a partial reload of `data` computes only that: `router.reload({ only: ['data'] })`.
+
+The demo's `data` totals orders by day for the range in the query string (`?days=30`). Here's the whole file:
+
+<DemoCode file="app/admin/screens/sales_report.ts" />
+
+## The component
+
+The component gets `{ data, screen }`, with `data` typed from the screen's `data` function. The demo's switches the range with a partial reload of `data`:
+
+<DemoCode file="inertia/admin/components/sales_report.tsx" />
+
+[Component props](/docs/reference/component-props/#screenprops) lists what `screen` holds.
+
+## Loading screens
+
+Screens in `app/admin/screens` load at boot. `screens.autoload` in `config/azu.ts` sets the folder, like `resources.autoload`.
+
+Two screens with the same name stop the app from booting.
+
+With autoload off, register them in `start/azu.ts`:
+
+```ts title="start/azu.ts"
+import azu from '@mezielabs/azu/services/main'
+import salesReport from '#admin/screens/sales_report'
+
+azu.registerScreen('sales-report', salesReport)
+```

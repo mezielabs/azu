@@ -18,17 +18,22 @@ const azuConfig = defineConfig({
    */
   siteUrl: '/',
 
+  // #region home
   /**
    * What /admin shows: the Overview screen from app/admin/screens (FR-22)
    */
   home: 'overview',
+  // #endregion
 
+  // #region autoload
   /**
    * Resources in this directory load automatically. Set autoload to
    * false to register them in start/azu.ts instead.
    */
   resources: { autoload: 'app/admin/resources' },
+  // #endregion
 
+  // #region brand
   /**
    * The name, logo and colour of the panel. Azu generates light and
    * dark palettes from the colour, adjusted where needed so text stays
@@ -36,7 +41,9 @@ const azuConfig = defineConfig({
    * Dark from the account menu.
    */
   brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
+  // #endregion
 
+  // #region navigation
   /**
    * Navigation group order. Groups not listed follow, by label.
    */
@@ -60,6 +67,7 @@ const azuConfig = defineConfig({
       },
     ],
   },
+  // #endregion
 })
 
 export default azuConfig

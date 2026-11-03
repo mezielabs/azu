@@ -1,0 +1,62 @@
+---
+title: Resources
+description: One file per model that points at your Lucid model, policy, and validators, and becomes a list, a detail page, and forms.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+You want an admin page for a model. In Azu, that's a **resource**: one file that points at a Lucid model and borrows its policy and validators.
+
+Here's the demo store's product resource in full:
+
+<DemoCode file="app/admin/resources/product_resource.ts" />
+
+Azu turns it into a paged list, a detail page, and create and edit forms. The rest of the guides take each part in turn.
+
+## Typed against the model
+
+Resource definitions are typed against the model. A typo like `column.text('nmae')` fails `tsc`, not your client's demo. You don't pass any generics; Azu infers everything from the model.
+
+## The options
+
+| Option | What it does |
+| --- | --- |
+| `label` | The name in the navigation and page titles. Defaults to the model's name, pluralised. |
+| `singularLabel` | One record's name, as in "New product". Defaults to the model's name. |
+| `group`, `icon`, `order` | Where it sits in the navigation. See [Home screen and navigation](/docs/guides/home-and-navigation/). |
+| `title` | The column that names a record: in breadcrumbs, links, and related pickers. |
+| `search` | Columns the list's search box matches. See [Columns and lists](/docs/guides/columns-and-lists/#search). |
+| `policy` | The Bouncer policy that decides who sees and does what. See [Permissions](/docs/guides/permissions/). |
+| `validators` | The VineJS validators the forms save through. See [Validation](/docs/guides/validation/). |
+| `query` | A hook on every query the resource runs. Preload relations here, or scope records. |
+| `columns` | The list's columns. See [Columns and lists](/docs/guides/columns-and-lists/). |
+| `fields` | The form and detail fields. See [Fields](/docs/guides/fields/). |
+| `filters` | The list's filters. See [Filters](/docs/guides/filters/). |
+| `actions` | Row and bulk actions. See [Actions](/docs/guides/actions/). |
+| `beforeSave`, `afterSave` | Hooks around a form save. Each gets the record and the HTTP context, in the save's transaction. |
+| `beforeDelete` | A hook before each record is deleted. See [Actions](/docs/guides/actions/#delete). |
+| `slots` | Your components on the resource's pages. See [Customising](/docs/guides/customising/#slots). |
+
+## Loading resources
+
+Files in `app/admin/resources` load automatically. Each one appears in the navigation, grouped by `group`, for users whose policy allows `viewList`.
+
+The demo sets the folder explicitly:
+
+<DemoCode file="config/azu.ts" region="autoload" />
+
+Prefer to register resources yourself? Turn autoload off:
+
+```ts title="config/azu.ts"
+resources: { autoload: false },
+```
+
+Then register each one in `start/azu.ts`. The demo's file shows how, in its comment:
+
+<DemoCode file="start/azu.ts" />
+
+Note: registering the same resource twice does nothing. Two resources with the same URL name stop the app from booting.
+
+## Generate one
+
+`node ace azu:resource Product` writes a resource from a model, with its validators. [Quick start](/docs/quick-start/#what-the-generator-writes) walks through it, and [Ace commands](/docs/reference/commands/#azuresource) lists the flags.

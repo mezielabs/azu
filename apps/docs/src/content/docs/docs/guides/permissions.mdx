@@ -1,0 +1,54 @@
+---
+title: Permissions
+description: How Azu uses your Bouncer policies on every request, and why a missing policy method means denied.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+You already decide who can do what in your Bouncer policies. Azu asks the same policies, on every request. A missing method means denied.
+
+Here's the demo's product policy:
+
+<DemoCode file="app/policies/product_policy.ts" />
+
+## What each method controls
+
+| Method | Controls |
+| --- | --- |
+| `viewList` | The resource in the navigation, and its list. |
+| `view` | Opening a record's detail page. |
+| `create` | The New button and the create form. |
+| `update` | The Edit button, the edit form, and actions without `.ability()`. |
+| `delete` | The built-in Delete row and bulk actions. |
+| Your own, such as `publish` | Actions and fields that name it with `.ability('publish')`. |
+
+`view`, `update`, `delete`, and your own methods get the record too, so a rule can depend on it.
+
+## Hiding is a convenience
+
+Azu hides buttons, fields, and actions a user can't use. But hiding is a convenience. The server always checks the policy, so a crafted request gets the same answer as a click.
+
+That includes each record in a bulk action. Records the user can't touch are skipped and reported.
+
+## Fields and actions
+
+`.ability('publish')` on a field shows it only to users your policy's `publish` method allows. Azu checks it with the record on edit. A field the user can't see is never read from the request, either.
+
+On an action, `.ability()` names the policy method checked for each record. See [Actions](/docs/guides/actions/#permissions).
+
+## The panel's own gate
+
+Before any policy runs, a user must pass `accessAdmin`, the Bouncer ability in `app/abilities/main.ts`. See [Installation](/docs/installation/#let-people-in).
+
+Screens and navigation links use Bouncer abilities instead of policies. See [Screens](/docs/guides/screens/#options).
+
+## Fails closed
+
+Azu denies, rather than allows, when anything is missing:
+
+- no Bouncer installed,
+- no `accessAdmin` ability,
+- a missing policy method,
+- an ability that throws.
+
+The reason goes to your log, never to the user. Run [`node ace azu:doctor`](/docs/reference/doctor/) to list the policy methods your resources rely on and don't have. [Troubleshooting](/docs/troubleshooting/#403-from-a-missing-policy-method) has more.

@@ -1,6 +1,4 @@
-import { readFile } from 'node:fs/promises'
 import { test } from '@japa/runner'
-import app from '@adonisjs/core/services/app'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { createUser } from './helpers.ts'
 
@@ -82,20 +80,6 @@ test.group('Admin login return', (group) => {
       )
       response.assertSessionMissing('redirect.intendedUrl')
     }
-  })
-
-  test("the README's login snippet is the demo's controller", async ({ assert }) => {
-    const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
-    const snippet = readme.match(
-      /```ts\n\/\/ app\/controllers\/session_controller\.ts\n([\s\S]*?)```/
-    )
-    assert.isNotNull(snippet, 'the README has the login snippet')
-    const [imports, method] = snippet![1].split(/\n\n(?=async store)/)
-    const controller = await readFile(app.makePath('app/controllers/session_controller.ts'), 'utf8')
-    assert.include(controller, imports.trim())
-    // The same method, indented as a class member
-    const indented = method.trimEnd().replace(/^(?=.)/gm, '  ')
-    assert.include(controller, indented)
   })
 
   test('Inertia login loads the admin entry point with a location response', async ({ client }) => {

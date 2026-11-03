@@ -1,0 +1,82 @@
+---
+title: Installation
+description: Add Bouncer and Azu to an AdonisJS 7 app, and decide who can open the admin panel.
+---
+
+import DemoCode from '../../../components/DemoCode.astro'
+import { Steps } from '@astrojs/starlight/components'
+
+Azu runs inside your AdonisJS app, at `/admin`. You'll add Bouncer, install Azu, and write one rule that says who gets in.
+
+## Requirements
+
+- AdonisJS 7 with Lucid, Auth, and Bouncer.
+- Inertia with React.
+- Node.js 24.21 or later.
+- PostgreSQL, MySQL, or SQLite.
+
+Azu's panel is an Inertia React app inside your AdonisJS app. So it also needs Vite, Edge, `@adonisjs/inertia` (its config and provider), and a session guard. The configure step checks for all of them first. If something's missing, it changes nothing and tells you what to add.
+
+Note: the React and Vue starter kits have everything but Bouncer. The Hypermedia kit needs two more steps, and the API kit isn't supported yet. [Starter kits](/docs/starter-kits/) has the details.
+
+## Install
+
+<Steps>
+
+1. Add Bouncer, if your app doesn't have it. Azu's access gate is a Bouncer ability, and the AdonisJS starter kits don't include Bouncer.
+
+   ```sh
+   node ace add @adonisjs/bouncer
+   ```
+
+2. Install Azu and its React package with the `preview` tag, then configure Azu. Use `pnpm add` or `yarn add` if you prefer.
+
+   ```sh
+   npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+   node ace configure @mezielabs/azu
+   ```
+
+   The `@preview` tag goes away at 0.1.0. From then on, `node ace add @mezielabs/azu` installs and configures in one step.
+
+3. Decide who gets in. Configuring adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`, so nothing is exposed until you change it.
+
+</Steps>
+
+## What configure does
+
+Configuring Azu:
+
+- registers its provider and creates `config/azu.ts`.
+- mounts the panel at `/admin`.
+- adds a separate Vite entry, so your public pages never load admin code.
+- adds the `accessAdmin` ability to `app/abilities/main.ts`.
+
+## Let people in
+
+`accessAdmin` decides who can open the panel. The demo store lets in admins and staff:
+
+<DemoCode file="app/abilities/main.ts" region="access-admin" />
+
+The starter kits' `User` model has no `role` column, and their signup page is public. So don't let every signed-in user in. While you try Azu on a fresh app, let yourself in by email:
+
+```ts title="app/abilities/main.ts"
+export const accessAdmin = Bouncer.ability((user: User) => {
+  return user.email === 'you@example.com'
+})
+```
+
+:::caution
+Narrow this rule before the app goes anywhere. Anyone who passes `accessAdmin` reaches the panel, and then your policies decide what they can see and do.
+:::
+
+Note: if you added Azu before Bouncer, run `node ace add @adonisjs/bouncer`, then `node ace configure @mezielabs/azu` again to add the ability. Without Bouncer, Azu denies everyone.
+
+## Signing in
+
+Azu uses your app's existing auth guard. Guests are sent to your login page, and signed-in users who fail `accessAdmin` get a 403.
+
+With session middleware, Azu remembers the admin page a guest asked for. Your login can send them back there. [Troubleshooting](/docs/troubleshooting/#login-doesnt-return-to-the-admin) shows the demo's login controller.
+
+## Next
+
+[Quick start](/docs/quick-start/) generates your first resource.
