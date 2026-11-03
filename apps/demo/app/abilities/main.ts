@@ -16,16 +16,20 @@ import { policies } from '#generated/policies'
  * Who can open the admin panel. Azu's installer will add this ability
  * returning `false`; the demo lets admins and staff in.
  */
+// #region access-admin
 export const accessAdmin = Bouncer.ability((user: User) => {
   return user.role === 'admin' || user.role === 'staff'
 })
+// #endregion
 
 /**
  * Who can see the Reports screens (FR-20): admins, not staff.
  */
+// #region view-reports
 export const viewReports = Bouncer.ability((user: User) => {
   return user.role === 'admin'
 })
+// #endregion
 
 /**
  * Who sees the "Awaiting shipping" link (FR-21): whoever OrderPolicy
@@ -35,14 +39,18 @@ export const viewReports = Bouncer.ability((user: User) => {
  * middleware, so this file loads without importing it. It only hides
  * the link; OrderPolicy still guards the list it opens.
  */
+// #region view-orders
 export const viewOrders = Bouncer.ability((user: User) => {
   return new Bouncer(user, {}, policies).with('OrderPolicy').allows('viewList')
 })
+// #endregion
 
 /**
  * Who can change the store's settings (FR-23): admins. Its own rule,
  * so settings can move to another role without touching the others.
  */
+// #region manage-settings
 export const manageSettings = Bouncer.ability((user: User) => {
   return user.role === 'admin'
 })
+// #endregion

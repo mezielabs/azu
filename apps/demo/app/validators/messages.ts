@@ -7,6 +7,7 @@ import type { FieldContext } from '@vinejs/vine/types'
  * `{{ field }}` is the label passed to `labelled()`, and starts each
  * message so its capital reads naturally.
  */
+// #region messages
 export const messages = {
   'required': '{{ field }} is required',
   'string': '{{ field }} must be text',
@@ -24,11 +25,13 @@ export const messages = {
   'database.unique': '{{ field }} is already taken',
   'database.exists': '{{ field }} was not found',
 }
+// #endregion
 
 /**
  * Gives a validator the admin's messages and the field labels to use
  * in them, keyed by input name (`categoryId`, not `category`).
  */
+// #region labelled
 export function labelled<Validator extends { messagesProvider: unknown }>(
   validator: Validator,
   fields: Record<string, string>,
@@ -37,6 +40,7 @@ export function labelled<Validator extends { messagesProvider: unknown }>(
   validator.messagesProvider = new SimpleMessagesProvider({ ...messages, ...overrides }, fields)
   return validator
 }
+// #endregion
 
 /**
  * A lower bound for a decimal kept as a string, checked after the

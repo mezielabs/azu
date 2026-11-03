@@ -17,7 +17,7 @@ import { restockValidator } from '#validators/product'
 import markAsPaid from './generated_action.ts'
 
 /**
- * Valid definitions beyond the README's, on other models, including a
+ * Valid definitions beyond the docs' Product resource, on other models, including a
  * mixin-composed one (User) and typed handlers and queries.
  */
 export const valid = [

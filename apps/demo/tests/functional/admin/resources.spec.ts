@@ -161,7 +161,7 @@ test.group('Admin / resources (FR-03)', (group) => {
     )
     // A badge column reads its values' labels from the select field of the same name
     assert.deepEqual(resource.columns[4].labels, { draft: 'Draft', published: 'Published' })
-    // The README's "Customising" examples (FR-15)
+    // The docs' Customising examples (FR-15)
     assert.include(resource.columns[5], { component: 'StockBar', label: 'In stock' })
     assert.include(resource.fields[1], { name: 'sku', component: 'SkuInput' })
     assert.deepEqual(resource.slots, {

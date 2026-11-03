@@ -1,0 +1,90 @@
+---
+title: Home screen and navigation
+description: What /admin shows, the sidebar's order and groups, links to anywhere, icons, and the account menu.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Your team opens `/admin` every morning. Make it land somewhere useful, and keep the sidebar in the order they work.
+
+## The home screen
+
+By default, `/admin` is a welcome page. Set `home` to show a screen there instead, with the URL unchanged. The demo shows its Overview:
+
+<DemoCode file="config/azu.ts" region="home" title="config/azu.ts (part)" />
+
+Or send people to a resource's list:
+
+```ts title="config/azu.ts"
+home: { resource: 'orders' },
+```
+
+- The home screen replaces "Dashboard" at the top of the navigation.
+- A user who fails the screen's ability gets the welcome page, not a 403.
+- With `{ resource }`, only users who may list that resource are redirected. Everyone else gets the welcome page.
+- A `home` that names no screen or resource stops the app from booting.
+
+## The sidebar
+
+The sidebar holds your brand, the dashboard, and your resources. At the bottom is the signed-in user's account button.
+
+On screens narrower than 768px, a menu button in a top bar opens the sidebar as a drawer. It has the same choices, as full-width rows.
+
+## Order and groups
+
+The navigation lists your resources, your [screens](/docs/guides/screens/), and any links you add.
+
+- Items without a `group` come first.
+- Groups follow the order you list in `navigation.groups`, then any others alphabetically.
+- Within a group, resources, screens, and links sort together. `order` comes first, lower first. Then items without one, alphabetically.
+
+<DemoCode file="config/azu.ts" region="navigation" title="config/azu.ts (part)" />
+
+## Links
+
+Links point anywhere: a filtered list, a page of your app, another site.
+
+- A link to an absolute `http(s)` URL opens in a new tab, with an external-link icon.
+- A link is highlighted when the page's path and query match it.
+
+A link's `ability` is a Bouncer ability, like a screen's. It only hides the link from users who fail it.
+
+:::caution
+A link's `ability` doesn't protect the page it opens. That page must check access itself, as Azu's resource pages do through their policies.
+:::
+
+The demo's "Awaiting shipping" link asks the order policy, rather than repeating its rule:
+
+<DemoCode file="app/abilities/main.ts" region="view-orders" />
+
+## Icons
+
+`icon` is a [Lucide](https://lucide.dev/icons) icon name in kebab case, like `'package'` or `'shopping-cart'`.
+
+Install `lucide-react` to show icons. Without it, the navigation shows none.
+
+```sh
+npm i lucide-react
+```
+
+The `azu()` Vite plugin bundles only the icons you name. It reads them from `app/admin/resources`, `app/admin/screens`, and `config/azu.ts`.
+
+If you set `icon` in a way the plugin can't read, from a variable say, list the name yourself:
+
+```ts title="vite.config.ts"
+azu({ icons: ['shopping-cart'] })
+```
+
+An unknown name gives a warning at build time and shows no icon.
+
+## The account menu
+
+The account button's menu holds:
+
+- the theme: Light, Dark, or System. See [Theming](/docs/guides/theming/#light-and-dark).
+- "View site", which opens your `siteUrl` (`/` by default). Set `siteUrl: false` to hide it.
+- Sign out.
+
+Sign out posts to `/admin/logout`. That signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`.
+
+Note: sign out doesn't run your app's own logout code, such as an audit entry or extra cookies.

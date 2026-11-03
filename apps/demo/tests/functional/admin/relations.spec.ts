@@ -200,7 +200,7 @@ test.group('Admin / belongsTo fields (FR-08)', (group) => {
     response.assertStatus(302)
   })
 
-  test('the README Product resource creates end to end', async ({ client, assert }) => {
+  test("the docs' Product resource creates end to end", async ({ client, assert }) => {
     const admin = await createUser('admin')
     const { categories } = await createCategories('Kitchen')
     const sku = `T-${randomUUID().slice(0, 8)}`.toUpperCase()
@@ -264,7 +264,7 @@ test.group('Admin / belongsTo fields (FR-08)', (group) => {
     assert.equal(category.optionsUrl, `${OPTIONS}?record=${product.id}`)
   })
 
-  test('the README Product resource updates end to end, with mapped metadata', async ({
+  test("the docs' Product resource updates end to end, with mapped metadata", async ({
     client,
     assert,
   }) => {

@@ -1,0 +1,87 @@
+---
+title: azu:doctor checks
+description: What node ace azu:doctor checks, and whether each finding is an error, a warning, or a note.
+---
+
+`node ace azu:doctor` boots your app and looks for setup that can't work, or probably isn't what you meant. Run it after setting Azu up, and after every upgrade.
+
+```sh
+node ace azu:doctor
+```
+
+It reports three levels:
+
+- **Errors:** configuration that can't work as written. Doctor exits with 1.
+- **Warnings:** something that works but probably isn't what you meant.
+- **Notes:** what doctor couldn't check.
+
+Note: values `defineConfig` already validates (`perPage`, `timezone`, `brand.color`, `path`) aren't checked again. The app wouldn't boot with them wrong.
+
+## Config
+
+| Finding | Level |
+| --- | --- |
+| `config/auth.ts` is missing, so no one can sign in. | Error |
+| `guard` names a guard `config/auth.ts` doesn't have. | Error |
+| `file` or `image` fields with no Drive installed. | Error |
+| An upload disk, or `defaultDisk`, that `config/drive.ts` doesn't define. | Error |
+| The `entry` file doesn't exist. | Error |
+| `vite.config.ts` is missing, or doesn't use the `azu()` plugin. | Error |
+| `home` names no screen or resource. | Error |
+| `resources.autoload` points at a folder that doesn't exist. | Warning |
+| No resources are registered, so the panel is empty. | Warning |
+| A link's `group` isn't in `navigation.groups`, so it comes after the listed groups. | Note |
+
+## Policies
+
+A missing method means denied, so each one quietly hides something.
+
+| Finding | Level |
+| --- | --- |
+| An action checks a policy method that doesn't exist, so it never runs. | Error |
+| No `viewList`, so no one sees the resource. | Warning |
+| No `view`, so no record opens. | Warning |
+| No `create` or `update` on a resource with form fields, so that form never shows. | Warning |
+| A field's `.ability()` names a method that doesn't exist, so the field never shows. | Warning |
+
+## Validators
+
+VineJS drops keys a validator doesn't declare. So whatever a user enters in an undeclared field is never saved.
+
+| Finding | Level |
+| --- | --- |
+| A form field the create or update validator doesn't declare. | Error |
+| No validator for create or update, so saving that form fails. | Error |
+| A screen form's field its validator doesn't declare. Read-only fields aren't checked. | Error |
+| A validator that isn't a VineJS 4 validator, so its fields can't be checked. | Note |
+
+## Components
+
+| Finding | Level |
+| --- | --- |
+| A field, column, slot, or screen names a component no file in `inertia/admin/components` registers. | Error |
+| Two files register the same component name, so only one is used. | Warning |
+
+## Widgets
+
+| Finding | Level |
+| --- | --- |
+| A `link()` filter the resource doesn't have, or a value it doesn't take. | Error |
+| A `date()` column that isn't a date or datetime. | Error |
+| A widget missing what its kind needs. | Error |
+| A trend's `by()` that can need more than 100 buckets in one of the screen's ranges. | Error |
+| The widget's resource has no `viewList`, so the widget never shows. | Warning |
+
+The app refuses to boot on the widget errors too.
+
+## Published pages
+
+Doctor compares each page in `inertia/admin/pages` with the installed `@mezielabs/azu-react`.
+
+| Finding | Level |
+| --- | --- |
+| The original page changed since you published it: it drifted. Compare, then merge, or run `azu:publish <page> --force`. | Warning |
+| A file names a page Azu doesn't have, so it's never rendered. | Warning |
+| A file was published as one page and now replaces another. | Warning |
+| `@mezielabs/azu-react` isn't installed, or has no such page, so drift can't be checked. | Warning |
+| A page has no `azu:publish` stamp, so it can't be checked for drift. | Note |

@@ -1,0 +1,72 @@
+---
+title: Fields
+description: The form controls each field type renders, what it submits, and how labels are named.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Fields become the create and edit forms, and the detail page. You list them on the resource, in the order you want them:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="fields" />
+
+## Field types
+
+| Field | Form control | Notes |
+| --- | --- | --- |
+| `text`, `textarea` | Input, auto-growing textarea | |
+| `number` | Numeric input | For numeric attributes (integers, floats). Supports `min`, `max`, `step`. |
+| `decimal` | Numeric input | For decimal columns, which Postgres and MySQL return as strings. See [Decimals](#decimals). |
+| `boolean` | Toggle | |
+| `select` | Dropdown, or radios for four or fewer options | |
+| `date`, `datetime` | Date picker | Uses the admin timezone. See [Dates](#dates). |
+| `richText` | Rich text editor | See [Rich text](#rich-text). |
+| `file`, `image` | Drag-and-drop upload | See [Uploads](/docs/guides/uploads/). |
+| `belongsTo` | Searchable select | Loads options as you type. See [Relationships](/docs/guides/relationships/). |
+| `hasMany` | Table on the detail page | See [Relationships](/docs/guides/relationships/#hasmany). |
+| `manyToMany` | Searchable picker that adds and removes related records | See [Relationships](/docs/guides/relationships/#manytomany). |
+
+## No `required()`
+
+You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree. The same goes for limits like `maxLength`: the form shows what the validator enforces.
+
+## Decimals
+
+Use `decimal` for decimal columns. Postgres and MySQL return them as strings, and Azu keeps them that way.
+
+- The value stays an exact string end to end. It's formatted with `Intl.NumberFormat`, never converted through `Number`.
+- It supports `min`, `max`, and `step`.
+- If the list column of the same name formats a currency, the input shows its code (`NGN`).
+
+## Dates
+
+`date` and `datetime` fields use the admin timezone. That's `timezone` in `config/azu.ts`, or else your server's timezone. Admins enter and read dates in that timezone.
+
+## Rich text
+
+`richText` is sanitised on the server before your validator sees it, and again before it's shown. So HTML written outside Azu (a seed, an API, a console) is safe to render too.
+
+The editor is Tiptap, loaded only when a form needs it. Install its packages to use it:
+
+```sh
+npm i @tiptap/react @tiptap/pm @tiptap/starter-kit
+```
+
+Without them, the field is a plain HTML textarea.
+
+## Labels
+
+Labels come from names. `isFeatured` reads "Is featured". Common acronyms are capitals, so `sku` reads "SKU" and `userId` reads "User ID". The same goes for URL, API, VAT, and UUID.
+
+Give any field, column, filter, or action its own label with `.label()`. The demo's stock column reads "In stock":
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="stock-column" title="app/admin/resources/product_resource.ts (columns)" />
+
+## More field options
+
+- `.section('Details')` groups fields under a heading. See [Forms](/docs/guides/forms/#sections).
+- `.help('…')` shows a hint under the control, and `.placeholder('…')` a placeholder in it.
+- `.default(value)` fills the create form.
+- `.visibleOn('create')` or `.visibleOn('edit')` shows the field on one form only.
+- `.readOnly()` shows the value without letting anyone change it.
+- `.ability('publish')` shows the field only to users the policy's `publish` method allows. See [Permissions](/docs/guides/permissions/#fields-and-actions).
+- `.component('SkuInput')` swaps in your own React component. See [Customising](/docs/guides/customising/#2-swap-a-component).

@@ -1,0 +1,55 @@
+---
+title: Quick start
+description: Generate a resource from a model you already have, then open it at /admin.
+---
+
+import { Steps } from '@astrojs/starlight/components'
+
+You have Azu installed and `accessAdmin` lets you in. Now give the panel something to show: a resource for one of your models.
+
+<Steps>
+
+1. Generate a resource from an existing model. On a fresh starter kit, use `User`.
+
+   ```sh
+   node ace azu:resource Product --policy
+   ```
+
+2. Start your dev server and open `/admin`.
+
+   ```sh
+   npm run dev
+   ```
+
+   You'll see a Products page with a list, search, and create, edit, and detail screens.
+
+3. Open the generated resource and fix what's wrong. It's a starting point, not a finished page.
+
+</Steps>
+
+## What the generator writes
+
+`azu:resource` reads the model's columns, casts, and relationships. Then it writes:
+
+- `app/admin/resources/product_resource.ts`, the resource.
+- A create and an update validator, derived from the model's columns, in `app/validators/product.ts`. If that file exists, it writes `product_admin.ts` instead. Pass `--no-validator` to skip it.
+- With `--policy`, `app/policies/product_policy.ts`, if Product doesn't have a policy yet.
+
+The generated policy lets everyone who can open the panel list, view, create, and update products. It has no `delete` method, so no one can delete. Narrow it to your roles before you ship.
+
+## Typecheck
+
+Run `node ace codegen` once before you typecheck:
+
+```sh
+node ace codegen
+npm run typecheck
+```
+
+Bouncer's middleware imports `#generated/policies`, which codegen writes. So `npm run typecheck` fails on a fresh app until codegen has run once. The dev server runs it for you.
+
+## Next
+
+- [Resources](/docs/guides/resources/) explains each part of the file you generated.
+- [Permissions](/docs/guides/permissions/) covers the policy.
+- [Ace commands](/docs/reference/commands/) lists every flag.

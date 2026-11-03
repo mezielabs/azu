@@ -1,0 +1,148 @@
+/*
+ * Azu's brand v0.2 (Clay) on Starlight's theme tokens.
+ * Variable names are Starlight's own (dist/style/props.css) and
+ * Expressive Code's (--ec-*, in Starlight's generated CSS).
+ *
+ * Light: Ground #F7F6F4 page, Ink #1C1916 text, Clay #B0472A accent,
+ * Warm gray #5A544E secondary text, borders #D6D1CA, accent-low #FBECE6,
+ * hover #963A20.
+ * Dark: Ink #1C1916 page, text #F3F1EE, Clay on dark #E47A57 accent,
+ * muted #B0A9A1, borders #3A342E, code background #131210.
+ *
+ * Every text pair here reaches WCAG AA (4.5:1) in both themes; the PR
+ * lists the ratios. Unlayered, so these override Starlight's
+ * `starlight.*` cascade layers.
+ */
+
+:root {
+  --sl-font: 'Instrument Sans', var(--sl-font-system);
+  --sl-font-mono: 'JetBrains Mono', var(--sl-font-system-mono);
+}
+
+/* Dark (Starlight's default) */
+:root,
+::backdrop {
+  --sl-color-white: #f3f1ee;
+  --sl-color-gray-1: #f3f1ee;
+  --sl-color-gray-2: #e2ddd7;
+  --sl-color-gray-3: #b0a9a1;
+  --sl-color-gray-4: #6e665e;
+  --sl-color-gray-5: #3a342e;
+  --sl-color-gray-6: #24201c;
+  --sl-color-black: #1c1916;
+
+  --sl-color-text: #f3f1ee;
+  --sl-color-accent-low: #3e2219;
+  --sl-color-accent: #e47a57;
+  --sl-color-accent-high: #f4b8a2;
+  --sl-color-text-accent: #e47a57;
+  --sl-color-text-invert: #1c1916;
+  --sl-color-bg-accent: #e47a57;
+  --sl-color-bg-inline-code: #2e2925;
+  --sl-color-hairline-light: #3a342e;
+  --sl-color-hairline: #3a342e;
+  --sl-color-hairline-shade: #131210;
+
+  /* Caution asides */
+  --sl-color-orange-low: #3b2410;
+  --sl-color-orange: #b45309;
+  --sl-color-orange-high: #fcd5a8;
+
+  --sl-color-backdrop-overlay: rgb(19 18 16 / 0.72);
+
+  --azu-accent-hover: #f0a285;
+
+  /* Code blocks: Expressive Code's editor and terminal bodies */
+  --ec-codeBg: #131210;
+  --ec-frm-edBg: #131210;
+  --ec-frm-trmBg: #131210;
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-white: #1c1916;
+  --sl-color-gray-1: #1c1916;
+  --sl-color-gray-2: #3d3732;
+  --sl-color-gray-3: #5a544e;
+  --sl-color-gray-4: #8c857d;
+  --sl-color-gray-5: #d6d1ca;
+  --sl-color-gray-6: #ece9e5;
+  --sl-color-gray-7: #f1eeea;
+  --sl-color-black: #f7f6f4;
+
+  --sl-color-text: #1c1916;
+  --sl-color-accent-low: #fbece6;
+  --sl-color-accent: #b0472a;
+  --sl-color-accent-high: #963a20;
+  --sl-color-text-accent: #b0472a;
+  --sl-color-text-invert: #f7f6f4;
+  --sl-color-bg-accent: #b0472a;
+  --sl-color-bg-nav: #f7f6f4;
+  --sl-color-bg-sidebar: #f7f6f4;
+  --sl-color-bg-inline-code: #ece9e5;
+  --sl-color-hairline-light: #d6d1ca;
+  --sl-color-hairline: #d6d1ca;
+  --sl-color-hairline-shade: #d6d1ca;
+
+  --sl-color-orange-low: #fdf1e4;
+  --sl-color-orange: #b45309;
+  --sl-color-orange-high: #8a3f07;
+
+  --sl-color-backdrop-overlay: rgb(28 25 22 / 0.5);
+
+  --azu-accent-hover: #963a20;
+}
+
+/* Expressive Code sets its light colours on each block, so match that */
+:root[data-theme='light'] .expressive-code {
+  --ec-codeBg: #f1eeea;
+  --ec-frm-edBg: #f1eeea;
+  --ec-frm-trmBg: #f1eeea;
+}
+
+/* Hover: links darken (light) or lighten (dark); the primary button and
+   the current sidebar item take the hover fill */
+.sl-markdown-content a:hover:not(:where(.not-content *)) {
+  color: var(--azu-accent-hover);
+}
+
+.sl-link-button.primary:hover {
+  background: var(--azu-accent-hover);
+  border-color: var(--azu-accent-hover);
+}
+
+/* Focus ring in the accent, everywhere Starlight leaves it to the browser */
+:focus-visible {
+  outline: 2px solid var(--sl-color-text-accent);
+  outline-offset: 2px;
+}
+
+/* Headings: Instrument Sans is narrow, so tighten slightly */
+.sl-markdown-content :is(h1, h2, h3, h4),
+h1#_top {
+  letter-spacing: -0.015em;
+}
+
+/* Bold is for terms and key warnings only (STYLE.md); keep it calm */
+.sl-markdown-content strong {
+  color: var(--sl-color-white);
+  font-weight: 600;
+}
+
+/* The changelog page renders CHANGELOG.md, whose own "# Changelog" repeats the page title */
+.changelog > h1:first-child {
+  display: none;
+}
+
+/* The landing hero's mark: Starlight sizes hero images for illustrations
+   (up to 25rem); the mark is a 64px tile, so keep it compact */
+.hero > img {
+  width: min(30%, 7rem);
+}
+
+@media (min-width: 50rem) {
+  .hero > img {
+    width: min(100%, 12rem);
+    justify-self: center;
+  }
+}

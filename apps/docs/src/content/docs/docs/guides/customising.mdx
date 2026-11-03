@@ -1,0 +1,89 @@
+---
+title: Customising
+description: Three levels of control, from config to your own components and slots to a published page you own.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Sooner or later a client wants something Azu doesn't do. A SKU that's always upper case, say, or a Print button. You get three levels of control. Start with the smallest one that works.
+
+## 1. Config
+
+Labels, icons, groups, page size, and branding live in the resource or in `config/azu.ts`. No React needed. See [Resources](/docs/guides/resources/#the-options) and [config/azu.ts](/docs/reference/config/).
+
+## 2. Swap a component
+
+Point any field or column at your own React component. The demo upper-cases its SKUs as you type:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="sku-field" title="app/admin/resources/product_resource.ts (fields)" />
+
+<DemoCode file="inertia/admin/components/sku_input.tsx" />
+
+A field component gets [`FieldProps`](/docs/reference/component-props/#fieldprops):
+
+- the `value` and `onChange`,
+- the field's `errors`,
+- the `field` itself: its `name`, `label`, and the validator's `required` hint,
+- the form's other values, as `record`.
+
+Note: a field component is responsible for its own label and errors. The demo's renders both, with Azu's classes, so it passes the same accessibility checks as Azu's own controls.
+
+A column works the same way. The demo shows stock as a coloured count:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="stock-column" title="app/admin/resources/product_resource.ts (columns)" />
+
+<DemoCode file="inertia/admin/components/stock_bar.tsx" />
+
+A cell gets [`CellProps`](/docs/reference/component-props/#cellprops): its `value`, the row as `record`, and the `column`. `.component()` works on every column kind. `column.custom()` is a column with no formatting of its own.
+
+### Where components live
+
+Components in `inertia/admin/components` are registered by file name, so `sku_input.tsx` becomes `SkuInput`.
+
+Each one loads only when a page that uses it opens. So they add nothing to the admin's initial JavaScript.
+
+## Slots
+
+To add something to a page without replacing it, name a component for one of a resource's slots. The demo adds a Print button to orders:
+
+<DemoCode file="app/admin/resources/order_resource.ts" region="slots" title="app/admin/resources/order_resource.ts (part)" />
+
+<DemoCode file="inertia/admin/components/print_order.tsx" />
+
+Azu's stylesheet leaves the sidebar, the top bar, and the page's actions out of print. So the page prints the order alone.
+
+The slots are:
+
+| Slot | Where |
+| --- | --- |
+| `header` | Under the page title, on every page of the resource. |
+| `toolbar` | Beside the page's own buttons. |
+| `beforeTable` | Above the list. |
+| `afterForm` | Under the create and edit forms. |
+
+A slot component gets [`SlotProps`](/docs/reference/component-props/#slotprops):
+
+- the `resource`,
+- the `page`: `index`, `create`, `edit`, or `show`,
+- the `record` on the edit and detail pages,
+- the resource's list URL, as `path`.
+
+## 3. Publish a page
+
+Copy any of Azu's pages into your app and edit it however you like:
+
+```sh
+node ace azu:publish resource/index
+```
+
+This copies the page to `inertia/admin/pages/resource/index.tsx`. A comment at the top records the Azu version it came from.
+
+- Page names are snake_case paths, like your app's own Inertia pages. The older `Resource/Index` spelling works too.
+- Run `node ace azu:publish` without a page to list them.
+- It won't replace a page you've already published unless you pass `--force`.
+
+Azu renders your copy from then on. It's the most flexible option, but you now own that page through upgrades.
+
+:::caution[After upgrading Azu]
+Run `node ace azu:doctor` to see which published pages drifted from the new version. See [azu:doctor checks](/docs/reference/doctor/#published-pages).
+:::

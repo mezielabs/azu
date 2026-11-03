@@ -50,8 +50,28 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  # The packages, the README and Azu's own setup messages link to the docs
+  # site, so a release must not go out before the docs are live. Runs only
+  # when publishing, so a dry run works before the domain is set up.
+  docs-live:
+    if: inputs.publish && github.ref == 'refs/heads/main' && github.repository == 'mezielabs/azu'
+    runs-on: ubuntu-latest
+    steps:
+      - name: The docs site answers
+        run: |
+          url=https://azuadmin.com/docs/
+          # curl prints 000 when it gets no answer at all (DNS, timeout)
+          code=$(curl --silent --show-error --location --max-time 30 --output /dev/null --write-out '%{http_code}' "$url") || true
+          case "$code" in
+            2??) echo "$url answered $code" ;;
+            *)
+              echo "::error title=Docs not live::$url answered ${code:-nothing}, not 2xx. Deploy the docs (apps/docs, pnpm docs:build) before publishing: the packages, the README and Azu's setup messages link there."
+              exit 1
+              ;;
+          esac
+
   publish:
-    needs: packages
+    needs: [packages, docs-live]
     if: inputs.publish && github.ref == 'refs/heads/main' && github.repository == 'mezielabs/azu'
     runs-on: ubuntu-latest
     environment: npm-preview

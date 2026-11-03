@@ -1,0 +1,75 @@
+---
+title: Troubleshooting
+description: Fixes for server-side rendering, CSP, 403s from missing policy methods, the login return, and codegen.
+---
+
+import DemoCode from '../../../components/DemoCode.astro'
+
+Something isn't working. Find the symptom below.
+
+## Server-side rendering
+
+**Symptom:** your app renders its pages on the server, and you expect `/admin` to as well.
+
+Admin pages always render in the browser. Azu gives the panel its own Inertia instance, with SSR off. Your app's SSR bundle renders your pages, not Azu's, so the two never collide.
+
+Your app's own SSR keeps working as before. This was checked on a production build of the React starter kit.
+
+Note: your app's Inertia shared props don't reach admin pages either.
+
+## Content Security Policy
+
+**Symptom:** you turned on Shield's CSP and want to know whether the panel still works.
+
+It does, with a strict nonce-only policy: `scriptSrc` and `styleSrc` of `'self'` and `'@nonce'`, with no `'unsafe-inline'`.
+
+The admin view puts the request's nonce on its theme style and script. It also adds a `<meta property="csp-nonce">` tag. Styles added at runtime read their nonce from it: React Aria's, Inertia's progress bar, and the rich text editor's.
+
+Note: your app's own starter kit pages may have inline styles of their own under such a policy. Those are your app's to fix.
+
+## 403 from a missing policy method
+
+**Symptom:** a user gets a 403, or a button or page is missing. You expected them to have access.
+
+A missing policy method means denied. Check these in order:
+
+1. **`accessAdmin`** in `app/abilities/main.ts`. It returns `false` until you change it, and a 403 on every admin page means the user fails it.
+2. **The resource's policy.** Each page needs its method. The list needs `viewList`, a record needs `view`, and forms need `create` or `update`. An action needs the method its `.ability()` names, or `update`.
+3. **A screen's ability.** A user who fails it gets a 403 on that screen.
+4. **Bouncer itself.** Without Bouncer installed, Azu denies everyone.
+
+`azu:doctor` lists the policy methods your resources rely on and don't have:
+
+```sh
+node ace azu:doctor
+```
+
+Note: an ability that throws counts as denied too. The reason goes to your log, never to the user.
+
+## Login doesn't return to the admin
+
+**Symptom:** a guest opens `/admin/resources/orders`, signs in, and lands on your app's dashboard instead.
+
+With session middleware, Azu remembers the admin page a guest asked for. Your login controller sends them back. Here's the demo's:
+
+<DemoCode file="app/controllers/session_controller.ts" />
+
+Two details matter:
+
+- **Check the URL.** Only redirect to a path on your own site. `isValidRedirectUrl` and the `/` check do that.
+- **Use `inertia.location()` for Inertia requests.** The admin has its own Inertia entry point. The browser needs a full page load to reach it.
+
+Note: Azu never remembers JSON requests or partial reloads, only page visits.
+
+## Typecheck fails on `#generated/policies`
+
+**Symptom:** `npm run typecheck` fails on a fresh app, because `#generated/policies` doesn't exist.
+
+Bouncer's middleware imports `#generated/policies`, which `node ace codegen` writes. Run it once before you typecheck:
+
+```sh
+node ace codegen
+npm run typecheck
+```
+
+The dev server runs codegen for you, so you'll only see this before your first `npm run dev`, or in CI. Add `node ace codegen` to your typecheck script to stop it for good.

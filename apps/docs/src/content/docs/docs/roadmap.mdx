@@ -1,0 +1,47 @@
+---
+title: Roadmap
+description: What the first preview has, what comes next, and Azu Pro.
+---
+
+Azu is early. Here's what's built, what comes next, and what will be paid.
+
+## Built, in the first preview
+
+`0.1.0-preview.0` has been on npm since 3 November 2026. It has:
+
+- Resources, fields, and relationships (`belongsTo`, `hasMany`, `manyToMany`).
+- Permissions and validation, from your policies and validators.
+- Row and bulk actions, including on all filtered rows.
+- Filters, form sections, and list column choices.
+- Theming, navigation groups, and icons.
+- Component overrides, slots, and `azu:publish`.
+- Screens: your own screens, navigation links, a home screen, screen forms, widgets, and trends.
+
+[Preview limits](/docs/preview-limits/) lists the known gaps, fixed after the preview.
+
+## Next
+
+- Private disks for uploads, with signed URLs.
+- Soft deletes, with a trashed filter and restore.
+- Global search.
+- Azu's own interface in other languages, through AdonisJS i18n. It's English-only for now.
+- Navigation badges, and more override slots.
+- v1.0.
+- Azu Pro.
+- Vue support, if there's demand.
+
+## Azu Pro
+
+The core is free and MIT licensed, and it always will be. Azu Pro will add the extensions clients tend to ask for once the basics work:
+
+- **Audit log:** every admin change, with before and after values.
+- **CSV import and export**, with a validation preview before anything is saved.
+- **Impersonation**, so support staff can see exactly what a user sees.
+- **Multi-tenancy**, with automatic query scoping.
+- **Premium layouts and theme.**
+
+Pro will be licensed per project, or for unlimited projects. The licence is checked at install, never at runtime, so a lapsed licence never takes down a production admin.
+
+## Contributing
+
+The most useful contribution right now is feedback on the API. Open a [discussion](https://github.com/mezielabs/azu/discussions) with what you'd change, or with what your current admin does that Azu wouldn't.

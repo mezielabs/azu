@@ -1,0 +1,51 @@
+---
+title: Errors
+description: E_AZU_SETUP, and the boot errors Azu raises for config it can't use.
+---
+
+Azu fails early and says what to fix. Here are the errors you can meet, and what each one means.
+
+## E_AZU_SETUP
+
+Thrown when you open the panel in an app that's missing part of Azu's setup. Azu renders the panel with Inertia and Vite, so it needs:
+
+- `config/inertia.ts`,
+- the Inertia provider, registered in `adonisrc.ts`,
+- Vite, from `node ace add @adonisjs/vite`.
+
+The message lists the missing steps, numbered:
+
+```txt
+Azu renders the admin panel with Inertia and Vite, and this app is missing part of that setup:
+1. Add config/inertia.ts: ...
+2. Register the provider in adonisrc.ts: () => import('@adonisjs/inertia/inertia_provider')
+```
+
+You'll usually meet it on the Hypermedia starter kit. [Starter kits](/docs/starter-kits/#hypermedia) has both Inertia steps in full.
+
+Note: `node ace configure @mezielabs/azu` runs the same checks first. When something's missing, it changes nothing and prints the same fixes.
+
+## Boot errors
+
+`defineConfig` checks `config/azu.ts` when the app boots. A bad value stops the app with a message naming the option:
+
+| Option | Must be |
+| --- | --- |
+| `perPage` | 10, 25, 50, or 100. |
+| `timezone` | An IANA timezone, such as `"Africa/Lagos"`. |
+| `brand.color` | A hex colour, such as `"#2563eb"`. |
+| `siteUrl` | A path or URL, such as `"/"`, or `false`. |
+| `path` | Anything but `"/"`. |
+| `home` | A screen name, or `{ resource: 'name' }`. |
+| `navigation.groups` | A list of group labels. |
+| `navigation.links` | A list of links, each with a `label` and a `url`. A link's `ability` must be a Bouncer ability object. |
+
+Resources and screens are checked at boot too. These stop the app:
+
+- two resources, or two screens, with the same name.
+- a filter named after one of the list's own parameters: `page`, `perPage`, `sort`, `direction`, `search`, or `columns`.
+- a `home` that names no screen or resource.
+- a screen with both `form` and `component`, or `data` beside a form.
+- a screen without an `ability`.
+- a widget `link()` filter the resource doesn't have, or a `date()` column that isn't a date.
+- `file` or `image` fields without Drive installed.

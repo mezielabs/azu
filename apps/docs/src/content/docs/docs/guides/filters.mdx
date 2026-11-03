@@ -1,0 +1,36 @@
+---
+title: Filters
+description: Select, boolean, date range, related record, and custom filters, each a URL parameter you can bookmark.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Your team wants "published products in Kitchen, added last month". Filters give them that, on the server, in the URL.
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="filters" />
+
+Each filter is a URL query parameter named after it, so a filtered view can be bookmarked:
+
+```
+?status=published&category=3&createdAt=2026-10-01..2026-10-31&low-stock=1
+```
+
+Filters combine with each other, with search, and with sort. Changing one goes back to page 1.
+
+## Filter kinds
+
+- `filter.select(column, options)` matches a column against one of the options.
+- `filter.boolean(column)` matches a true or false column.
+- `filter.dateRange(column)` takes whole days in the admin's timezone (`timezone` in `config/azu.ts`). Either end can be left open.
+- `filter.belongsTo(relation)` picks a related record from a searchable list. It shows only to users who pass the related resource's `viewList`, like a `belongsTo` field.
+- `filter.custom(label, query)` is an on or off filter with your own query, typed against the model. Its parameter is the label in kebab case, so "Low stock" is `low-stock`.
+
+Every filter takes `.label()`, as the demo's `filter.boolean('isFeatured').label('Featured')` does.
+
+## Reserved names
+
+A filter can't be named after the list's own parameters: `page`, `perPage`, `sort`, `direction`, `search`, or `columns`. If one is, Azu refuses to boot.
+
+## Bad values
+
+Values that don't fit a filter are ignored rather than failing the page. A hand-edited or stale link still shows a list.

@@ -1,0 +1,58 @@
+---
+title: Relationships
+description: belongsTo, hasMany, and manyToMany in columns, fields, and filters, and what each one submits to your validator.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+A product belongs to a category and has many tags. Azu reads those relationships from your Lucid model. You choose where they show.
+
+## belongsTo
+
+A `belongsTo` column shows the related record's title, and Azu preloads it:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="columns" mark="column.belongsTo('category', 'name')" title="app/admin/resources/product_resource.ts (columns)" />
+
+A `belongsTo` field is a searchable select that loads options as you type. `searchable()` names the column it searches, or the related resource's `title` without it:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="fields" mark={["field.belongsTo('category')", "field.manyToMany('tags')"]} title="app/admin/resources/product_resource.ts (fields)" />
+
+It submits its foreign key (`category` → `categoryId`), so your validator checks `categoryId`.
+
+Note: the field is read-only for users who can't list the related resource. It still shows the current record, but offers no options and never writes.
+
+## hasMany
+
+A `hasMany` field shows a table on the detail page. It uses the related resource's columns, except the `belongsTo` back to this record. A category's products table has no Category column.
+
+## manyToMany
+
+A `manyToMany` field, the second one marked above, is a searchable picker that adds and removes related records. It submits the related records' keys under the relation's singular name plus `Ids` (`tags` → `tagIds`). So your validator checks an array:
+
+<DemoCode file="app/validators/product.ts" region="tag-ids" />
+
+Azu syncs the pivot rows with the validator's output, in the same transaction as the save. A failure rolls back both.
+
+- Leave `tagIds` out of a request, and the attached records stay as they are.
+- Send an empty list to detach them all.
+- This works when the form uploads a file too. Azu sends an empty selection as the string `[]`, and restores the array before validation.
+
+### When the picker is read-only
+
+The picker is read-only for users who can't list the related resource.
+
+It's also read-only on edit when the related resource's `query` scope hides some attached records. The form explains why. The server checks the scope again on submit, and ignores changes to that field. The whole attachment set is kept. Its current keys still reach the validator.
+
+### More than 200 attached
+
+The edit form loads up to 200 attached records. For a record with more, the field is read-only, with a note: "350 tags attached; too many to edit here". It leaves `tagIds` out, so saving never detaches the ones it didn't load.
+
+The server applies the same rule. A `tagIds` sent anyway is ignored, and doesn't reach your validator either.
+
+## Keys
+
+Picker and filter values use Lucid's configured relation key: `localKey` for `belongsTo`, and `relatedKey` for `manyToMany`. Detail links still use the related record's primary key.
+
+## Filters
+
+`filter.belongsTo('category')` filters the list by a related record. See [Filters](/docs/guides/filters/#filter-kinds).

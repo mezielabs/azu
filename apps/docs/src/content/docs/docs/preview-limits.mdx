@@ -1,0 +1,40 @@
+---
+title: Preview limits
+description: What the 0.1.0 preview doesn't do yet, so you can plan around it.
+---
+
+The preview is for early testers. These are the gaps you're most likely to hit, and what to do about each one. [Roadmap](/docs/roadmap/) says what comes next.
+
+## The interface is English only
+
+Azu's built-in interface is in English. It doesn't route its strings through AdonisJS i18n yet, and there's no panel-wide locale setting.
+
+Your own labels show as you write them: resource, field, column, and action labels, and your validators' messages. They don't translate Azu's buttons, status messages, or counts.
+
+Dates and numbers are formatted with `Intl`, but that isn't full translation.
+
+Until i18n lands, a fully translated admin needs your own [component overrides or published pages](/docs/guides/customising/).
+
+## Uploads need a public disk
+
+Azu links `file` and `image` fields with Drive's `getUrl()`, which suits public disks only. Private disks and signed, expiring URLs (`getSignedUrl()`) aren't supported yet.
+
+:::caution
+Don't use `file` or `image` fields for files that must stay private. Anyone with a file's link can open it.
+:::
+
+[Uploads](/docs/guides/uploads/) covers the rest.
+
+## No hot reload on the Vue starter kit
+
+On the Vue kit, the admin has no hot reload in dev, so an edit reloads the page. `npm run typecheck` doesn't check the admin's TSX either. Tracked in [#66](https://github.com/mezielabs/azu/issues/66).
+
+## Very broad searches on very large tables
+
+A search matching nearly every row of a huge table is slower than the rest of the list. It's about 250 ms at p95 on 100,000 rows, against a 200 ms target. Tracked in [#67](https://github.com/mezielabs/azu/issues/67).
+
+Searches that narrow the list stay fast. On Postgres, add trigram indexes as [Columns and lists](/docs/guides/columns-and-lists/#search) describes.
+
+## The API starter kit
+
+The API kit has no browser sign-in, so the panel can't work there yet. See [Starter kits](/docs/starter-kits/#api).

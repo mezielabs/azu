@@ -32,6 +32,13 @@ const VITE_PROVIDER = '@adonisjs/vite/vite_provider'
 const EDGE_PROVIDER = '@adonisjs/core/providers/edge_provider'
 const INERTIA_PROVIDER = '@adonisjs/inertia/inertia_provider'
 
+/**
+ * Azu's "Starter kits" docs page, which the setup messages point to.
+ * TODO: azuadmin.com isn't live yet; the page's source is
+ * apps/docs/src/content/docs/docs/starter-kits.mdx.
+ */
+export const STARTER_KITS_DOCS = 'https://azuadmin.com/docs/starter-kits/'
+
 /** The config file an app without Inertia adds for the admin panel alone */
 export const INERTIA_CONFIG_SNIPPET = `// config/inertia.ts
 import { defineConfig } from '@adonisjs/inertia'
@@ -156,6 +163,6 @@ export function runtimeSetupProblem(app: {
   return [
     'Azu renders the admin panel with Inertia and Vite, and this app is missing part of that setup:',
     ...steps.map((step, index) => `${index + 1}. ${step}`),
-    'See "Starter kits" in the @mezielabs/azu README.',
+    `See "Starter kits" in the Azu docs: ${STARTER_KITS_DOCS}`,
   ].join('\n')
 }

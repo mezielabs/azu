@@ -1,0 +1,62 @@
+---
+title: Starter kits
+description: Which AdonisJS starter kits Azu works with in the preview, and the extra steps some of them need.
+---
+
+AdonisJS has four official starter kits. Azu works on three of them in the preview. Here's what each one needs.
+
+| Kit | Status | What you do |
+| --- | --- | --- |
+| React (Inertia) | Supported | [Installation](/docs/installation/) as written. |
+| Vue (Inertia) | Supported, with two limits | Installation as written. |
+| Hypermedia (Edge) | Supported, with two manual steps | Add Inertia for `/admin` first. |
+| API | Not supported in the preview | No browser sign-in for the panel. |
+
+These results come from fresh installs of `0.1.0-preview.0` into new apps from each kit, on 2 November 2026.
+
+## React
+
+The documented steps reach a working `/admin` with a generated resource and an Overview screen. You change nothing in the app's own code beyond the `accessAdmin` rule and, if you want one, `home`. Azu's commands take about a minute on top of creating the app.
+
+## Vue
+
+The same steps work. Azu's admin is React, beside your Vue pages. One `node ace build` builds both entries, and your pages load only their own.
+
+Two limits on this kit, tracked in [#66](https://github.com/mezielabs/azu/issues/66):
+
+- The admin has no hot reload in dev. An edit reloads the page.
+- `npm run typecheck` doesn't check the admin's TSX.
+
+## Hypermedia
+
+The Hypermedia kit has no Inertia, and `@adonisjs/inertia` has no configure step. So add Inertia for `/admin` by hand. These two steps don't touch your Edge pages.
+
+1. Add `config/inertia.ts`:
+
+   ```ts title="config/inertia.ts"
+   import { defineConfig } from '@adonisjs/inertia'
+
+   export default defineConfig({
+     ssr: { enabled: false, entrypoint: 'inertia/ssr.tsx' },
+   })
+   ```
+
+2. Register the provider in `adonisrc.ts`:
+
+   ```ts title="adonisrc.ts"
+   () => import('@adonisjs/inertia/inertia_provider')
+   ```
+
+Then follow [Installation](/docs/installation/). Without these steps, `node ace configure @mezielabs/azu` changes nothing and lists them for you. If you skip it, `/admin` throws [`E_AZU_SETUP`](/docs/reference/errors/#e_azu_setup) with the same steps.
+
+## API
+
+The API kit isn't supported in the preview. Its default guard issues access tokens, and its only login is a JSON endpoint. It has no Vite or Edge either.
+
+You could add Vite, Edge, and Inertia for `/admin` alone. But a working panel needs a session login page, and the API kit doesn't have one.
+
+## What works on every supported kit
+
+- **SSR:** with your app's SSR on, your pages render on the server. `/admin` renders in the browser. [Troubleshooting](/docs/troubleshooting/#server-side-rendering) explains why.
+- **CSP:** the panel works under Shield's strict nonce-only policy. See [Troubleshooting](/docs/troubleshooting/#content-security-policy).
+- **Your public pages never load admin code**, on React, Vue, and Hypermedia alike.

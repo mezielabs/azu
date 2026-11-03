@@ -4,21 +4,6 @@ import ace from '@adonisjs/core/services/ace'
 import app from '@adonisjs/core/services/app'
 import ts from 'typescript'
 
-const README = new URL('../../../../../README.md', import.meta.url)
-
-/**
- * The README's "Customising" section, as code blocks: each one's
- * language and source.
- */
-async function customisingExamples() {
-  const readme = await readFile(README, 'utf8')
-  const section = readme.slice(readme.indexOf('## Customising'), readme.indexOf('## Theming'))
-  return [...section.matchAll(/```(\w+)\n([\s\S]*?)```/g)].map((match) => ({
-    lang: match[1],
-    source: match[2],
-  }))
-}
-
 /**
  * Type errors in one file of the app's front end, checked against the
  * whole `inertia/tsconfig.json` program, as `pnpm typecheck` checks it
@@ -47,44 +32,14 @@ async function run(name: string, args: string[] = []) {
   return command
 }
 
-test.group('README "Customising" examples (FR-15)', (group) => {
+/**
+ * Customising (FR-15): azu:doctor on the demo, and azu:publish. The docs'
+ * Customising examples are the demo's own files (DemoCode in apps/docs),
+ * so they can't drift from the code these tests run.
+ */
+test.group('Customising: doctor and publish (FR-15)', (group) => {
   group.setup(() => ace.ui.switchMode('raw'))
   group.teardown(() => ace.ui.switchMode('normal'))
-
-  test('every component example is a file in the demo, as written', async ({ assert }) => {
-    const examples = await customisingExamples()
-    const components = examples.filter((example) =>
-      example.source.startsWith('// inertia/admin/components/')
-    )
-    assert.isAbove(components.length, 2)
-
-    for (const example of components) {
-      const path = example.source.split('\n')[0].replace('// ', '')
-      assert.equal(await readFile(app.makePath(path), 'utf8'), example.source, path)
-    }
-  })
-
-  test("every resource example is in the demo's resource it names", async ({ assert }) => {
-    const all = await customisingExamples()
-    const examples = all.filter((example) => example.lang === 'ts')
-    assert.isAbove(examples.length, 1)
-
-    for (const example of examples) {
-      // A first-line path comment names the file; the product resource otherwise
-      const named = /^\/\/ (app\/admin\/resources\/\S+\.ts)\n/.exec(example.source)?.[1]
-      const path = named ?? 'app/admin/resources/product_resource.ts'
-      const resource = await readFile(app.makePath(path), 'utf8')
-      const lines = example.source
-        .split('\n')
-        .map((line) => line.trim().replace(/,$/, ''))
-        .filter(
-          (line) =>
-            line && !line.startsWith('//') && !/^(\}\)|export default defineResource)/.test(line)
-        )
-      assert.isAbove(lines.length, 0, path)
-      for (const line of lines) assert.include(resource, line, path)
-    }
-  })
 
   test('azu:doctor finds nothing wrong with the demo', async ({ assert }) => {
     const command = await run('azu:doctor')

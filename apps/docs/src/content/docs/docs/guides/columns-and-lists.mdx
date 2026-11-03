@@ -1,0 +1,82 @@
+---
+title: Columns and lists
+description: The list screen's columns, search, sorting, column choices, and how it works on phones.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+Each resource gets a list screen. You choose its columns, and Azu handles paging, sorting, searching, and filtering on the server.
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="columns" />
+
+## Column kinds
+
+| Column | Shows |
+| --- | --- |
+| `column.text(name)` | The value as text. |
+| `column.number(name)`, `column.decimal(name)` | A number. `.format('currency', 'NGN')` or `.format('percent')` formats it with `Intl.NumberFormat`; decimals format from their exact strings. |
+| `column.boolean(name)` | Yes or no. |
+| `column.badge(name)` | A coloured badge. `.colors({ draft: 'gray', published: 'green' })` picks each value's colour: `gray`, `green`, `blue`, `red`, or `yellow`. |
+| `column.image(name)` | A thumbnail of an uploaded image. |
+| `column.date(name)`, `column.datetime(name)` | A date, in the admin timezone. |
+| `column.belongsTo(relation, title)` | The related record's `title` column. See [Relationships](/docs/guides/relationships/#belongsto). |
+| `column.custom(name, component)` | Your component, with no formatting of its own. See [Customising](/docs/guides/customising/#2-swap-a-component). |
+
+Every column takes `.label()`, `.component()`, and `.hiddenByDefault()`. All but `image`, `belongsTo`, and `custom` take `.sortable()`.
+
+A badge column reads its values' labels from the select field of the same name, so "draft" reads "Draft".
+
+## Everything is in the URL
+
+The list keeps its page, sort, search, filters, and columns in the URL. A reload, a bookmark, or a shared link shows the same list.
+
+Pages hold 25 rows by default. Users pick 10, 25, 50, or 100, and you set the default with `perPage` in [config/azu.ts](/docs/reference/config/).
+
+## Sorting
+
+`.sortable()` lets users sort by a column, on the server. Only persisted columns sort. A getter can't, and `defineResource` refuses it.
+
+## Search
+
+The search box matches the resource's `search` columns with `ILIKE '%term%'`:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="options" mark="search: ['name', 'sku']" title="app/admin/resources/product_resource.ts (part)" />
+
+:::caution[Large Postgres tables]
+Give the `search` columns trigram indexes, or every search scans the table.
+:::
+
+```sql
+CREATE EXTENSION pg_trgm;
+CREATE INDEX products_name_trgm ON products USING gin (name gin_trgm_ops);
+```
+
+Note: a search that matches almost every row of a very large table is still slow. See [Preview limits](/docs/preview-limits/#very-broad-searches-on-very-large-tables).
+
+## Choosing columns
+
+The **Columns** control sits beside the list's filters, or beside Sort by on phones. It shows or hides columns, including those marked `.hiddenByDefault()`. It also resets to the resource's defaults. At least one column stays visible.
+
+The choice is in the URL, as `?columns=name,price`. Paging, sorting, filtering, and searching keep it. It survives a reload, opening a record and coming back, and a shared link. Reset to defaults removes it.
+
+Names the resource doesn't list are ignored, so a stale or edited link still shows a list.
+
+Note: hiding a column is a presentation choice, not an authorisation rule. The server still decides which columns exist.
+
+## On phones
+
+On narrow screens the list becomes cards.
+
+- A card shows two details by default. Once columns are chosen, it shows every chosen one, each on its own line.
+- **Sort by** offers each sortable column in both directions.
+- **Select records** switches cards to checkbox selection. Select individual records or the whole page, then use the same bulk actions and "Select all N matching" flow.
+
+## Selection
+
+Pressing "Done selecting", paging, sorting, filtering, resizing between table and cards, or completing an action clears the selection. [Actions](/docs/guides/actions/#all-matching-rows) explains "Select all N matching".
+
+## No N+1 queries
+
+Relations shown in `belongsTo` columns are preloaded for you. Preload anything else your columns show in the resource's `query` hook:
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="options" mark="query: (q) => q.preload('category')" title="app/admin/resources/product_resource.ts (part)" />

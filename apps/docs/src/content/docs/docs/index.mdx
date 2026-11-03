@@ -1,0 +1,51 @@
+---
+title: Introduction
+description: What Azu is, why it reuses your app's own rules, and where to start.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components'
+
+Azu is an admin panel for AdonisJS 7. It reads the models, policies, and validators you already wrote. Your team or client gets a back office the same day.
+
+_Azụ_ is Igbo for "back". It's the part of your app your users never see, and the part your team lives in.
+
+:::note[Azu is in preview]
+The current release is `0.1.0-preview.0`. The API may change based on your feedback, so tell us what you'd change in [Discussions](https://github.com/mezielabs/azu/discussions). [Preview limits](/docs/preview-limits/) lists what doesn't work yet.
+:::
+
+## Why Azu
+
+Every client app needs an admin sooner or later. You can hand-build one, and write the same tables, forms, filters, and permission checks on every project. Or you can bolt on a generic tool with its own config, permissions, and validation. Those slowly drift from your app's real rules.
+
+Azu takes a different route. It doesn't add a second set of rules. It uses the ones you already have:
+
+- **Lucid models** for data and relationships.
+- **Bouncer policies** for who can see and do what.
+- **VineJS validators** for form rules and error messages.
+- **Drive** for file and image uploads.
+- **Inertia and React** for the UI, so you can replace every page and field with your own component.
+
+If your API rejects a request, Azu rejects it too. There's one source of truth, and it's your code.
+
+## What you write
+
+A resource is one file. It points at a Lucid model and borrows the model's policy and validators. Azu turns it into a list, a detail page, and create and edit forms. This is the demo store's product resource:
+
+import DemoCode from '../../../components/DemoCode.astro'
+
+<DemoCode file="app/admin/resources/product_resource.ts" region="options" title="app/admin/resources/product_resource.ts (part)" />
+
+Resources are typed against the model, so a typo like `column.text('nmae')` fails `tsc`, not your client's demo.
+
+## Start here
+
+<CardGrid>
+  <LinkCard title="Installation" description="Add Bouncer and Azu to your app, and decide who gets in." href="/docs/installation/" />
+  <LinkCard title="Quick start" description="Generate your first resource and open /admin." href="/docs/quick-start/" />
+  <LinkCard title="Resources" description="The file behind each admin page, and what it borrows from your app." href="/docs/guides/resources/" />
+  <LinkCard title="Screens" description="Pages of your own: reports, settings, and dashboards of widgets." href="/docs/guides/screens/" />
+</CardGrid>
+
+## Licence
+
+The core is free and MIT licensed, and it always will be. Azu is built by [Mezie Labs](https://mezielabs.com). [Azu Pro](/docs/roadmap/#azu-pro) will add paid extensions later.

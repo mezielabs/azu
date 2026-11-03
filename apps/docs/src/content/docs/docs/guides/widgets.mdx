@@ -1,0 +1,124 @@
+---
+title: Widgets
+description: Key figures, goals, breakdowns, and recent records on a screen, each scoped to what the user may list.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+The owner wants revenue, order counts, and low stock at a glance. A screen can show **widgets** instead of a component or a form. Each widget reads one of your resources, through that resource's `query` hook. It shows only to users who may list that resource.
+
+The demo's Overview, its home screen:
+
+<DemoCode file="app/admin/screens/overview.ts" />
+
+## Kinds
+
+- `metric.value()` is one figure.
+- `metric.progress()` is a figure against a goal.
+- `metric.partition()` is a figure per value of a column, as bars.
+- `metric.table()` is a few records, with the resource's columns.
+- `metric.trend()` is a figure over time. See [Trends](/docs/guides/trends/).
+
+A screen has `widgets`, `component`, or `form`, never two of them.
+
+## Aggregates
+
+`count(resource)` counts. `sum`, `avg`, `min`, and `max(resource, column)` aggregate a column.
+
+- Column names are typed against the resource's model, so a misspelled column fails `tsc`.
+- `sum` and the others take number columns, and the columns the resource lists with `column.decimal()`. Decimals are typed `string` on the model, so the resource is what says a column holds numbers.
+- Decimal results stay exact strings on every database. `avg` rounds to the column's scale, or two places for a number column.
+
+## Access and scoping
+
+A widget needs the resource's `viewList`. Without it, the widget isn't on the page at all.
+
+Every widget's query starts from the resource's `query` hook, then the widget's `where()`, then the range. So a user never sees totals for records they couldn't list.
+
+## Ranges
+
+A screen's `ranges` lists the ranges its switch offers. The first is the default.
+
+The ranges are `today`, `7d`, `30d`, and `90d`, plus `month`, `quarter`, and `year`, each to date. They use the panel's `timezone`. The range is in the URL as `?range=`, and the switch beside the title changes it.
+
+A widget without a `date()` is all-time. It ignores the range, and says so.
+
+## Comparisons
+
+A value widget with a `date()` is compared with the period before:
+
+- for `7d`, `30d`, and `90d`, the same number of days before.
+- for the to-date ranges, as long again from the start of the previous month, quarter, or year.
+
+It reads "▲ 12.4% from NGN 4.28M", or "New" when the period before was 0, or "No change". `.compare(false)` turns it off.
+
+For figures where down is good, `.lowerIsBetter()` colours a decrease as the good change. The arrow still shows the real direction, and the words say "better" or "worse".
+
+<DemoCode file="app/admin/screens/overview.ts" region="lower-is-better" title="app/admin/screens/overview.ts (part)" />
+
+## Large figures
+
+Figures from 1,000,000 up are abbreviated, as "NGN 4.28M" or "-NGN 1.05B". That's at most two decimals, in the widget's `format()`. It applies to value, progress, and partition widgets, and to the comparison's previous value. Smaller figures show in full.
+
+- `.compact()` abbreviates every figure ("NGN 194K"). `.compact(false)` never does. Either is a type error on tables and trends.
+- The exact figure is never lost. Screen readers read it instead of the short one, and hovering shows it.
+- A long figure shown in full wraps at a space before it splits digits.
+
+## Progress
+
+Progress has its own `period()`, not the screen's range: `day`, `week`, `month`, `quarter`, or `year`, to date. It shows how much of the goal is reached, and how far through the period you are.
+
+`goal()` takes a number or `(ctx) => number`.
+
+## Partition
+
+Partition labels come from the resource's select field or badge column. Without one, they're the value in sentence case.
+
+- Rows go largest first. Equal ones keep the options' order, then the labels'.
+- `.limit(n)` (default 5) folds the rest into "Other". "Other" applies the same aggregate to the omitted records, including a weighted average for `avg`.
+- Count and sum show percentages of the total. Averages, minima, and maxima show values and relative bars, without percentages.
+- In the data payload, `total` is the aggregate over all matching records. Each row's `percent` is `null` for `avg`, `min`, and `max`.
+
+## Tables
+
+Tables use the resource's columns, or `.columns([...])`, a typed subset, and its preloads. Each row links to its record when the user may `view` it.
+
+- A table wider than its card scrolls sideways inside it, like the list.
+- `.latest(column)` or `.orderBy(column, direction)` order the rows.
+- `.limit(n)` (default 5) caps them.
+
+## Links
+
+`.link(filters?)` on a value or table widget links it to the resource's list.
+
+- The list is filtered by the resource's own filters. It's filtered by the range too, if the resource has a `dateRange` filter on the `date()` column.
+- Partition rows link to the list, filtered by their value. That needs a select filter on that column.
+- Filter names are checked at boot.
+
+Note: keep a widget's `link()` filters matching its `where()`. Azu can't turn a query into list filters. A link narrows the list only the ways its filters can.
+
+## Your own figure
+
+`metric.value(label).using(async (ctx, range) => number)` computes a value yourself. It's called again with the previous period's range for the comparison.
+
+With no resource, there's no automatic access check or scoping. So it needs `.ability(ability)`:
+
+<DemoCode file="app/admin/screens/overview.ts" region="using" title="app/admin/screens/overview.ts (part)" />
+
+## Width
+
+Values, progress, and partitions take one of the grid's four columns, tables two, and trends all four. `.width(1 | 2 | 3 | 4)` changes it.
+
+The grid is two columns on narrower screens, and one on phones.
+
+## Loading
+
+Each widget loads on its own after the page appears. So a slow or failing widget never holds up the others.
+
+A widget that throws shows "Couldn't load this" in its card. Its Try again button reloads that widget alone. The error goes to your log with the screen's and widget's names.
+
+## Indexes
+
+Each widget queries its resource's table with the range on the `date()` column. Index that column, and a table widget's sort column.
+
+The demo's Overview widgets take under 30 ms each at p95. That's on 100,000 orders on Postgres, with an index on `placed_at`.

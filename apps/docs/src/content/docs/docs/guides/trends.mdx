@@ -1,0 +1,47 @@
+---
+title: Trends
+description: A figure over time, bucketed by hour, day, week, or month, with the period before for comparison.
+---
+
+import DemoCode from '../../../../components/DemoCode.astro'
+
+"Is revenue going up?" needs a line, not a number. A trend is a widget that counts along a date column in buckets.
+
+<DemoCode file="app/admin/screens/overview.ts" region="trend" title="app/admin/screens/overview.ts (part)" />
+
+`date()` is required on a trend. Everything else in [Widgets](/docs/guides/widgets/) about aggregates, access, ranges, and formats applies.
+
+## Buckets
+
+The bucket follows the screen's range:
+
+| Range | Bucket |
+| --- | --- |
+| `today` | hours |
+| `7d`, `30d`, `90d`, `month` | days |
+| `quarter` | weeks |
+| `year` | months |
+
+`.by('hour' | 'day' | 'week' | 'month')` fixes it instead, up to 100 buckets.
+
+Buckets are in the panel's timezone. Weeks start on Monday. Days across a clock change are 23 or 25 hours.
+
+Note: `azu:doctor` reports a `by()` that can need more than 100 buckets in one of the screen's ranges.
+
+## Looks
+
+- It's a line by default, or bars with `.bars()`.
+- `.compare()` adds the previous period as a muted line.
+- `.lowerIsBetter()` works as it does on values.
+- It spans the whole grid by default.
+
+## Reading it
+
+- Hover or focus the chart for each bucket's value.
+- Use the arrow keys to move between buckets.
+- Press Enter or click to open the list, filtered to that day, week, or month.
+- "View as table" shows the numbers.
+
+## Speed
+
+These figures are p95, on 100,000 orders on Postgres, with an index on `placed_at`. The demo's revenue trend with `compare()` takes 59 ms over 90 days by day. Over a year by month, it takes 26 ms.

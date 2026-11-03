@@ -17,3 +17,4 @@ coverage/
 .claude/settings.local.json
 
 /artifacts/
+.astro/

@@ -51,7 +51,7 @@ The first preview, for early testers. Install it with the `preview` tag (see the
 
 ### Reviewed
 
-Everything above went through [the 22 October 2026 review](docs/reviews/2026-10-22-azu-review.md) before this release; its fixes (C01–C03, U01–U09, R01–R05) are part of the features they touch.
+Everything above went through [the 22 October 2026 review](https://github.com/mezielabs/azu/blob/main/docs/reviews/2026-10-22-azu-review.md) before this release; its fixes (C01–C03, U01–U09, R01–R05) are part of the features they touch.
 
 ### Release
 

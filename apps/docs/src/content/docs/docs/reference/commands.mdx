@@ -1,0 +1,83 @@
+---
+title: Ace commands
+description: Azu's Ace commands, their arguments, and their flags.
+---
+
+Azu's commands share one `azu:` namespace, so they sit together in `node ace list`.
+
+| Command | What it does |
+| --- | --- |
+| `node ace configure @mezielabs/azu` | Configures Azu once it's installed. See [Installation](/docs/installation/). |
+| [`node ace azu:resource <Model>`](#azuresource) | Generates a resource from a model, with its validators. |
+| [`node ace azu:action <Name>`](#azuaction) | Creates a reusable row or bulk action. |
+| [`node ace azu:screen <Name>`](#azuscreen) | Creates a screen and its component, or a form screen. |
+| [`node ace azu:publish [page]`](#azupublish) | Copies one of Azu's pages into your app to edit. |
+| [`node ace azu:doctor`](#azudoctor) | Checks your setup. |
+
+## configure
+
+`node ace configure @mezielabs/azu` checks prerequisites first. If Vite, Edge, Inertia, or a session guard is missing, it writes and installs nothing. It exits with 1 and names each fix.
+
+From 0.1.0, `node ace add @mezielabs/azu` installs and configures in one step.
+
+## azu:resource
+
+```sh
+node ace azu:resource Product
+```
+
+Generates a resource from a model, read from the model and its database table. It writes `app/admin/resources/<model>_resource.ts`, plus create and update validators in `app/validators`.
+
+| Flag | What it does |
+| --- | --- |
+| `--no-validator` | Skips the validators. |
+| `--policy` | Creates a policy when the model has none. It lets admin users list, view, create, and update. |
+| `--readonly` | List and detail only: no validators, and a policy without `create` or `update`. |
+
+## azu:action
+
+```sh
+node ace azu:action MarkAsPaid
+```
+
+Creates a reusable row action in `app/admin/actions`. It has an ability, a confirmation, and a handler that uses the action's transaction. The ability is the name in camelCase: `MarkAsPaid` becomes `markAsPaid`.
+
+| Flag | What it does |
+| --- | --- |
+| `--bulk` | Makes a bulk action, for selected rows. |
+| `--force`, `-f` | Overwrites the file if it exists. |
+
+It refuses the name `delete`, which every resource with a `delete` policy method already has.
+
+## azu:screen
+
+```sh
+node ace azu:screen SalesReport
+```
+
+Creates a [screen](/docs/guides/screens/) in `app/admin/screens` and its component in `inertia/admin/components`. It's ready to open at `/admin/screens/<name>`, with `accessAdmin` as its ability.
+
+| Flag | What it does |
+| --- | --- |
+| `--form` | Writes a [form screen](/docs/guides/screen-forms/) and its validator in `app/validators` instead, with no component. |
+| `--force`, `-f` | Overwrites the files if they exist. |
+
+## azu:publish
+
+```sh
+node ace azu:publish resource/index
+```
+
+Copies one of Azu's pages into `inertia/admin/pages` for editing, stamped with the version it came from. Without a page, it lists them. See [Customising](/docs/guides/customising/#3-publish-a-page).
+
+| Flag | What it does |
+| --- | --- |
+| `--force`, `-f` | Overwrites a page you already published. |
+
+## azu:doctor
+
+```sh
+node ace azu:doctor
+```
+
+Boots your app and checks config, policies, validators, components, widgets, and published pages. It exits with 1 when it finds an error. [azu:doctor checks](/docs/reference/doctor/) lists every check.

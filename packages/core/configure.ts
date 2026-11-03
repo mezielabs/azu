@@ -12,7 +12,11 @@ import { existsSync } from 'node:fs'
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import type Configure from '@adonisjs/core/commands/configure'
 import { stubsRoot } from './stubs/main.ts'
-import { checkPrerequisites, sessionGuardToUse } from './src/setup/prerequisites.ts'
+import {
+  checkPrerequisites,
+  sessionGuardToUse,
+  STARTER_KITS_DOCS,
+} from './src/setup/prerequisites.ts'
 
 /**
  * Appended to app/abilities/main.ts. Denies everyone until the app
@@ -111,7 +115,7 @@ async function ensurePrerequisites(command: Configure): Promise<boolean> {
     }
   }
   command.logger.log(
-    '\nThen run "node ace configure @mezielabs/azu" again. See "Starter kits" in the README.'
+    `\nThen run "node ace configure @mezielabs/azu" again. See "Starter kits" in the Azu docs: ${STARTER_KITS_DOCS}`
   )
   command.exitCode = 1
   return false

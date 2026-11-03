@@ -5,27 +5,31 @@ const fields = {
   name: vine.string().trim().minLength(2).maxLength(160),
   /** Sanitised HTML from the rich text field */
   description: vine.string().trim().maxLength(20000).nullable().optional(),
+  // #region thumbnail
   /** A Drive key: Azu checks and stores the upload, then validates its key */
   thumbnail: vine.string().maxLength(255).nullable().optional(),
+  // #endregion
   /**
    * A decimal column: kept as an exact string end to end, so validate
    * the format instead of parsing it into a float (`decimalString`).
    */
   price: decimalString(0),
   /**
-   * Optional: the README's ProductResource has no stock field, and the
-   * column defaults to 0
+   * Optional: the product resource has no stock field, and the column
+   * defaults to 0
    */
   stock: vine.number().withoutDecimals().min(0).optional(),
   status: vine.enum(['draft', 'published'] as const),
   isFeatured: vine.boolean().optional(),
   categoryId: vine.number().exists({ table: 'categories', column: 'id' }),
   publishedAt: vine.date().nullable().optional(),
+  // #region tag-ids
   /** The product's tags, as their keys: Azu syncs the pivot rows (FR-09) */
   tagIds: vine
     .array(vine.number().exists({ table: 'tags', column: 'id' }))
     .maxLength(10)
     .optional(),
+  // #endregion
 }
 
 /**
@@ -62,6 +66,7 @@ export const createProductValidator = labelled(
   skuFormat
 )
 
+// #region update-validator
 export const updateProductValidator = labelled(
   vine.create({
     ...fields,
@@ -82,6 +87,7 @@ export const updateProductValidator = labelled(
   labels,
   skuFormat
 )
+// #endregion
 
 /**
  * The restock action's dialog (FR-12)
