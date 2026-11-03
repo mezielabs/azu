@@ -7,7 +7,7 @@ Azu is an admin panel for AdonisJS 7. It reads the models, policies, and validat
 *Azụ* is Igbo for "back". It's the part of your app your users never see, and the part your team lives in.
 
 > [!NOTE]
-> **Azu is pre-release.** This README describes the planned v1 API, and it will change based on feedback. If you'd use Azu on a real project in the next few months, [tell us about it](https://github.com/mezielabs/azu/discussions). Early testers get preview builds from week three.
+> **Azu is in preview (0.1.0-preview.0).** The API may change based on feedback; tell us in [Discussions](https://github.com/mezielabs/azu/discussions).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/list-dark.png">
@@ -72,13 +72,16 @@ Azu's panel is an Inertia React app inside your AdonisJS app, so it needs Vite, 
 
 Details for each kit are in [docs/compatibility.md](docs/compatibility.md).
 
-Then install and configure Azu with one command:
+Then install Azu and its React package with the `preview` tag (or `pnpm add`, `yarn add`), and configure it:
 
 ```sh
-node ace add @mezielabs/azu
+npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+node ace configure @mezielabs/azu
 ```
 
-This registers the provider, creates `config/azu.ts`, mounts the panel at `/admin`, and adds a separate Vite entry so your public pages don't load any admin code.
+`@preview` goes away at 0.1.0, when `node ace add @mezielabs/azu` does both steps.
+
+Configuring registers the provider, creates `config/azu.ts`, mounts the panel at `/admin`, and adds a separate Vite entry so your public pages don't load any admin code.
 
 It also adds an `accessAdmin` ability to `app/abilities/main.ts`. It returns `false` by default, so nothing is exposed until you decide who gets in:
 
@@ -729,7 +732,7 @@ The palettes are Azu's own CSS variables (`--azu-brand`, `--azu-surface`, `--azu
 
 | Command | What it does |
 | --- | --- |
-| `node ace add @mezielabs/azu` | Installs and configures Azu |
+| `node ace configure @mezielabs/azu` | Configures Azu once it's installed (see [Installation](#installation)). From 0.1.0, `node ace add @mezielabs/azu` installs and configures it in one step |
 | `node ace azu:resource <Model>` | Generates a resource from a model, plus a create and update validator in `app/validators` unless you pass `--no-validator`. Add `--policy` to create a policy when the model has none, or `--readonly` for list and detail only |
 | `node ace azu:action <Name>` | Creates a reusable row action in `app/admin/actions`, or a bulk one with `--bulk`, with an ability, a confirmation and a handler that uses the action's transaction |
 | `node ace azu:screen <Name>` | Creates a [screen](#screens) in `app/admin/screens` and its component in `inertia/admin/components`, ready to open at `/admin/screens/<name>`. With `--form`, a [form screen](#form-screens) and its validator in `app/validators` instead |

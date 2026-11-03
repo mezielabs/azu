@@ -80,13 +80,13 @@ On `61dde23` (`pnpm pack:check` locally, and the release workflow's `packages` j
 - ⬜ **(Chimezie)** **First publish (0.1.0-preview.0):** create a short-lived granular access token on npmjs.com that can publish `@mezielabs/azu` and `@mezielabs/azu-react` (2FA bypass for automation where npm asks for it), add it to the `npm-preview` environment as the secret `NODE_AUTH_TOKEN`, and run the workflow with `publish: true`. Delete the secret and revoke the token as soon as both packages are on npm.
 - ⬜ **(Chimezie)** **Trusted publishing** then set up on npmjs.com for both packages, pointing at `mezielabs/azu`, `release.yml` and environment `npm-preview`. Later previews publish through OIDC with no token in the environment.
 - ⬜ **(Chimezie)** Approve and run the workflow.
-- ⬜ **After publishing:** both packages show a provenance badge on npmjs.com linking to the workflow run, and `npm view @mezielabs/azu dist-tags` shows `preview: 0.1.0-preview.0` with `latest` unset.
+- ⬜ **After publishing:** both packages show a provenance badge on npmjs.com linking to the workflow run, and `npm view @mezielabs/azu dist-tags` shows `preview: 0.1.0-preview.0`. `latest` may point at it too (section 7); the README installs with `@preview` either way.
 
 ## 5. Changelog
 
 - ✅ **`CHANGELOG.md`** has the unreleased `0.1.0-preview.0` entry for both packages, written from the merged PRs: the features (#37–#45, the earlier phases, and what came out of the 22 October review), with one line linking the review rather than a list of fixes to code no one has installed. Date it only after actual publication.
 
-- ⬜ **README:** update the pre-release note at the top to say the preview is on npm, with `--tag preview` in the install command until `0.1.0`.
+- ✅ **README:** the note at the top says Azu is in preview (0.1.0-preview.0), and Installation installs with `@preview` until 0.1.0. The package READMEs match.
 
 ## 6. Checks before publishing
 
@@ -108,5 +108,12 @@ All on `61dde23`, 2026-11-02.
 
 ## 7. After publishing
 
-- ⬜ The quickstart from npm, on a fresh starter kit, then time it again and update `docs/quickstart.md`. Check whether `node ace add` takes a dist-tag (`@mezielabs/azu@preview`); if it doesn't, the README's install step for the preview is `npm i @mezielabs/azu@preview @mezielabs/azu-react@preview`, then `node ace configure @mezielabs/azu`.
+**The install, checked before publishing** (2026-11-03) against a local registry: Verdaccio 7.0.2, with the tarballs `pnpm pack:check` built from `94bb98a`, published as `release.yml` does (`npm publish <tarball> --tag preview --access public`, core first, with `--provenance` off because provenance needs GitHub's OIDC token). They went into a fresh React starter kit (`create-adonisjs` 3.4.0, npm 11.19.0) whose `.npmrc` sent only the `@mezielabs` scope to Verdaccio.
+
+- **Dist-tags:** `npm view @mezielabs/azu dist-tags` showed `{ latest: '0.1.0-preview.0', preview: '0.1.0-preview.0' }`, and the same for `@mezielabs/azu-react`. `--tag preview` didn't leave `latest` unset: Verdaccio points `latest` at a package's first version, and puts it back when it's removed. Whether npmjs does the same on a first publish shows only after it; the README's install step works either way.
+- **`npm i @mezielabs/azu@preview @mezielabs/azu-react@preview`, then `node ace configure @mezielabs/azu`:** installs both and configures, with no prompt for the React package, since it's already listed. This is the README's install step.
+- **`node ace add @mezielabs/azu@preview`:** installs core, then fails with `Cannot find module "@mezielabs/azu@preview"` and exit 1. `ace add` (`@adonisjs/core` 7.6) passes the name, tag included, to `configure`, which imports it as a module name. Running `node ace configure @mezielabs/azu` afterwards finishes the install.
+- **Plain `node ace add @mezielabs/azu`:** with `latest` set, as on Verdaccio, it installs and configures the preview. If npmjs leaves `latest` unset, it fails at install with `ETARGET No matching version found`: npm's resolver finds no `latest`, and a prerelease doesn't match `*`. Configure's own install of `@mezielabs/azu-react` names no tag, so it would fail the same way. The README leaves it out until 0.1.0 in both cases: when `latest` is the first preview, later previews published with `--tag preview` leave it behind on `0.1.0-preview.0`.
+
+- ⬜ The quickstart from npm, on a fresh starter kit, with the README's install step, then time it again and update `docs/quickstart.md`.
 - ⬜ Announce to the early testers in the repo's Discussions, with the changelog entry and the quickstart.

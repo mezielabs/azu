@@ -36,7 +36,7 @@ Each app followed the README's Installation and Quick start, with the tarballs i
 
 1. `npx create-adonisjs@3.4.0 <app> --kit=<kit> --pkg=npm`
 2. `node ace add @adonisjs/bouncer`
-3. `npm install <mezielabs-azu-0.1.0-preview.0.tgz> <mezielabs-azu-react-0.1.0-preview.0.tgz>`, then `node ace configure @mezielabs/azu` (what `node ace add @mezielabs/azu` does once the packages are on npm)
+3. `npm install <mezielabs-azu-0.1.0-preview.0.tgz> <mezielabs-azu-react-0.1.0-preview.0.tgz>`, then `node ace configure @mezielabs/azu` (the preview's install from npm is the same two steps, with `@preview` tags: [release notes](release.md#7-after-publishing))
 4. `accessAdmin` lets in one test email; `node ace azu:resource User --policy`; `node ace azu:screen Overview`; `home: 'overview'` in `config/azu.ts`
 5. `node ace codegen`, then the kit's `npm run typecheck`
 6. `node ace serve --hmr`, sign up through the kit's page, then `/admin`, `/admin/resources/users` and a user's edit page
