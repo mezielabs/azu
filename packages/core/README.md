@@ -8,4 +8,11 @@ See the [installation and resource guide](https://github.com/mezielabs/azu#insta
 
 Requires Node 24.21+, AdonisJS 7, Lucid, Auth, Bouncer, and Inertia with React. Drive is optional unless resources use file/image fields. Rich text and navigation icons have optional frontend peers; the guide covers configuration.
 
-The preview source is being prepared for publication. Until the owner publishes it, install the paired tarballs and run `node ace configure @mezielabs/azu`. After publication, use `node ace add @mezielabs/azu@preview`; review the generated access ability before granting admin access.
+Install both packages with the `preview` tag, then configure:
+
+```sh
+npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+node ace configure @mezielabs/azu
+```
+
+`@preview` goes away at 0.1.0, when `node ace add @mezielabs/azu` does both steps. Review the generated `accessAdmin` ability before granting admin access.
