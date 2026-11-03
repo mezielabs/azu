@@ -1,26 +1,32 @@
 ---
 /**
- * The "azu" text wordmark, until the logo is chosen. Replaces
- * Starlight's SiteTitle; the site's name stays "Azu" for page titles.
+ * The Azu wordmark (brand v0.2), one file per theme. Replaces Starlight's
+ * SiteTitle rather than using its `logo` config: with `replacesTitle`,
+ * Starlight keeps a screen-reader copy of the title beside the logo's
+ * alt text, so the link would read "Azu Azu". Here only the visible
+ * image is in the accessibility tree.
  */
+import { Image } from 'astro:assets'
+import wordmark from '../assets/brand/azu-wordmark.svg'
+import wordmarkDark from '../assets/brand/azu-wordmark-dark.svg'
+
 const { siteTitleHref } = Astro.locals.starlightRoute
 ---
 
-<a href={siteTitleHref} class="wordmark" aria-label="Azu home">
-  <span aria-hidden="true">azu</span>
+<a href={siteTitleHref} class="site-title">
+  <Image src={wordmark} alt="Azu" class="dark:sl-hidden" loading="eager" />
+  <Image src={wordmarkDark} alt="Azu" class="light:sl-hidden" loading="eager" />
 </a>
 
 <style>
-  .wordmark {
+  .site-title {
     display: flex;
     align-items: center;
-    color: var(--sl-color-white);
-    font-family: var(--__sl-font);
-    font-size: 1.625rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 1;
     text-decoration: none;
-    white-space: nowrap;
+  }
+
+  .site-title :global(img) {
+    height: 1.75rem;
+    width: auto;
   }
 </style>
