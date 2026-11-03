@@ -40,7 +40,7 @@ const azuConfig = defineConfig({
    * readable. The theme follows the OS until the user picks Light or
    * Dark from the account menu.
    */
-  brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#0d9488' },
+  brand: { name: 'Azu Store', logo: '/images/logo.svg', color: '#b0472a' },
   // #endregion
 
   // #region navigation

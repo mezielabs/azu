@@ -50,8 +50,8 @@ test.group('Theming (FR-14)', (group) => {
     const page = await visit('/admin/resources/products')
     await page.waitForSelector('.azu-main')
 
-    // brand.color is #0d9488, 3.7:1 on white: the light palette darkens it
-    // to reach 4.5:1, and the dark one keeps or lightens it
+    // brand.color is Azu's Clay, #b0472a: 5.6:1 on white, so the light
+    // palette keeps it; 3.6:1 on the dark surface, so the dark one lightens it
     const light = await variable(page, '--azu-brand')
     assert.notEqual(light, '#2563eb')
     assert.isAtLeast(contrast(light, await variable(page, '--azu-surface')), 4.5)

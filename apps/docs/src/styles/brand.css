@@ -134,3 +134,15 @@ h1#_top {
   display: none;
 }
 
+/* The landing hero's mark: Starlight sizes hero images for illustrations
+   (up to 25rem); the mark is a 64px tile, so keep it compact */
+.hero > img {
+  width: min(30%, 7rem);
+}
+
+@media (min-width: 50rem) {
+  .hero > img {
+    width: min(100%, 12rem);
+    justify-self: center;
+  }
+}
