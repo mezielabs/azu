@@ -22,7 +22,11 @@ Here's the demo's product policy:
 | `delete` | The built-in Delete row and bulk actions. |
 | Your own, such as `publish` | Actions and fields that name it with `.ability('publish')`. |
 
-`view`, `update`, `delete`, and your own methods get the record too, so a rule can depend on it.
+`view`, `update`, and `delete` receive the record. A custom method receives it for actions and for fields on edit and detail pages. On create, the field check runs before a record exists.
+
+:::caution[List data]
+`viewList` allows the list's row data, including IDs, titles, and column values. `view` controls opening a row's detail page. To restrict which rows someone can list, scope the resource's `query`.
+:::
 
 ## Hiding is a convenience
 
@@ -33,6 +37,8 @@ That includes each record in a bulk action. Records the user can't touch are ski
 ## Fields and actions
 
 `.ability('publish')` on a field shows it only to users your policy's `publish` method allows. Azu checks it with the record on edit. A field the user can't see is never read from the request, either.
+
+Keep sensitive attributes out of `columns` and `title`. A field's `.ability()` applies to the field, while Azu sends the resource's columns separately. Those columns can also appear on a detail page when the user has no visible fields.
 
 On an action, `.ability()` names the policy method checked for each record. See [Actions](/docs/guides/actions/#permissions).
 

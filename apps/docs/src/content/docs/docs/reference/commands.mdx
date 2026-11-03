@@ -16,7 +16,14 @@ Azu's commands share one `azu:` namespace, so they sit together in `node ace lis
 
 ## configure
 
-`node ace configure @mezielabs/azu` checks prerequisites first. If Vite, Edge, Inertia, or a session guard is missing, it writes and installs nothing. It exits with 1 and names each fix.
+`node ace configure @mezielabs/azu` checks prerequisites before writing files or installing packages. It exits with 1 if any of these checks fail:
+
+- `vite.config.ts` exists, along with either `config/vite.ts` or the Vite provider registration.
+- The Edge provider is registered in `adonisrc.ts`.
+- `config/inertia.ts` exists.
+- `config/auth.ts` declares a session guard.
+
+If the Vite or Inertia config exists but configure can't confirm its provider, it warns and continues. Register the provider if it's missing. Azu checks for both at runtime and reports [`E_AZU_SETUP`](/docs/reference/errors/#e_azu_setup) if either is unavailable.
 
 From 0.1.0, `node ace add @mezielabs/azu` installs and configures in one step.
 
@@ -31,8 +38,10 @@ Generates a resource from a model, read from the model and its database table. I
 | Flag | What it does |
 | --- | --- |
 | `--no-validator` | Skips the validators. |
-| `--policy` | Creates a policy when the model has none. It lets admin users list, view, create, and update. |
-| `--readonly` | List and detail only: no validators, and a policy without `create` or `update`. |
+| `--policy` | Generates a missing policy. It allows listing, viewing, and editing for anyone who passes `accessAdmin`. It allows creation when generated fields cover all required columns. |
+| `--readonly` | Skips validator generation. With `--policy`, a newly generated policy allows listing and viewing only. |
+
+The generator uses an existing policy as written. For a read-only resource, make sure that policy denies `create`, `update`, and `delete`.
 
 ## azu:action
 

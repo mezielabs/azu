@@ -34,12 +34,14 @@ The demo's product validator:
 
 ## Size and type
 
-Both are checked on the server, from the file's contents, not the browser's claim.
+The server checks the size and detects the file type. It checks file signatures where available. For text, CSV, SVG, and HTML, it uses the extension. ZIP-based Office files share a signature, so the extension distinguishes them.
 
 - **Size:** `.maxSize('2mb')`. The default is 5mb for images and 10mb for files.
-- **Type:** `.accept('application/pdf')`, with wildcards like `'image/*'`. Images default to JPEG, PNG, WebP, GIF, and AVIF. Files add PDF, text, CSV, Office documents, and ZIP.
+- **Type:** `.accept('application/pdf')` replaces the default list. Images default to JPEG, PNG, WebP, GIF, and AVIF. Files add PDF, text, CSV, Office documents, and ZIP.
 
-Note: SVG and HTML are refused unless you `accept()` them, because they can carry scripts.
+:::caution[Use explicit types for images]
+The defaults exclude SVG and HTML because both can carry scripts. The `image/*` wildcard includes SVG. To limit uploads to common image formats, keep the defaults or use an explicit list such as `.accept('image/jpeg', 'image/png', 'image/webp')`.
+:::
 
 ## Saving, replacing, and removing
 
