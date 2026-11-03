@@ -2,7 +2,7 @@
 
 The first preview of `@mezielabs/azu` and `@mezielabs/azu-react`, for early testers. **Verified on `61dde23`** (#59's merge into `main`), 2026-11-02: the figures below are from that commit, and replace earlier ones. Compatibility with each official starter kit is in [`docs/compatibility.md`](compatibility.md).
 
-**Nothing here has been published.** Publishing, the `mezielabs` npm org and its trusted-publisher settings are Chimezie's to approve and do. The items marked **(Chimezie)** need him; the rest can be done in a PR.
+**Published 2026-11-03:** `0.1.0-preview.0` of both packages, from `141275c` (#73's merge into `main`) in [run 41597845479](https://github.com/mezielabs/azu/actions/runs/41597845479). npm staged the first publish: section 7 has what happened and how to approve a staged publish. Publishing, the `mezielabs` npm org and its trusted-publisher settings are Chimezie's to approve and do. The items marked **(Chimezie)** need him; the rest can be done in a PR.
 
 Status: ✅ done and checked · ⬜ to do · **(Chimezie)** needs his approval or access
 
@@ -20,7 +20,7 @@ Recorded from the compatibility pass and the benchmarks; both issues stay open f
 ## 1. Version and tag
 
 - ✅ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm pack` rewrites to `^0.1.0-preview.0`.
-- ⬜ **npm dist-tag `preview`.** Publish with `--tag preview`. Without it, npm points `latest` at the prerelease, and `npm install @mezielabs/azu` would install a preview for everyone.
+- ✅ **npm dist-tag `preview`.** Published with `--tag preview`. On the first publish npm set `latest` to `0.1.0-preview.0` as well (section 7), so `npm install @mezielabs/azu` installs the preview until `latest` moves.
 - ⬜ **Git tag** `v0.1.0-preview.0` on the release commit, and a GitHub release (marked pre-release) with the changelog entry.
 - ⬜ **Later previews** bump the last number (`0.1.0-preview.1`). `0.1.0` itself is the Phase 3 release.
 
@@ -75,16 +75,16 @@ On `61dde23` (`pnpm pack:check` locally, and the release workflow's `packages` j
 - It downloads and rechecks the inspected artifacts, prints each tarball's full `shasum` and `integrity`, then runs `npm stage publish <tarball> --tag preview --access public --provenance`, core first. `npm stage publish` runs the same code as `npm publish` (npm's `StagePublish` extends `Publish`), so OIDC, `--tag`, `--access` and `--provenance` work as before; npm then holds each version, staged, until a maintainer approves it with 2FA, core first (section 7). pnpm has already rewritten workspace peers during packing; plain npm publishing of the source folders is not supported. No Git tag or GitHub release is created automatically.
 - **If only core is staged:** the packages release together but registry operations are not atomic. Don't approve core on its own. Inspect the run and `npm stage list` before recovery, and reject what shouldn't go live; don't assume rerunning both commands succeeds over a version that's already staged.
 - Implementation references: [pnpm packing](https://pnpm.io/cli/pack), [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), [staged publishing](https://docs.npmjs.com/staged-publishing), and [npm stage](https://docs.npmjs.com/cli/v11/commands/npm-stage/).
-- ⬜ **(Chimezie)** **The `mezielabs` org on npm** exists, and the two package names are free or already in it.
+- ✅ **(Chimezie)** **The `mezielabs` org on npm** exists, and both packages are in it.
 - **No token.** The publish job stages through OIDC, with the trusted publishers set on each package's settings page on npmjs.com (Packages → the package → Settings → Trusted publishing), which allow `npm stage publish` only. The first publish needed a token, since those settings exist only once the package does; the workflow no longer reads `NODE_AUTH_TOKEN`.
-- ⬜ **(Chimezie)** **First publish (0.1.0-preview.0):** create a short-lived granular access token on npmjs.com that can publish `@mezielabs/azu` and `@mezielabs/azu-react` (2FA bypass for automation where npm asks for it), add it to the `npm-preview` environment as the secret `NODE_AUTH_TOKEN`, and run the workflow with `publish: true`. Delete the secret and revoke the token as soon as both packages are on npm.
-- ⬜ **(Chimezie)** **Trusted publishing** then set up on npmjs.com for both packages, pointing at `mezielabs/azu`, `release.yml` and environment `npm-preview`. Later previews publish through OIDC with no token in the environment.
-- ⬜ **(Chimezie)** Approve and run the workflow.
-- ⬜ **After publishing:** both packages show a provenance badge on npmjs.com linking to the workflow run, and `npm view @mezielabs/azu dist-tags` shows `preview: 0.1.0-preview.0`. `latest` may point at it too (section 7); the README installs with `@preview` either way.
+- ✅ **(Chimezie)** **First publish (0.1.0-preview.0):** done 2026-11-03, and npm staged it (section 7). The steps were: create a short-lived granular access token on npmjs.com that can publish `@mezielabs/azu` and `@mezielabs/azu-react` (2FA bypass for automation where npm asks for it), add it to the `npm-preview` environment as the secret `NODE_AUTH_TOKEN`, and run the workflow with `publish: true`. Delete the secret and revoke the token as soon as both packages are on npm.
+- ✅ **(Chimezie)** **Trusted publishing** set up on npmjs.com for both packages, pointing at `mezielabs/azu`, `release.yml` and environment `npm-preview`. They allow staging only (`npm stage publish`), not `npm publish`. The `npm-preview` environment holds no secrets.
+- ✅ **(Chimezie)** Approve and run the workflow.
+- ✅ **After publishing:** both packages carry a provenance attestation from the workflow run, and `npm view @mezielabs/azu dist-tags` shows `latest` and `preview`, both `0.1.0-preview.0` (section 7). Expect both on a package's first publish; the README installs with `@preview` either way.
 
 ## 5. Changelog
 
-- ✅ **`CHANGELOG.md`** has the unreleased `0.1.0-preview.0` entry for both packages, written from the merged PRs: the features (#37–#45, the earlier phases, and what came out of the 22 October review), with one line linking the review rather than a list of fixes to code no one has installed. Date it only after actual publication.
+- ✅ **`CHANGELOG.md`** has the `0.1.0-preview.0` entry for both packages, dated 2026-11-03, the day it went live. It's written from the merged PRs: the features (#37–#45, the earlier phases, and what came out of the 22 October review), with one line linking the review rather than a list of fixes to code no one had installed.
 
 - ✅ **README:** the note at the top says Azu is in preview (0.1.0-preview.0), and Installation installs with `@preview` until 0.1.0. The package READMEs match.
 
@@ -108,12 +108,31 @@ All on `61dde23`, 2026-11-02.
 
 ## 7. After publishing
 
+**The first publish** (2026-11-03, [run 41597845479](https://github.com/mezielabs/azu/actions/runs/41597845479) from `141275c`):
+
+- **npm staged it.** The job ran `npm publish <tarball> --tag preview --access public --provenance` with the first-publish token, core first. Each package got a public `0.0.0-stage` placeholder at once (07:51 UTC), and `0.1.0-preview.0` stayed staged, not installable, until a maintainer approved it with 2FA: `@mezielabs/azu-react` at 07:55:01, `@mezielabs/azu` at 07:55:56. npm documents the placeholder for a package's first staged publish ([staged publishing](https://docs.npmjs.com/staged-publishing)).
+- **Placeholders deprecated** by hand, so installing `0.0.0-stage` warns: "Placeholder from staged publishing. Install @mezielabs/azu@preview." (and `@mezielabs/azu-react@preview`).
+- **Dist-tags:** `latest` and `preview` both `0.1.0-preview.0`, on both packages. A package's first publish sets `latest` even with `--tag preview`, as Verdaccio did (below); later previews published with `--tag preview` leave it where it is.
+- **Integrity:** npm's `shasum` for each version matches the job log's: `5e4d5036…6e8d49` for `@mezielabs/azu`, `cf29429a…67c861` for `@mezielabs/azu-react`.
+- **Provenance:** both versions carry an SLSA v1 provenance attestation, signed in the run and logged in Sigstore's transparency log.
+- ⬜ **Next preview:** note whether trusted publishing also stages, and add it here.
+
+**Approving a staged publish.** You need npm 11.15 or later, 2FA on your npm account, and a session logged in as a maintainer (`npm login`). The `stage` subcommands other than `publish` can't use the job's OIDC token. Do this for each package, core first, since `@mezielabs/azu-react`'s peer range names core's version:
+
+1. `npm stage list @mezielabs/azu` gives the staged version's stage id.
+2. `npm stage view <stage-id>`: check the package name, the version, the tag (`preview`) and `staged by`, and that `shasum` matches the job's "Tarball checksums" step for that tarball (or, in runs before that step existed, the `npm notice shasum:` line under Tarball Details).
+3. For a full-length check, `npm stage download <stage-id>` and compare the file with the job's log: `shasum -a 256 <downloaded .tgz>` against the `sha256` the "Recheck downloaded packages" step prints, or its sha512 against the full `integrity` the "Tarball checksums" step prints. (npm's own `integrity:` line is shortened, so it can't be compared in full.)
+4. If anything differs, `npm stage reject <stage-id>` (2FA), and don't approve the other package.
+5. `npm stage approve <stage-id>` (2FA). The version then goes live with the tag it was staged with. npmjs.com's Staged Packages tab has the same Approve button.
+
+Then run `npm view @mezielabs/azu dist-tags` (and the same for `@mezielabs/azu-react`) to check the result.
+
 **The install, checked before publishing** (2026-11-03) against a local registry: Verdaccio 7.0.2, with the tarballs `pnpm pack:check` built from `94bb98a`, published as `release.yml` does (`npm publish <tarball> --tag preview --access public`, core first, with `--provenance` off because provenance needs GitHub's OIDC token). They went into a fresh React starter kit (`create-adonisjs` 3.4.0, npm 11.19.0) whose `.npmrc` sent only the `@mezielabs` scope to Verdaccio.
 
-- **Dist-tags:** `npm view @mezielabs/azu dist-tags` showed `{ latest: '0.1.0-preview.0', preview: '0.1.0-preview.0' }`, and the same for `@mezielabs/azu-react`. `--tag preview` didn't leave `latest` unset: Verdaccio points `latest` at a package's first version, and puts it back when it's removed. Whether npmjs does the same on a first publish shows only after it; the README's install step works either way.
+- **Dist-tags:** `npm view @mezielabs/azu dist-tags` showed `{ latest: '0.1.0-preview.0', preview: '0.1.0-preview.0' }`, and the same for `@mezielabs/azu-react`. `--tag preview` didn't leave `latest` unset: Verdaccio points `latest` at a package's first version, and puts it back when it's removed. npmjs did the same on the first publish (above).
 - **`npm i @mezielabs/azu@preview @mezielabs/azu-react@preview`, then `node ace configure @mezielabs/azu`:** installs both and configures, with no prompt for the React package, since it's already listed. This is the README's install step.
 - **`node ace add @mezielabs/azu@preview`:** installs core, then fails with `Cannot find module "@mezielabs/azu@preview"` and exit 1. `ace add` (`@adonisjs/core` 7.6) passes the name, tag included, to `configure`, which imports it as a module name. Running `node ace configure @mezielabs/azu` afterwards finishes the install.
-- **Plain `node ace add @mezielabs/azu`:** with `latest` set, as on Verdaccio, it installs and configures the preview. If npmjs leaves `latest` unset, it fails at install with `ETARGET No matching version found`: npm's resolver finds no `latest`, and a prerelease doesn't match `*`. Configure's own install of `@mezielabs/azu-react` names no tag, so it would fail the same way. The README leaves it out until 0.1.0 in both cases: when `latest` is the first preview, later previews published with `--tag preview` leave it behind on `0.1.0-preview.0`.
+- **Plain `node ace add @mezielabs/azu`:** with `latest` set, as on Verdaccio and now on npmjs, it installs and configures the preview. Without `latest` it would fail at install with `ETARGET No matching version found`: npm's resolver finds no `latest`, and a prerelease doesn't match `*`. The README leaves it out until 0.1.0 anyway: later previews published with `--tag preview` leave `latest` behind on `0.1.0-preview.0`, so it would install the first preview.
 
 - ⬜ The quickstart from npm, on a fresh starter kit, with the README's install step, then time it again and update `docs/quickstart.md`.
 - ⬜ Announce to the early testers in the repo's Discussions, with the changelog entry and the quickstart.

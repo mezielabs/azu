@@ -753,7 +753,7 @@ Pro is licensed per project or for unlimited projects, and is checked at install
 
 ## Roadmap
 
-Built, for the first preview:
+Built, in the first preview (0.1.0-preview.0, on npm since 2026-11-03):
 
 - [x] Resources, fields and relationships (`belongsTo`, `hasMany`, `manyToMany`), permissions, validation, row and bulk actions (including on all filtered rows), filters, form sections, list column choices, theming, navigation groups and icons, component overrides and `azu:publish`
 - [x] Screens: your own screens, navigation links, a home screen, screen forms, widgets and trends
@@ -765,7 +765,6 @@ Known limits in the preview, fixed after it:
 
 Next:
 
-- [ ] 0.1.0-preview.0 for early testers
 - [ ] Private disks for uploads, with signed URLs
 - [ ] Soft deletes (a trashed filter and restore) and global search
 - [ ] Azu's own interface in other languages, through AdonisJS i18n (it's English-only for now)
