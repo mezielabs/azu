@@ -2,6 +2,8 @@
 
 | File | Use |
 | --- | --- |
+| azu-lockup.svg | The mark and wordmark together, on light grounds: the docs header and other places with room |
+| azu-lockup-reversed.svg | The lockup on dark grounds |
 | azu-wordmark.svg | Wordmark on light grounds (Ink text, Clay dot) |
 | azu-wordmark-dark.svg | Wordmark on dark grounds (light text, Clay-on-dark dot) |
 | azu-mark.svg | The mark (direction A, Underdot) on light grounds, 32 px and up |

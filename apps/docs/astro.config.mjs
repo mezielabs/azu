@@ -4,8 +4,16 @@ import starlight from '@astrojs/starlight'
 import starlightLinksValidator from 'starlight-links-validator'
 
 // TODO: azuadmin.com isn't live yet. The build is static, so any host works.
+const site = 'https://azuadmin.com'
+
+// The social card (public/og/azu.png, 1200x630), for every page. Starlight
+// merges this after its own head tags and before a page's frontmatter head.
+const socialCard = new URL('/og/azu.png', site).href
+const socialCardAlt =
+  'Azu, the back of your AdonisJS app. npm i @mezielabs/azu@preview @mezielabs/azu-react@preview'
+
 export default defineConfig({
-  site: 'https://azuadmin.com',
+  site,
   trailingSlash: 'always',
   integrations: [
     starlight({
@@ -13,6 +21,14 @@ export default defineConfig({
       description:
         'Azu is an admin panel for AdonisJS 7, built on your Lucid models, Bouncer policies, and VineJS validators.',
       favicon: '/favicon.svg',
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: socialCard } },
+        { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+        { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+        { tag: 'meta', attrs: { property: 'og:image:alt', content: socialCardAlt } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: socialCard } },
+        { tag: 'meta', attrs: { name: 'twitter:image:alt', content: socialCardAlt } },
+      ],
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/mezielabs/azu' }],
       editLink: { baseUrl: 'https://github.com/mezielabs/azu/edit/main/apps/docs/' },
       customCss: [
@@ -28,10 +44,16 @@ export default defineConfig({
       // reached by keyboard (axe: scrollable-region-focusable), and
       // wrapped code reads better on phones
       expressiveCode: {
-        defaultProps: { wrap: true },
+        // Wrapped lines keep their indent, plus two columns, so a wrapped
+        // continuation reads as one
+        defaultProps: { wrap: true, preserveIndent: true, hangingIndent: 2 },
       },
       components: {
         SiteTitle: './src/components/SiteTitle.astro',
+        // Adds Docs, Changelog and Roadmap links beside Starlight's own icons
+        SocialIcons: './src/components/SocialIcons.astro',
+        // Renders nothing on the landing page, whose Landing.astro owns its h1
+        PageTitle: './src/components/PageTitle.astro',
       },
       plugins: [starlightLinksValidator()],
       sidebar: [

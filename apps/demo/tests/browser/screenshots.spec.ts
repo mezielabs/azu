@@ -17,7 +17,7 @@ const OUT = app.makePath('../../docs/screenshots')
 test.group('Screenshots', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('captures the list, the form and dark mode', async ({ browser }) => {
+  test('captures the list, the form, the phone list and dark mode', async ({ browser }) => {
     // Postgres, the primary database: SQLite returns decimals as numbers,
     // so the form would show a price of 3250 rather than 3250.00
     if (db.connection().dialect.name !== 'postgres') {
@@ -51,7 +51,43 @@ test.group('Screenshots', (group) => {
       await form.evaluate(() => (globalThis as any).document.fonts.ready)
       await form.screenshot({ path: `${OUT}/form-${colorScheme}.png` })
 
+      // The form's card alone, for the docs landing page. A viewport tall
+      // enough for the whole card keeps the sticky action bar off it.
+      const card = await context.newPage()
+      await card.setViewportSize({ width: 1280, height: 2400 })
+      await card.goto(`/admin/resources/products/${product.id}/edit`)
+      await card.locator('[data-azu-field="tags"] [role="row"]').first().waitFor()
+      await card.locator('[data-azu-field="description"] [contenteditable="true"]').waitFor()
+      await card.evaluate(() => (globalThis as any).document.fonts.ready)
+      await card
+        .locator('.azu-form-body')
+        .screenshot({ path: `${OUT}/form-card-${colorScheme}.png` })
+
       await context.close()
+
+      // The list on a phone: cards, with Sort and Select records
+      const phone = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+        colorScheme,
+        baseURL: `http://${process.env.HOST}:${process.env.PORT}`,
+      })
+      await phone.loginAs(admin)
+
+      const cards = await phone.newPage()
+      await cards.goto('/admin/resources/products')
+      await cards.locator('.azu-list-cards .azu-card').nth(3).waitFor()
+      await cards.locator('.azu-mobile-sort').waitFor()
+      await cards.evaluate(async () => {
+        const doc = (globalThis as any).document
+        await doc.fonts.ready
+        await Promise.all([...doc.images].map((img: any) => img.decode().catch(() => {})))
+      })
+      await cards.screenshot({ path: `${OUT}/list-phone-${colorScheme}.png` })
+
+      await phone.close()
     }
   })
     .skip(!process.env.AZU_SCREENSHOTS, 'Run with pnpm screenshots')
