@@ -34,8 +34,7 @@ const INERTIA_PROVIDER = '@adonisjs/inertia/inertia_provider'
 
 /**
  * Azu's "Starter kits" docs page, which the setup messages point to.
- * TODO: azuadmin.com isn't live yet; the page's source is
- * apps/docs/src/content/docs/docs/starter-kits.mdx.
+ * The page's source is apps/docs/src/content/docs/docs/starter-kits.mdx.
  */
 export const STARTER_KITS_DOCS = 'https://azuadmin.com/docs/starter-kits/'
 

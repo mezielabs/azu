@@ -1,0 +1,18 @@
+// The docs site on Cloudflare Workers: static assets only, no Worker script
+// (`main` is optional then). Workers Builds runs `pnpm docs:build`, then
+// `npx wrangler deploy --config apps/docs/wrangler.jsonc`: see
+// docs/release.md, "Deploying the docs". Wrangler isn't a dependency.
+{
+  "name": "azu-docs",
+  // Cloudflare's docs: set it to the current date when the project starts
+  "compatibility_date": "2026-11-05",
+  "assets": {
+    // Astro's build output, relative to this file
+    "directory": "./dist",
+    // Astro writes every page as <path>/index.html (trailingSlash: 'always'),
+    // so /docs/installation/ is served and /docs/installation redirects to it
+    "html_handling": "force-trailing-slash",
+    // Unknown paths get dist/404.html, with a 404 status
+    "not_found_handling": "404-page",
+  },
+}
