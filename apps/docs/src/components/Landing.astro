@@ -25,8 +25,8 @@ import {
 import DemoCode from './DemoCode.astro'
 import lockup from '../assets/brand/azu-lockup.svg'
 import lockupReversed from '../assets/brand/azu-lockup-reversed.svg'
-import formDark from '../../../../docs/screenshots/form-dark.png'
-import formLight from '../../../../docs/screenshots/form-light.png'
+import formCardDark from '../../../../docs/screenshots/form-card-dark.png'
+import formCardLight from '../../../../docs/screenshots/form-card-light.png'
 import listDark from '../../../../docs/screenshots/list-dark.png'
 import listLight from '../../../../docs/screenshots/list-light.png'
 import listPhoneDark from '../../../../docs/screenshots/list-phone-dark.png'
@@ -53,7 +53,7 @@ const listAlt =
   "Azu's product list in the demo store: search, filters, thumbnails, prices, status badges, and stock levels"
 const listPhoneAlt = "Azu's product list on a phone: products as cards, with search, sort, and selection"
 const formAlt =
-  "The demo's product edit form: name, SKU, price in naira, a category select, and tags, grouped into sections"
+  "The demo's product edit form in sections: name, SKU, price in naira, a category select, tags, status, a description editor, and a thumbnail"
 
 const rules = [
   {
@@ -200,8 +200,8 @@ const footerLinks = [
         class="dark:sl-hidden shot-phone"
         data-shot="light-phone"
         loading="lazy"
-        widths={[390, 780]}
-        sizes="calc(100vw - 2.5rem)"
+        widths={[300, 600]}
+        sizes="min(18.75rem, calc(100vw - 2.5rem))"
       />
       <Image
         src={listPhoneDark}
@@ -209,8 +209,8 @@ const footerLinks = [
         class="light:sl-hidden shot-phone"
         data-shot="dark-phone"
         loading="lazy"
-        widths={[390, 780]}
-        sizes="calc(100vw - 2.5rem)"
+        widths={[300, 600]}
+        sizes="min(18.75rem, calc(100vw - 2.5rem))"
       />
     </div>
     <figcaption>The demo store's products, from one resource file and the app's own policy.</figcaption>
@@ -277,20 +277,20 @@ const footerLinks = [
       <figure class="form-shot">
         <div class="frame">
           <Image
-            src={formLight}
+            src={formCardLight}
             alt={formAlt}
             class="dark:sl-hidden"
             loading="lazy"
-            widths={[640, 1280, 1920]}
-            sizes="(min-width: 75rem) 35rem, (min-width: 64rem) calc(50vw - 2.5rem), calc(100vw - 2.5rem)"
+            widths={[480, 960, 1520]}
+            sizes="(min-width: 75rem) 28rem, (min-width: 64rem) calc(40vw - 2rem), calc(100vw - 2.5rem)"
           />
           <Image
-            src={formDark}
+            src={formCardDark}
             alt={formAlt}
             class="light:sl-hidden"
             loading="lazy"
-            widths={[640, 1280, 1920]}
-            sizes="(min-width: 75rem) 35rem, (min-width: 64rem) calc(50vw - 2.5rem), calc(100vw - 2.5rem)"
+            widths={[480, 960, 1520]}
+            sizes="(min-width: 75rem) 28rem, (min-width: 64rem) calc(40vw - 2rem), calc(100vw - 2.5rem)"
           />
         </div>
         <figcaption>
@@ -369,6 +369,7 @@ const footerLinks = [
           Azu is MIT licensed. The API may still change, so tell us what you'd change before it
           settles.
         </p>
+        <a class="limits-link" href="/docs/preview-limits/">See what's not ready yet</a>
         <div class="open-source-actions">
           <a class="btn on-ink-primary" href={discussions}>Join the discussion</a>
           <a class="btn on-ink-secondary" href={github}>
@@ -417,7 +418,18 @@ const footerLinks = [
       try {
         await navigator.clipboard.writeText(button.dataset.copy ?? '')
       } catch {
-        if (status) status.textContent = "Couldn't copy. Select the command instead."
+        // Select the command (after the $ prompt), so it's ready to copy by hand
+        const code = button.parentElement?.querySelector('code')
+        const selection = window.getSelection()
+        if (code && selection) {
+          const range = document.createRange()
+          range.selectNodeContents(code)
+          const prompt = code.querySelector('.prompt')
+          if (prompt) range.setStartAfter(prompt)
+          selection.removeAllRanges()
+          selection.addRange(range)
+        }
+        if (status) status.textContent = "Couldn't copy, so the command is selected for you."
         return
       }
       button.dataset.copied = ''
@@ -500,6 +512,19 @@ const footerLinks = [
 
   .landing code {
     font-family: var(--sl-font-mono);
+  }
+
+  .landing :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  .landing p {
+    text-wrap: pretty;
+  }
+
+  .landing p code {
+    font-size: 0.875em;
+    color: var(--sl-color-white);
   }
 
   /* Buttons */
@@ -700,6 +725,12 @@ const footerLinks = [
     .browser-bar {
       display: none;
     }
+
+    /* Narrower than the phone itself, so it reads as a picture */
+    .browser {
+      max-width: 18.75rem;
+      margin-inline: auto;
+    }
   }
 
   @media (min-width: 40rem) {
@@ -827,8 +858,9 @@ const footerLinks = [
   /* Two columns from 64rem. The file runs about twice the screenshot's
      height, so the screenshot and its caption stay in view beside it. */
   @media (min-width: 64rem) {
+    /* About 3:2, so most lines of the resource file don't wrap at 1440 */
     .write {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     }
 
     .form-shot {
@@ -848,9 +880,10 @@ const footerLinks = [
     color: var(--sl-color-white);
   }
 
+  /* The form card brings its own border, so the frame adds only the
+     rounding and the shadow */
   .frame {
     overflow: hidden;
-    border: 1px solid var(--landing-line);
     border-radius: 0.75rem;
     background: var(--landing-surface);
     box-shadow: var(--landing-shadow);
@@ -979,6 +1012,20 @@ const footerLinks = [
     font-size: var(--sl-text-lg);
     line-height: 1.6;
     color: var(--azu-on-ink-muted);
+  }
+
+  .open-source .limits-link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-height: 2.75rem;
+    color: var(--azu-clay-on-dark);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .open-source .limits-link:hover {
+    color: var(--azu-clay-on-dark-hover);
   }
 
   .open-source-actions {

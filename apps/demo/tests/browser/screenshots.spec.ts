@@ -51,6 +51,18 @@ test.group('Screenshots', (group) => {
       await form.evaluate(() => (globalThis as any).document.fonts.ready)
       await form.screenshot({ path: `${OUT}/form-${colorScheme}.png` })
 
+      // The form's card alone, for the docs landing page. A viewport tall
+      // enough for the whole card keeps the sticky action bar off it.
+      const card = await context.newPage()
+      await card.setViewportSize({ width: 1280, height: 2400 })
+      await card.goto(`/admin/resources/products/${product.id}/edit`)
+      await card.locator('[data-azu-field="tags"] [role="row"]').first().waitFor()
+      await card.locator('[data-azu-field="description"] [contenteditable="true"]').waitFor()
+      await card.evaluate(() => (globalThis as any).document.fonts.ready)
+      await card
+        .locator('.azu-form-body')
+        .screenshot({ path: `${OUT}/form-card-${colorScheme}.png` })
+
       await context.close()
 
       // The list on a phone: cards, with Sort and Select records

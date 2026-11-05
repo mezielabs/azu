@@ -3,6 +3,12 @@ title: The AdonisJS admin panel
 description: Azu is an admin panel for AdonisJS 7, built on the Lucid models, Bouncer policies, and VineJS validators you already wrote.
 template: splash
 editUrl: false
+head:
+  # Starlight's default is "article"; this tag replaces it on "/" only
+  - tag: meta
+    attrs:
+      property: og:type
+      content: website
 ---
 
 {/* No hero: Landing.astro renders the whole page, its h1 included (docs/decisions.md) */}
