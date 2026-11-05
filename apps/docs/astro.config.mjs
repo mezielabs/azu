@@ -32,6 +32,10 @@ export default defineConfig({
       },
       components: {
         SiteTitle: './src/components/SiteTitle.astro',
+        // Adds Docs, Changelog and Roadmap links beside Starlight's own icons
+        SocialIcons: './src/components/SocialIcons.astro',
+        // Renders nothing on the landing page, whose Landing.astro owns its h1
+        PageTitle: './src/components/PageTitle.astro',
       },
       plugins: [starlightLinksValidator()],
       sidebar: [

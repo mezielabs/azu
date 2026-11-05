@@ -1,32 +1,39 @@
 ---
 /**
- * The Azu wordmark (brand v0.2), one file per theme. Replaces Starlight's
- * SiteTitle rather than using its `logo` config: with `replacesTitle`,
- * Starlight keeps a screen-reader copy of the title beside the logo's
- * alt text, so the link would read "Azu Azu". Here only the visible
- * image is in the accessibility tree.
+ * The Azu lockup (mark and wordmark), one file per theme. Replaces
+ * Starlight's SiteTitle rather than using its `logo` config: with
+ * `replacesTitle`, Starlight keeps a screen-reader copy of the title beside
+ * the logo's alt text, so the link would read "Azu Azu". Here only the
+ * visible image is in the accessibility tree.
  */
 import { Image } from 'astro:assets'
-import wordmark from '../assets/brand/azu-wordmark.svg'
-import wordmarkDark from '../assets/brand/azu-wordmark-dark.svg'
+import lockup from '../assets/brand/azu-lockup.svg'
+import lockupReversed from '../assets/brand/azu-lockup-reversed.svg'
 
 const { siteTitleHref } = Astro.locals.starlightRoute
 ---
 
 <a href={siteTitleHref} class="site-title">
-  <Image src={wordmark} alt="Azu" class="dark:sl-hidden" loading="eager" />
-  <Image src={wordmarkDark} alt="Azu" class="light:sl-hidden" loading="eager" />
+  <Image src={lockup} alt="Azu" class="dark:sl-hidden" loading="eager" />
+  <Image src={lockupReversed} alt="Azu" class="light:sl-hidden" loading="eager" />
 </a>
 
 <style>
   .site-title {
     display: flex;
     align-items: center;
+    min-height: 2.75rem;
     text-decoration: none;
   }
 
   .site-title :global(img) {
-    height: 1.75rem;
+    height: 2rem;
     width: auto;
+  }
+
+  @media (min-width: 50rem) {
+    .site-title :global(img) {
+      height: 2.125rem;
+    }
   }
 </style>

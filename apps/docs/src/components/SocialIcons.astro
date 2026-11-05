@@ -1,0 +1,64 @@
+---
+/**
+ * Adds text links to the header, then Starlight's own social icons. The
+ * header keeps its default parts: this override only adds to the group
+ * Starlight renders beside the theme select.
+ */
+import Default from '@astrojs/starlight/components/SocialIcons.astro'
+
+const links = [
+  { label: 'Docs', href: '/docs/' },
+  { label: 'Changelog', href: '/docs/changelog/' },
+  { label: 'Roadmap', href: '/docs/roadmap/' },
+]
+
+const path = Astro.url.pathname
+---
+
+<nav class="header-links" aria-label="Main">
+  {
+    links.map(({ label, href }) => (
+      <a href={href} aria-current={path === href ? 'page' : undefined}>
+        {label}
+      </a>
+    ))
+  }
+</nav>
+<Default />
+
+<style>
+  .header-links {
+    display: none;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* Beside the sidebar, the search box needs the room until 72rem */
+  @media (min-width: 72rem) {
+    .header-links {
+      display: flex;
+    }
+  }
+
+  @media (min-width: 50rem) {
+    :global(:root:not([data-has-sidebar])) .header-links {
+      display: flex;
+    }
+  }
+
+  .header-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: 0.75rem;
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+  }
+
+  .header-links a:hover,
+  .header-links a[aria-current='page'] {
+    color: var(--sl-color-text-accent);
+  }
+</style>

@@ -1,0 +1,13 @@
+---
+/**
+ * Starlight's page title, except on the landing page: there Landing.astro
+ * renders the whole page, its h1 (`#_top`, the skip link's target) included.
+ * See docs/decisions.md, "The landing page owns its layout".
+ */
+import Default from '@astrojs/starlight/components/PageTitle.astro'
+
+// Starlight gives the root index.mdx an empty id (normalizeIndexSlug)
+const isLanding = Astro.locals.starlightRoute.id === ''
+---
+
+{!isLanding && <Default />}

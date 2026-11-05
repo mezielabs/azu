@@ -93,6 +93,18 @@
   --azu-accent-hover: #963a20;
 }
 
+/* The dark palette as fixed values, for a surface that stays dark in both
+   themes: the landing page's open-source band */
+:root {
+  --azu-ink: #1c1916;
+  --azu-on-ink: #f3f1ee;
+  --azu-on-ink-muted: #b0a9a1;
+  --azu-on-ink-line: #3a342e;
+  --azu-on-ink-control: #6e665e;
+  --azu-clay-on-dark: #e47a57;
+  --azu-clay-on-dark-hover: #f0a285;
+}
+
 /* Expressive Code sets its light colours on each block, so match that */
 :root[data-theme='light'] .expressive-code {
   --ec-codeBg: #f1eeea;
@@ -117,6 +129,23 @@
   outline-offset: 2px;
 }
 
+/* Header touch targets at 44px: Starlight's search button is 2.5rem high
+   (and 2rem wide on phones), its social icons 2rem square */
+button[data-open-modal] {
+  height: 2.75rem;
+  min-width: 2.75rem;
+  justify-content: center;
+}
+
+.header a[rel='me'] {
+  justify-content: center;
+  align-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  margin: 0;
+}
+
 /* Headings: Instrument Sans is narrow, so tighten slightly */
 .sl-markdown-content :is(h1, h2, h3, h4),
 h1#_top {
@@ -132,17 +161,4 @@ h1#_top {
 /* The changelog page renders CHANGELOG.md, whose own "# Changelog" repeats the page title */
 .changelog > h1:first-child {
   display: none;
-}
-
-/* The landing hero's mark: Starlight sizes hero images for illustrations
-   (up to 25rem); the mark is a 64px tile, so keep it compact */
-.hero > img {
-  width: min(30%, 7rem);
-}
-
-@media (min-width: 50rem) {
-  .hero > img {
-    width: min(100%, 12rem);
-    justify-self: center;
-  }
 }
