@@ -59,12 +59,12 @@ const rules = [
   {
     icon: Database,
     title: 'Lucid models',
-    text: 'Lists, detail pages, and forms come from your models and their relationships. Relations in columns are preloaded, so there are no N+1 queries.',
+    text: "Columns, fields, and relationships come from your models. Azu preloads relations shown in columns, so lists don't run N+1 queries.",
   },
   {
     icon: ShieldCheck,
     title: 'Bouncer policies',
-    text: 'Every page and action is checked on the server, including each record in a bulk action. A missing policy method means denied.',
+    text: 'Azu checks every page and action on the server, including each record in a bulk action. A missing policy method means denied.',
   },
   {
     icon: ListChecks,
@@ -81,8 +81,8 @@ const rules = [
 const features = [
   {
     icon: Table,
-    title: 'Lists that hold up',
-    text: 'Search, sort, filters, and column choice that stays in the URL. On phones, rows become cards.',
+    title: 'Search, sort, and filter',
+    text: 'Pick your columns, and the URL keeps the view. On phones, rows become cards.',
   },
   {
     icon: Zap,
@@ -92,7 +92,7 @@ const features = [
   {
     icon: LinkIcon,
     title: 'Relationships',
-    text: 'belongsTo selects, hasMany lists, and manyToMany pickers you can search, synced on save.',
+    text: '`belongsTo` and `manyToMany` fields get searchable pickers, and `hasMany` lists the related records. Pivot rows sync on save.',
   },
   {
     icon: LayoutDashboard,
@@ -115,11 +115,11 @@ const steps = [
   { title: 'Add Bouncer', text: "The panel's access gate is a Bouncer ability." },
   {
     title: 'Install and configure Azu',
-    text: 'Configure checks your setup first. Then it adds the config, the admin entry, and an access ability.',
+    text: "Configure checks your setup first. Then it adds the config, the admin's Vite entry, and an access ability.",
   },
   {
     title: 'Let yourself in',
-    text: 'Allow your account in accessAdmin, generate a resource, and open /admin.',
+    text: 'Allow your account in `accessAdmin`, generate a resource, and open `/admin`.',
   },
 ]
 
@@ -130,6 +130,9 @@ const requirements = [
   'Node.js 24.21 or later',
   'PostgreSQL, MySQL, or SQLite',
 ]
+
+/** Splits text on backticks: odd parts are code */
+const inline = (text: string) => text.split('`')
 
 const footerLinks = [
   { label: 'Docs', href: '/docs/' },
@@ -236,7 +239,7 @@ const footerLinks = [
 
   <section class="wrap section" aria-labelledby="rules-title">
     <div class="intro">
-      <p class="eyebrow">One source of truth</p>
+      <p class="eyebrow">Your rules</p>
       <h2 id="rules-title">One set of rules, and it's yours.</h2>
       <p>
         Azu doesn't keep its own permissions or validation. It calls the code your app already runs, so
@@ -251,7 +254,7 @@ const footerLinks = [
               <RuleIcon size={20} stroke-width={1.75} />
             </span>
             <h3>{title}</h3>
-            <p>{text}</p>
+            <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
           </li>
         ))
       }
@@ -261,10 +264,10 @@ const footerLinks = [
   <section class="wrap section" aria-labelledby="write-title">
     <div class="intro">
       <p class="eyebrow">What you write</p>
-      <h2 id="write-title">One small file per resource.</h2>
+      <h2 id="write-title">A short file per resource.</h2>
       <p>
-        Point it at a model, then borrow the policy and validators you already wrote. This is the demo
-        store's categories.
+        Point it at a model, then borrow the policy and validators you already wrote. Here's the demo
+        store's category resource.
       </p>
     </div>
     <div class="write">
@@ -294,8 +297,8 @@ const footerLinks = [
           />
         </div>
         <figcaption>
-          The fields become the create and edit forms, checked by your validators. Here's the demo's
-          product form, with sections and a tag picker.
+          Fields become the create and edit forms, and your validators check every save. This is the
+          demo's product form, with sections and a tag picker.
         </figcaption>
       </figure>
     </div>
@@ -320,7 +323,7 @@ const footerLinks = [
               </span>
               <div>
                 <h3>{title}</h3>
-                <p>{text}</p>
+                <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
               </div>
             </li>
           ))
@@ -333,7 +336,7 @@ const footerLinks = [
     <div class="install">
       <div class="intro">
         <p class="eyebrow">Install</p>
-        <h2 id="install-title">From a fresh app to /admin in about two minutes.</h2>
+        <h2 id="install-title">Up and running in about two minutes.</h2>
         <p>Timed on a new React starter kit, from adding Bouncer to editing a user.</p>
         <ol class="steps" role="list">
           {
@@ -344,7 +347,7 @@ const footerLinks = [
                 </span>
                 <div>
                   <h3>{title}</h3>
-                  <p>{text}</p>
+                  <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
                 </div>
               </li>
             ))
@@ -366,7 +369,7 @@ const footerLinks = [
       <div class="open-source-copy">
         <h2 id="open-source-title">Free, open source, and in preview.</h2>
         <p>
-          Azu is MIT licensed. The API may still change, so tell us what you'd change before it
+          Azu is MIT licensed. The API may still change, so tell us what you'd do differently while it
           settles.
         </p>
         <a class="limits-link" href="/docs/preview-limits/">See what's not ready yet</a>
