@@ -46,6 +46,45 @@ const path = Astro.url.pathname
     }
   }
 
+  /*
+   * Phones, on pages without the sidebar (and so without its menu): show
+   * Docs. Starlight hides this whole group below 50rem (sl-hidden
+   * md:sl-flex), so show the group and keep the rest of it hidden as
+   * before: the GitHub icon, its divider, the theme select, and the other
+   * two links. The lockup takes the free space, so Docs and search sit
+   * together at the end, Docs first.
+   */
+  @media screen and (width < 50rem) {
+    :global(:root:not([data-has-sidebar]) .header .title-wrapper) {
+      margin-inline-end: auto;
+    }
+
+    :global(:root:not([data-has-sidebar]) .header > div:has(> site-search)) {
+      order: 1;
+    }
+
+    :global(:root:not([data-has-sidebar]) .header .right-group) {
+      display: flex;
+    }
+
+    :global(:root:not([data-has-sidebar]) .header .right-group > :not(.social-icons)),
+    :global(:root:not([data-has-sidebar]) .header .social-icons > a[rel='me']) {
+      display: none;
+    }
+
+    :global(:root:not([data-has-sidebar]) .header .social-icons::after) {
+      display: none;
+    }
+
+    :global(:root:not([data-has-sidebar])) .header-links {
+      display: flex;
+    }
+
+    .header-links a:not(:first-child) {
+      display: none;
+    }
+  }
+
   .header-links a {
     display: inline-flex;
     align-items: center;

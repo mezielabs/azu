@@ -769,10 +769,24 @@ const footerLinks = [
   /* What you write */
   .write {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: 1.5rem;
     margin-top: 3rem;
+  }
+
+  /* Two columns from 64rem. The file runs about twice the screenshot's
+     height, so the screenshot and its caption stay in view beside it. */
+  @media (min-width: 64rem) {
+    .write {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-shot {
+      position: sticky;
+      top: calc(var(--sl-nav-height) + 2rem);
+      align-self: start;
+    }
   }
 
   .note {
