@@ -40,14 +40,7 @@ export default defineConfig({
         '@fontsource/jetbrains-mono/600.css',
         './src/styles/brand.css',
       ],
-      // Wrap long lines rather than scroll: a scrolling block can't be
-      // reached by keyboard (axe: scrollable-region-focusable), and
-      // wrapped code reads better on phones
-      expressiveCode: {
-        // Wrapped lines keep their indent, plus two columns, so a wrapped
-        // continuation reads as one
-        defaultProps: { wrap: true, preserveIndent: true, hangingIndent: 2 },
-      },
+      // Code blocks: see ec.config.mjs (the brand theme, wrapping, diff tints)
       components: {
         SiteTitle: './src/components/SiteTitle.astro',
         // Adds Docs, Changelog and Roadmap links beside Starlight's own icons
