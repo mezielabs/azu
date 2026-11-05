@@ -7,7 +7,7 @@ Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and 
 > [!NOTE]
 > **Azu is in preview (0.1.0-preview.0).** The API may change based on feedback; tell us in [Discussions](https://github.com/mezielabs/azu/discussions).
 
-**Documentation: [azuadmin.com/docs](https://azuadmin.com/docs)** <!-- TODO: azuadmin.com isn't live yet; until it is, the docs' source is apps/docs/src/content/docs. -->
+**Documentation: [azuadmin.com/docs](https://azuadmin.com/docs)**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/screenshots/list-dark.png">

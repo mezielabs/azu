@@ -137,3 +137,26 @@ Then run `npm view @mezielabs/azu dist-tags` (and the same for `@mezielabs/azu-r
 
 - ⬜ The quickstart from npm, on a fresh starter kit, with the README's install step, then time it again and update `docs/quickstart.md`.
 - ⬜ Announce to the early testers in the repo's Discussions, with the changelog entry and the quickstart.
+
+## Deploying the docs
+
+The docs site, `apps/docs`, is a static build on Cloudflare Workers at [azuadmin.com](https://azuadmin.com). `apps/docs/wrangler.jsonc` makes it a Worker with static assets only, no script. `/docs/installation` redirects to `/docs/installation/` (`html_handling: "force-trailing-slash"`), and an unknown path gets the site's 404 page with a 404 status.
+
+Cloudflare Workers Builds deploys it. In the dashboard, connect `mezielabs/azu` to the `azu-docs` Worker under Settings › Builds:
+
+| Setting | Value |
+| --- | --- |
+| Git branch | `main` |
+| Root directory | Empty, the repository root |
+| Build command | `pnpm install --frozen-lockfile && pnpm docs:build` |
+| Deploy command | `npx wrangler deploy --config apps/docs/wrangler.jsonc` |
+| Preview command | `npx wrangler preview --config apps/docs/wrangler.jsonc` |
+| Build variables | `NODE_VERSION=24` |
+
+- A push to `main` builds and deploys the site.
+- With preview builds turned on, a push to any other branch runs the preview command instead. That branch gets its own preview URL, and production stays as it is.
+- Wrangler isn't a dependency, so `npx` fetches it. Previews need Wrangler 4.135.0 or later, according to Cloudflare's docs.
+
+Under the Worker's Settings › Domains & Routes, add `azuadmin.com` and `www.azuadmin.com` as custom domains. Then send www to the bare domain with a Redirect Rule in the `azuadmin.com` zone (Rules › Redirect Rules): `www.azuadmin.com` to `https://azuadmin.com`, keeping the path and query, with a 301.
+
+The release workflow's `docs-live` job needs the site live. Before publishing, it checks that `https://azuadmin.com/docs/` answers 2xx, because the packages, the README and Azu's setup messages link there. Deploy the docs before you publish.

@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 import starlightLinksValidator from 'starlight-links-validator'
 
-// TODO: azuadmin.com isn't live yet. The build is static, so any host works.
 const site = 'https://azuadmin.com'
 
 // The social card (public/og/azu.png, 1200x630), for every page. Starlight

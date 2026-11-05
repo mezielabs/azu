@@ -54,7 +54,7 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 - Admin bundle budget: `pnpm budget` (production build of the demo, then `scripts/check_admin_bundle.mjs`; CI runs it)
 - List performance (spec §2, before each release): on Postgres, `node ace migration:fresh --seed` and `node ace bench:products --count=100000` in `apps/demo`, start the demo with `NODE_ENV=production`, then `pnpm bench:list <url>`
 - Format: `pnpm format`
-- Docs: `pnpm docs:dev` (http://localhost:4321) and `pnpm docs:build`. The build fails on a broken internal link or anchor (starlight-links-validator), and on a `DemoCode` file or region that doesn't exist. CI runs it.
+- Docs: `pnpm docs:dev` (http://localhost:4321) and `pnpm docs:build`, then `pnpm --filter docs preview` to serve the build (http://localhost:4321). Cloudflare Workers Builds deploys `main` to azuadmin.com (`docs/release.md`, "Deploying the docs"). The build fails on a broken internal link or anchor (starlight-links-validator), and on a `DemoCode` file or region that doesn't exist. CI runs it.
 - Docs code samples come from the demo: `<DemoCode file="…" region="…" />` shows a demo file, or the part between `// #region name` and `// #endregion`. Renaming or removing a region in `apps/demo` means updating the page that shows it.
 - Azu's own Ace commands, in the app: `node ace azu:resource`, `azu:action`, `azu:publish`, `azu:doctor`. No `make:`/`admin:` aliases; a core test fails if the old names reappear outside `docs/decisions.md`.
 
