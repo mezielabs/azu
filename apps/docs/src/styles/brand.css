@@ -1,7 +1,7 @@
 /*
  * Azu's brand v0.2 (Clay) on Starlight's theme tokens.
- * Variable names are Starlight's own (dist/style/props.css) and
- * Expressive Code's (--ec-*, in Starlight's generated CSS).
+ * Variable names are Starlight's own (dist/style/props.css). Code
+ * blocks take their colours from ec.config.mjs's brand theme.
  *
  * Light: Ground #F7F6F4 page, Ink #1C1916 text, Clay #B0472A accent,
  * Warm gray #5A544E secondary text, borders #D6D1CA, accent-low #FBECE6,
@@ -51,11 +51,6 @@
   --sl-color-backdrop-overlay: rgb(19 18 16 / 0.72);
 
   --azu-accent-hover: #f0a285;
-
-  /* Code blocks: Expressive Code's editor and terminal bodies */
-  --ec-codeBg: #131210;
-  --ec-frm-edBg: #131210;
-  --ec-frm-trmBg: #131210;
 }
 
 :root[data-theme='light'],
@@ -103,13 +98,6 @@
   --azu-on-ink-control: #6e665e;
   --azu-clay-on-dark: #e47a57;
   --azu-clay-on-dark-hover: #f0a285;
-}
-
-/* Expressive Code sets its light colours on each block, so match that */
-:root[data-theme='light'] .expressive-code {
-  --ec-codeBg: #f1eeea;
-  --ec-frm-edBg: #f1eeea;
-  --ec-frm-trmBg: #f1eeea;
 }
 
 /* Hover: links darken (light) or lighten (dark); the primary button and
