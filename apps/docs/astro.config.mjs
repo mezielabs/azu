@@ -41,13 +41,13 @@ export default defineConfig({
       ],
       // Code blocks: see ec.config.mjs (the brand theme, wrapping, diff tints)
       components: {
+        // The landing page has its own product navigation
+        Header: './src/components/Header.astro',
         SiteTitle: './src/components/SiteTitle.astro',
         // Adds Docs, Changelog and Roadmap links beside Starlight's own icons
         SocialIcons: './src/components/SocialIcons.astro',
         // Renders nothing on the landing page, whose Landing.astro owns its h1
         PageTitle: './src/components/PageTitle.astro',
-        // Search belongs in the docs, not the landing page
-        Search: './src/components/Search.astro',
       },
       plugins: [starlightLinksValidator()],
       sidebar: [

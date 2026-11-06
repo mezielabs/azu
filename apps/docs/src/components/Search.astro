@@ -1,8 +1,0 @@
----
-/** Keep documentation search off the marketing landing page. */
-import Default from '@astrojs/starlight/components/Search.astro'
-
-const isLanding = Astro.locals.starlightRoute.id === ''
----
-
-{!isLanding && <Default {...Astro.props} />}

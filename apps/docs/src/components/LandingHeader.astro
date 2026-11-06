@@ -1,0 +1,362 @@
+---
+import { Icon } from '@astrojs/starlight/components'
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro'
+import SiteTitle from './SiteTitle.astro'
+
+const links = [
+  { label: 'Product', href: '#product-preview' },
+  { label: 'Customise', href: '#customise' },
+  { label: 'Docs', href: '/docs/' },
+]
+const github = 'https://github.com/mezielabs/azu'
+---
+
+<div class="marketing-header" data-landing-header>
+  <div class="brand"><SiteTitle /><span class="preview-label">Preview</span></div>
+  <nav class="desktop-nav" aria-label="Main">
+    {links.map(({ label, href }) => <a href={href}>{label}</a>)}
+  </nav>
+  <div class="header-actions">
+    <a class="github-link desktop-only" href={github} aria-label="Azu on GitHub">
+      <Icon name="github" size="1.25rem" />
+    </a>
+    <div class="theme-control desktop-only"><ThemeSelect /></div>
+    <a class="start-link" href="/docs/installation/">Get started <span aria-hidden="true">↗</span></a>
+    <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="landing-menu" hidden>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path class="menu-line first" d="M4 8h16" /><path class="menu-line last" d="M4 16h16" /></svg>
+    </button>
+    <noscript><a class="fallback-docs" href="/docs/">Docs</a></noscript>
+  </div>
+  <dialog class="mobile-menu" id="landing-menu" aria-label="Navigation">
+    <div class="menu-top"><SiteTitle />
+      <button class="menu-close" type="button" aria-label="Close navigation">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+      </button>
+    </div>
+    <nav class="mobile-links" aria-label="Main">
+      {links.map(({ label, href }, index) => <a href={href} style={`--link-index: ${index}`}>{label}<span aria-hidden="true">↗</span></a>)}
+      <a href={github} style="--link-index: 3">GitHub <Icon name="github" size="1.5rem" /></a>
+    </nav>
+    <div class="menu-bottom">
+      <div class="menu-theme"><span>Appearance</span><ThemeSelect /></div>
+      <a class="start-link" href="/docs/installation/">Get started <span aria-hidden="true">↗</span></a>
+      <p>Free, open source, and in preview.</p>
+    </div>
+  </dialog>
+</div>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-landing-header]')
+  if (header) {
+    const toggle = header.querySelector<HTMLButtonElement>('.menu-toggle')!
+    const dialog = header.querySelector<HTMLDialogElement>('dialog')!
+    const close = header.querySelector<HTMLButtonElement>('.menu-close')!
+    toggle.hidden = false
+    toggle.addEventListener('click', () => dialog.showModal())
+    close.addEventListener('click', () => dialog.close())
+    dialog.addEventListener('toggle', () => {
+      toggle.setAttribute('aria-expanded', String(dialog.open))
+    })
+    dialog.querySelectorAll<HTMLAnchorElement>('a').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        dialog.close()
+        if (link.hash && link.pathname === location.pathname) {
+          const section = document.getElementById(link.hash.slice(1))
+          const target = section?.querySelector<HTMLElement>('h2') ?? section
+          if (target) {
+            event.preventDefault()
+            history.pushState(null, '', link.hash)
+            section?.scrollIntoView({ block: 'start' })
+            target.tabIndex = -1
+            target.focus({ preventScroll: true })
+          }
+        }
+      })
+    })
+    matchMedia('(min-width: 56rem)').addEventListener('change', ({ matches }) => {
+      if (matches && dialog.open) {
+        dialog.close()
+        header.querySelector<HTMLAnchorElement>('.site-title')?.focus()
+      }
+    })
+  }
+</script>
+
+<style>
+  :global(:root:has(.marketing-header)) {
+    --sl-nav-height: 6rem;
+  }
+
+  :global(header.header:has(.marketing-header)) {
+    height: auto;
+    padding: 1rem 1.5rem 0;
+    border: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .marketing-header {
+    --header-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 76rem;
+    min-height: 4rem;
+    margin-inline: auto;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--sl-color-black) 94%, transparent);
+    backdrop-filter: blur(16px);
+    color: var(--sl-color-white);
+    pointer-events: auto;
+  }
+
+  .brand,
+  .header-actions,
+  .desktop-nav,
+  .menu-top,
+  .menu-theme {
+    display: flex;
+    align-items: center;
+  }
+
+  .brand {
+    gap: 0.75rem;
+  }
+  .header-actions {
+    gap: 0.5rem;
+  }
+  .preview-label,
+  .desktop-nav,
+  .desktop-only {
+    display: none;
+  }
+  .marketing-header a {
+    text-decoration: none;
+  }
+  .marketing-header :is(a, button) {
+    transition:
+      color 300ms var(--header-ease),
+      background-color 300ms var(--header-ease),
+      transform 300ms var(--header-ease);
+  }
+  .marketing-header :is(button, .start-link):active {
+    transform: scale(0.98);
+  }
+
+  .start-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: var(--sl-color-text-accent);
+    color: var(--sl-color-text-invert);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+  .start-link:hover {
+    background: var(--azu-accent-hover);
+  }
+  .menu-toggle,
+  .menu-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--sl-color-white);
+    cursor: pointer;
+  }
+  .menu-toggle[hidden] {
+    display: none;
+  }
+  .menu-toggle:hover,
+  .menu-close:hover,
+  .github-link:hover {
+    background: var(--sl-color-accent-low);
+  }
+  .menu-toggle path,
+  .menu-close path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+  }
+  .menu-line {
+    transform-origin: center;
+    transition: transform 500ms var(--header-ease);
+  }
+  .menu-toggle[aria-expanded='true'] .first {
+    transform: translateY(4px) rotate(45deg);
+  }
+  .menu-toggle[aria-expanded='true'] .last {
+    transform: translateY(-4px) rotate(-45deg);
+  }
+  .fallback-docs {
+    color: var(--sl-color-white);
+  }
+
+  .mobile-menu {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 1rem 1.5rem 1.5rem;
+    border: 0;
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    overscroll-behavior: contain;
+  }
+  .mobile-menu[open] {
+    display: flex;
+    flex-direction: column;
+    animation: menu-enter 500ms var(--header-ease);
+  }
+  .mobile-menu::backdrop {
+    background: var(--sl-color-backdrop-overlay);
+  }
+  :global(html:has(.mobile-menu[open])) {
+    overflow: hidden;
+  }
+  .menu-top {
+    justify-content: space-between;
+    flex: none;
+    min-height: 4rem;
+  }
+  .mobile-links {
+    display: grid;
+    gap: 0.5rem;
+    margin-block: 2rem;
+  }
+  .mobile-links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 4rem;
+    padding-block: 0.5rem;
+    color: var(--sl-color-white);
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 500;
+  }
+  .mobile-menu[open] .mobile-links a {
+    animation: menu-enter 500ms var(--header-ease) both;
+    animation-delay: calc(var(--link-index) * 60ms);
+  }
+  .mobile-links a:hover {
+    color: var(--sl-color-text-accent);
+  }
+  .mobile-links a > span {
+    font-size: 1.5rem;
+    color: var(--sl-color-text-accent);
+  }
+  .menu-bottom {
+    display: grid;
+    gap: 1rem;
+    margin-top: auto;
+  }
+  .menu-theme {
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .menu-bottom p {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .marketing-header :global(starlight-theme-select select) {
+    min-height: 3rem;
+    cursor: pointer;
+  }
+  @keyframes menu-enter {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (min-width: 56rem) {
+    :global(header.header:has(.marketing-header)) {
+      padding-inline: 2rem;
+    }
+    .marketing-header {
+      padding-inline: 1rem;
+    }
+    .desktop-nav {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .desktop-nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 3rem;
+      color: var(--sl-color-gray-3);
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      font-weight: 500;
+    }
+    .desktop-nav a:hover {
+      color: var(--sl-color-text-accent);
+    }
+    .desktop-only {
+      display: flex;
+    }
+    .menu-toggle {
+      display: none;
+    }
+    .github-link {
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.5rem;
+      color: var(--sl-color-white);
+    }
+    .preview-label {
+      display: inline-flex;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      background: var(--sl-color-accent-low);
+      color: var(--sl-color-accent-high);
+      font-size: 0.75rem;
+      line-height: 1rem;
+      font-weight: 500;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marketing-header :is(a, button),
+    .menu-line {
+      transition: none;
+    }
+    .mobile-menu[open],
+    .mobile-menu[open] .mobile-links a {
+      animation: none;
+    }
+    .marketing-header :is(button, .start-link):active {
+      transform: none;
+    }
+  }
+</style>
