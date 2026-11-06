@@ -1,0 +1,65 @@
+---
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+
+interface Props {
+  light: ImageMetadata
+  dark: ImageMetadata
+  phoneLight: ImageMetadata
+  phoneDark: ImageMetadata
+  alt: string
+  phoneAlt: string
+  primary?: boolean
+}
+
+const { light, dark, phoneLight, phoneDark, alt, phoneAlt, primary = false } = Astro.props
+---
+
+<div class="product-shot" data-primary-shot={primary || undefined}>
+  <Image src={light} alt={alt} class="desktop dark:sl-hidden" loading="lazy"
+    widths={[640, 1280, 1920]} sizes="(min-width: 75rem) 46rem, (min-width: 64rem) 60vw, calc(100vw - 3rem)" data-shot-theme="light" data-shot-size="desktop" />
+  <Image src={dark} alt={alt} class="desktop light:sl-hidden" loading="lazy"
+    widths={[640, 1280, 1920]} sizes="(min-width: 75rem) 46rem, (min-width: 64rem) 60vw, calc(100vw - 3rem)" data-shot-theme="dark" data-shot-size="desktop" />
+  <Image src={phoneLight} alt={phoneAlt} class="phone dark:sl-hidden" loading="lazy"
+    widths={[390, 780]} sizes="(min-width: 40rem) 0px, min(22rem, calc(100vw - 3rem))" data-shot-theme="light" data-shot-size="phone" />
+  <Image src={phoneDark} alt={phoneAlt} class="phone light:sl-hidden" loading="lazy"
+    widths={[390, 780]} sizes="(min-width: 40rem) 0px, min(22rem, calc(100vw - 3rem))" data-shot-theme="dark" data-shot-size="phone" />
+</div>
+
+<script is:inline>
+  // Promote only the visible hero image. Hidden tabs and other themes stay lazy.
+  document.querySelectorAll('[data-primary-shot] img').forEach((img) => {
+    const size = matchMedia('(max-width: 39.9375rem)').matches ? 'phone' : 'desktop'
+    if (img.dataset.shotTheme === document.documentElement.dataset.theme && img.dataset.shotSize === size) {
+      img.loading = 'eager'
+      img.fetchPriority = 'high'
+    }
+  })
+</script>
+
+<style>
+  .product-shot {
+    overflow: hidden;
+    border-radius: 0.5rem;
+  }
+  /* Only hide images: unlayered display:block would override Starlight's theme utilities. */
+  .product-shot :global(img) {
+    width: 100%;
+    height: auto;
+    vertical-align: top;
+  }
+  @media (max-width: 39.9375rem) {
+    .product-shot {
+      max-width: 22rem;
+      margin-inline: auto;
+    }
+    .product-shot :global(.desktop) {
+      display: none;
+    }
+  }
+  @media (min-width: 40rem) {
+    .product-shot :global(.phone) {
+      display: none;
+    }
+  }
+</style>

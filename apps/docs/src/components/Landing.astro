@@ -1,398 +1,269 @@
 ---
-/**
- * The landing page at "/", design "A · Product first". index.mdx uses
- * Starlight's splash template without a hero, so this component renders
- * everything under the header, the h1 included (PageTitle.astro skips this
- * page). See docs/decisions.md, "The landing page owns its layout".
- */
+/** The landing page owns its layout inside Starlight's splash template. */
 import { Image } from 'astro:assets'
 import { Code, Icon } from '@astrojs/starlight/components'
-import {
-  ArrowRight,
-  Check,
-  Copy,
-  Database,
-  HardDrive,
-  Layers,
-  LayoutDashboard,
-  Link as LinkIcon,
-  ListChecks,
-  Palette,
-  ShieldCheck,
-  Table,
-  Zap,
-} from '@lucide/astro'
+import { ArrowDown, ArrowRight, Check, Database, ShieldCheck, ListChecks } from '@lucide/astro'
 import DemoCode from './DemoCode.astro'
+import LandingShot from './LandingShot.astro'
 import lockup from '../assets/brand/azu-lockup.svg'
 import lockupReversed from '../assets/brand/azu-lockup-reversed.svg'
-import formCardDark from '../../../../docs/screenshots/form-card-dark.png'
-import formCardLight from '../../../../docs/screenshots/form-card-light.png'
-import listDark from '../../../../docs/screenshots/list-dark.png'
+import mark from '../assets/brand/azu-mark.svg'
+import markDark from '../assets/brand/azu-mark-dark.svg'
 import listLight from '../../../../docs/screenshots/list-light.png'
-import listPhoneDark from '../../../../docs/screenshots/list-phone-dark.png'
+import listDark from '../../../../docs/screenshots/list-dark.png'
 import listPhoneLight from '../../../../docs/screenshots/list-phone-light.png'
+import listPhoneDark from '../../../../docs/screenshots/list-phone-dark.png'
+import formLight from '../../../../docs/screenshots/form-light.png'
+import formDark from '../../../../docs/screenshots/form-dark.png'
+import formPhoneLight from '../../../../docs/screenshots/form-phone-light.png'
+import formPhoneDark from '../../../../docs/screenshots/form-phone-dark.png'
+import actionsLight from '../../../../docs/screenshots/actions-light.png'
+import actionsDark from '../../../../docs/screenshots/actions-dark.png'
+import actionsPhoneLight from '../../../../docs/screenshots/actions-phone-light.png'
+import actionsPhoneDark from '../../../../docs/screenshots/actions-phone-dark.png'
+import overviewLight from '../../../../docs/screenshots/overview-light.png'
+import overviewDark from '../../../../docs/screenshots/overview-dark.png'
+import overviewPhoneLight from '../../../../docs/screenshots/overview-phone-light.png'
+import overviewPhoneDark from '../../../../docs/screenshots/overview-phone-dark.png'
+import formCardLight from '../../../../docs/screenshots/form-card-light.png'
+import formCardDark from '../../../../docs/screenshots/form-card-dark.png'
 
 const github = 'https://github.com/mezielabs/azu'
-const discussions = `${github}/discussions`
-
-const installCommand = 'npm i @mezielabs/azu@preview @mezielabs/azu-react@preview'
-
-const terminal = `# 1. Bouncer
-node ace add @adonisjs/bouncer
-
-# 2. Azu, from the preview tag
-${installCommand}
-node ace configure @mezielabs/azu
-
-# 3. Allow your account in app/abilities/main.ts, then:
-node ace migration:run
-node ace azu:resource User --policy
-npm run dev`
-
-const listAlt =
-  "Azu's product list in the demo store: search, filters, thumbnails, prices, status badges, and stock levels"
-const listPhoneAlt = "Azu's product list on a phone: products as cards, with search, sort, and selection"
-const formAlt =
-  "The demo's product edit form in sections: name, SKU, price in naira, a category select, tags, status, a description editor, and a thumbnail"
-
-const rules = [
+const resource = 'app/admin/resources/product_resource.ts'
+const previews = [
   {
-    icon: Database,
-    title: 'Lucid models',
-    text: "Columns, fields, and relationships come from your models. Azu preloads relations shown in columns, so lists don't run N+1 queries.",
+    id: 'lists',
+    label: 'Lists',
+    region: 'columns',
+    title: 'Your products, ready to manage.',
+    description:
+      'Search, sort, and filter your records. The URL keeps the view, and rows become cards on phones.',
+    note: 'These columns come from the demo store’s product resource. Related records are preloaded.',
+    link: '/docs/guides/columns-and-lists/',
+    linkLabel: 'Explore lists and columns',
+    light: listLight,
+    dark: listDark,
+    phoneLight: listPhoneLight,
+    phoneDark: listPhoneDark,
+    alt: 'The Azu Store product list, with search, filters, prices, status badges, and stock levels',
+    phoneAlt: 'The Azu Store product list on a phone, with products displayed as cards',
   },
+  {
+    id: 'forms',
+    label: 'Forms',
+    region: 'fields',
+    title: 'From fields to a product form.',
+    description:
+      'Group fields into sections, pick related records, and upload images to your configured Drive disk.',
+    note: 'The same product resource defines this form. Your VineJS validators check every save.',
+    link: '/docs/guides/forms/',
+    linkLabel: 'Explore forms and fields',
+    light: formLight,
+    dark: formDark,
+    phoneLight: formPhoneLight,
+    phoneDark: formPhoneDark,
+    alt: 'The Azu Store product edit form, with details, pricing, relationship pickers, and media fields',
+    phoneAlt:
+      'The Azu Store product edit form on a phone, with name, SKU, price, and category fields',
+  },
+  {
+    id: 'actions',
+    label: 'Actions',
+    region: 'publish-action',
+    title: 'Publish a whole selection.',
+    description:
+      'Add actions for one record or many. Azu asks for confirmation and checks the policy for each record.',
+    note: 'This is the product resource’s Publish action. Its handler receives the selected records and a transaction.',
+    link: '/docs/guides/actions/',
+    linkLabel: 'Explore row and bulk actions',
+    light: actionsLight,
+    dark: actionsDark,
+    phoneLight: actionsPhoneLight,
+    phoneDark: actionsPhoneDark,
+    alt: 'The Azu Store product list with a confirmation dialog for publishing selected products',
+    phoneAlt: 'The Azu Store Publish confirmation dialog on a phone',
+  },
+]
+const rules = [
+  { icon: Database, title: 'Lucid models', detail: 'Your records and relationships.' },
   {
     icon: ShieldCheck,
     title: 'Bouncer policies',
-    text: 'Azu checks every page and action on the server, including each record in a bulk action. A missing policy method means denied.',
+    detail: 'Your permissions, checked on the server.',
   },
-  {
-    icon: ListChecks,
-    title: 'VineJS validators',
-    text: 'Forms save through your validators, and their messages show on the field. Only declared fields ever reach them.',
-  },
-  {
-    icon: HardDrive,
-    title: 'Drive disks',
-    text: "Images and files go to the disks you configured. The server checks each upload's size and type.",
-  },
+  { icon: ListChecks, title: 'VineJS validators', detail: 'Your validation, shown on each field.' },
 ]
+const terminal = `node ace add @adonisjs/bouncer
+npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+node ace configure @mezielabs/azu
 
-const features = [
-  {
-    icon: Table,
-    title: 'Search, sort, and filter',
-    text: 'Pick your columns, and the URL keeps the view. On phones, rows become cards.',
-  },
-  {
-    icon: Zap,
-    title: 'Row and bulk actions',
-    text: 'Run an action on one record or many. Each record passes its policy, and the work runs in a transaction.',
-  },
-  {
-    icon: LinkIcon,
-    title: 'Relationships',
-    text: '`belongsTo` and `manyToMany` fields get searchable pickers, and `hasMany` lists the related records. Pivot rows sync on save.',
-  },
-  {
-    icon: LayoutDashboard,
-    title: 'Screens and widgets',
-    text: 'Add dashboards, settings forms, and reports. Value, progress, partition, table, and trend metrics are built in.',
-  },
-  {
-    icon: Palette,
-    title: 'Your brand, light and dark',
-    text: 'Set one brand colour. Azu adjusts it so every text pair stays at WCAG AA in both themes.',
-  },
-  {
-    icon: Layers,
-    title: 'Override anything',
-    text: 'Swap a field or page for your own React component, or publish a page and own it. No fork.',
-  },
-]
-
-const steps = [
-  { title: 'Add Bouncer', text: "The panel's access gate is a Bouncer ability." },
-  {
-    title: 'Install and configure Azu',
-    text: "Configure checks your setup first. Then it adds the config, the admin's Vite entry, and an access ability.",
-  },
-  {
-    title: 'Let yourself in',
-    text: 'Allow your account in `accessAdmin`, generate a resource, and open `/admin`.',
-  },
-]
-
-// The Installation page's requirements, worded the same
+# Allow your account in app/abilities/main.ts, then:
+node ace migration:run
+node ace azu:resource User --policy
+npm run dev`
 const requirements = [
   'AdonisJS 7 with Lucid, Auth, and Bouncer',
   'Inertia with React',
   'Node.js 24.21 or later',
   'PostgreSQL, MySQL, or SQLite',
 ]
-
-/** Splits text on backticks: odd parts are code */
-const inline = (text: string) => text.split('`')
-
 const footerLinks = [
   { label: 'Docs', href: '/docs/' },
   { label: 'Changelog', href: '/docs/changelog/' },
   { label: 'Roadmap', href: '/docs/roadmap/' },
-  { label: 'Discussions', href: discussions },
+  { label: 'Discussions', href: `${github}/discussions` },
   { label: 'GitHub', href: github },
 ]
 ---
 
 <div class="landing not-content">
   <section class="wrap hero" aria-labelledby="_top">
-    <p class="pill"><span class="dot" aria-hidden="true"></span>In preview, for AdonisJS 7 with Inertia and React</p>
-    <h1 id="_top">The back of your AdonisJS app.</h1>
-    <p class="hero-lead">
-      Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and forms from the
-      Lucid models, Bouncer policies, and VineJS validators you already have.
+    <p class="eyebrow caption-1">The AdonisJS admin panel</p>
+    <h1 id="_top" class="heading-1">The back of your<br />AdonisJS app.</h1>
+    <p class="hero-lead body-lead">
+      Build your admin with the Lucid models, Bouncer policies, and VineJS validators you already have.
     </p>
     <div class="hero-actions">
-      <a class="btn primary" href="/docs/installation/">
-        Get started
-        <ArrowRight size={18} />
-      </a>
-      <div class="install-command">
-        <code><span class="prompt" aria-hidden="true">$ </span>{installCommand}</code>
-        <button type="button" class="copy-button" aria-label="Copy the install command" data-copy={installCommand}>
-          <Copy class="copy-idle" size={18} stroke-width={1.75} />
-          <Check class="copy-done" size={18} />
-        </button>
-        <span class="sr-only" role="status" data-copy-status></span>
-      </div>
+      <a class="btn primary button-md" href="/docs/installation/">Get started <ArrowRight size={18} aria-hidden="true" /></a>
+      <a class="text-link button-md" href="#product-preview">See how it works <ArrowDown size={16} aria-hidden="true" /></a>
     </div>
+    <p class="hero-meta caption-2"><span class="preview-dot" aria-hidden="true"></span>In preview <span aria-hidden="true">·</span> AdonisJS 7 <span aria-hidden="true">·</span> Free and MIT licensed</p>
   </section>
 
-  {/*
-    Four images, theme × width, rather than <picture><source media>: Astro's
-    Picture only writes format sources, and one <img> can't carry both alts.
-    Each is hidden by Starlight's theme class or a width query (below), and
-    a lazy hidden image never loads, so only the visible one is fetched.
-  */}
-  <figure class="wrap shot">
-    <div class="browser">
-      <div class="browser-bar">
-        <span class="browser-dots" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="browser-url">localhost:3333/admin/resources/products</span>
-      </div>
-      <Image
-        src={listLight}
-        alt={listAlt}
-        class="dark:sl-hidden shot-desktop"
-        data-shot="light-desktop"
-        loading="lazy"
-        widths={[640, 1280, 1920, 2560]}
-        sizes="(min-width: 75rem) 71rem, calc(100vw - 2.5rem)"
-      />
-      <Image
-        src={listDark}
-        alt={listAlt}
-        class="light:sl-hidden shot-desktop"
-        data-shot="dark-desktop"
-        loading="lazy"
-        widths={[640, 1280, 1920, 2560]}
-        sizes="(min-width: 75rem) 71rem, calc(100vw - 2.5rem)"
-      />
-      <Image
-        src={listPhoneLight}
-        alt={listPhoneAlt}
-        class="dark:sl-hidden shot-phone"
-        data-shot="light-phone"
-        loading="lazy"
-        widths={[300, 600]}
-        sizes="min(18.75rem, calc(100vw - 2.5rem))"
-      />
-      <Image
-        src={listPhoneDark}
-        alt={listPhoneAlt}
-        class="light:sl-hidden shot-phone"
-        data-shot="dark-phone"
-        loading="lazy"
-        widths={[300, 600]}
-        sizes="min(18.75rem, calc(100vw - 2.5rem))"
-      />
-    </div>
-    <figcaption>The demo store's products, from one resource file and the app's own policy.</figcaption>
-  </figure>
-  {/*
-    Starlight sets data-theme in the head, so the theme is known here, and
-    so is the width: load the shot for both now. The others stay lazy, and a
-    hidden lazy image only loads if the theme or width changes.
-  */}
-  <script is:inline>
-    document
-      .querySelectorAll(
-        'img[data-shot="' +
-          document.documentElement.dataset.theme +
-          (matchMedia('(max-width: 39.9375rem)').matches ? '-phone' : '-desktop') +
-          '"]'
-      )
-      .forEach(function (img) {
-        img.loading = 'eager'
-        img.fetchPriority = 'high'
-      })
-  </script>
-
-  <section class="wrap section" aria-labelledby="rules-title">
-    <div class="intro">
-      <p class="eyebrow">Your rules</p>
-      <h2 id="rules-title">One set of rules, and it's yours.</h2>
-      <p>
-        Azu doesn't keep its own permissions or validation. It calls the code your app already runs, so
-        the panel can't drift from it.
-      </p>
-    </div>
-    <ul class="rules" role="list">
-      {
-        rules.map(({ icon: RuleIcon, title, text }) => (
-          <li class="rule">
-            <span class="rule-icon" aria-hidden="true">
-              <RuleIcon size={20} stroke-width={1.75} />
-            </span>
-            <h3>{title}</h3>
-            <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-
-  <section class="wrap section" aria-labelledby="write-title">
-    <div class="intro">
-      <p class="eyebrow">What you write</p>
-      <h2 id="write-title">A short file per resource.</h2>
-      <p>
-        Point it at a model, then borrow the policy and validators you already wrote. Here's the demo
-        store's category resource.
-      </p>
-    </div>
-    <div class="write">
+  <section class="wrap showcase" id="product-preview" aria-labelledby="preview-title" data-preview>
+    <div class="showcase-top">
       <div>
-        <DemoCode file="app/admin/resources/category_resource.ts" />
-        <p class="note">
-          Typed against the model, so a typo like <code>column.text('nmae')</code> fails <code>tsc</code>.
-        </p>
+        <p class="eyebrow caption-1">One product resource</p>
+        <h2 id="preview-title" class="heading-5">What you write. What you get.</h2>
       </div>
-      <figure class="form-shot">
-        <div class="frame">
-          <Image
-            src={formCardLight}
-            alt={formAlt}
-            class="dark:sl-hidden"
-            loading="lazy"
-            widths={[480, 960, 1520]}
-            sizes="(min-width: 75rem) 28rem, (min-width: 64rem) calc(40vw - 2rem), calc(100vw - 2.5rem)"
-          />
-          <Image
-            src={formCardDark}
-            alt={formAlt}
-            class="light:sl-hidden"
-            loading="lazy"
-            widths={[480, 960, 1520]}
-            sizes="(min-width: 75rem) 28rem, (min-width: 64rem) calc(40vw - 2rem), calc(100vw - 2.5rem)"
-          />
-        </div>
-        <figcaption>
-          Fields become the create and edit forms, and your validators check every save. This is the
-          demo's product form, with sections and a tag picker.
-        </figcaption>
-      </figure>
+      {/* Without JavaScript, every example stays readable and the tabs stay hidden. */}
+      <div class="preview-tabs" role="tablist" aria-label="Product resource examples" hidden>
+        {previews.map(({ id, label }, index) => (
+          <button type="button" class="preview-tab button-sm" id={`tab-${id}`} role="tab"
+            aria-controls={`panel-${id}`} aria-selected={index === 0 ? 'true' : 'false'} tabindex={index === 0 ? 0 : -1}>{label}</button>
+        ))}
+      </div>
     </div>
+    {previews.map((preview, index) => (
+      <div class="preview-panel" id={`panel-${preview.id}`} data-preview-panel>
+        <div class="preview-layout">
+          <figure class="preview-visual">
+            <LandingShot light={preview.light} dark={preview.dark} phoneLight={preview.phoneLight}
+              phoneDark={preview.phoneDark} alt={preview.alt} phoneAlt={preview.phoneAlt} primary={index === 0} />
+            <figcaption class="caption-2">Azu Store / Products / {preview.label}</figcaption>
+          </figure>
+          <div class="preview-code">
+            <p class="code-label caption-1">product_resource.ts <span>/{preview.region === 'publish-action' ? 'actions' : preview.region}</span></p>
+            <DemoCode file={resource} region={preview.region} title={`Product resource · ${preview.label.toLowerCase()}`} />
+            <p class="code-note caption-2">{preview.note}</p>
+          </div>
+        </div>
+        <div class="preview-summary">
+          <div><h3 class="title-2">{preview.title}</h3><p class="body-3">{preview.description}</p></div>
+          <a class="text-link button-sm" href={preview.link}>{preview.linkLabel}<ArrowRight size={16} aria-hidden="true" /></a>
+        </div>
+      </div>
+    ))}
   </section>
 
-  <section class="band" aria-labelledby="box-title">
-    <div class="wrap band-inner">
-      <div class="intro">
-        <p class="eyebrow">In the box</p>
-        <h2 id="box-title">Everything a back office needs.</h2>
-        <p>
-          Lists, forms, and actions come from the resource. Screens cover the pages that aren't about
-          one model.
-        </p>
-      </div>
-      <ul class="features" role="list">
-        {
-          features.map(({ icon: FeatureIcon, title, text }) => (
-            <li class="feature">
-              <span class="feature-icon" aria-hidden="true">
-                <FeatureIcon size={22} stroke-width={1.75} />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
-              </div>
-            </li>
-          ))
-        }
+  <section class="wrap section rules-section" aria-labelledby="rules-title">
+    <div class="rules-heading">
+      <p class="eyebrow caption-1">Built on your AdonisJS app</p>
+      <h2 id="rules-title" class="heading-2">Your app sets the rules.<br />Azu puts them to work.</h2>
+      <p class="body-lead muted">Keep permissions and validation in the code your app already runs.</p>
+    </div>
+    <div class="rules-flow">
+      <ul class="rule-sources" role="list">
+        {rules.map(({ icon: RuleIcon, title, detail }) => (
+          <li><RuleIcon size={20} stroke-width={1.75} aria-hidden="true" /><div><h3 class="title-3">{title}</h3><p class="caption-2 muted">{detail}</p></div></li>
+        ))}
       </ul>
+      <span class="flow-arrow" aria-hidden="true"><ArrowRight size={24} /></span>
+      <div class="flow-azu">
+        <Image src={mark} alt="" class="dark:sl-hidden" /><Image src={markDark} alt="" class="light:sl-hidden" />
+        <span class="title-3">Azu</span>
+      </div>
+      <span class="flow-arrow" aria-hidden="true"><ArrowRight size={24} /></span>
+      <div class="flow-result"><span class="eyebrow caption-1">Your admin</span><p class="title-2">Lists, forms, and actions.<br />The same rules throughout.</p></div>
+    </div>
+    <a class="text-link button-sm" href="/docs/guides/resources/">See how a resource fits together <ArrowRight size={16} aria-hidden="true" /></a>
+  </section>
+
+  <section class="wrap section feature-section" aria-labelledby="screens-title">
+    <div class="feature-copy">
+      <p class="eyebrow caption-1">Beyond CRUD</p>
+      <h2 id="screens-title" class="heading-2">Give your back office<br />a home.</h2>
+      <p class="body-lead muted">Add dashboards, reports, and settings pages alongside your resources.</p>
+      <p class="body-3 muted">The demo store’s overview brings revenue trends, order totals, and low stock into one screen. Each widget checks access.</p>
+      <a class="text-link button-md" href="/docs/guides/widgets/">Build with screens and widgets <ArrowRight size={18} aria-hidden="true" /></a>
+    </div>
+    <figure class="feature-shot">
+      <LandingShot light={overviewLight} dark={overviewDark} phoneLight={overviewPhoneLight} phoneDark={overviewPhoneDark}
+        alt="The Azu Store overview, with revenue metrics, a revenue trend, order status, and recent orders"
+        phoneAlt="The Azu Store overview on a phone, with revenue and order metrics above the revenue trend" />
+      <figcaption class="caption-2 muted">The demo store’s overview, built with Azu’s screen and metric APIs.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap section custom-section" aria-labelledby="custom-title">
+    <div class="feature-copy">
+      <p class="eyebrow caption-1">Make it yours</p>
+      <h2 id="custom-title" class="heading-2">Your fields.<br />Your React code.</h2>
+      <p class="body-lead muted">Set your brand colour. Bring your own React components when a field needs something specific.</p>
+      <p class="body-3 muted">The demo’s SKU input uppercases product codes. It plugs into the same product resource you saw above.</p>
+      <a class="text-link button-md" href="/docs/guides/customising/">Customise a field or own a page <ArrowRight size={18} aria-hidden="true" /></a>
+      <p class="caption-2 muted">Light and dark themes are built in. Publish a page to edit its React source in your app.</p>
+    </div>
+    <div class="custom-demo">
+      <figure class="custom-form">
+        <div class="custom-form-crop">
+          <Image src={formCardLight} alt="The demo’s product form with the custom SKU input, name, and price fields" class="dark:sl-hidden" loading="lazy" widths={[480, 960]} sizes="(min-width: 64rem) 36rem, calc(100vw - 3rem)" />
+          <Image src={formCardDark} alt="The demo’s product form with the custom SKU input, name, and price fields" class="light:sl-hidden" loading="lazy" widths={[480, 960]} sizes="(min-width: 64rem) 36rem, calc(100vw - 3rem)" />
+        </div>
+        <figcaption class="caption-2 muted">Your component, inside an Azu form.</figcaption>
+      </figure>
+      <DemoCode file={resource} region="sku-field" title="product_resource.ts · custom SKU field" />
+      <a class="text-link button-sm" href="/docs/guides/theming/">Set your brand colour <ArrowRight size={16} aria-hidden="true" /></a>
     </div>
   </section>
 
-  <section class="wrap section" aria-labelledby="install-title">
-    <div class="install">
-      <div class="intro">
-        <p class="eyebrow">Install</p>
-        <h2 id="install-title">Up and running in about two minutes.</h2>
-        <p>Timed on a new React starter kit, from adding Bouncer to editing a user.</p>
+  <section class="setup-band" aria-labelledby="install-title">
+    <div class="wrap setup-layout">
+      <div class="setup-copy">
+        <p class="eyebrow caption-1">Start building</p>
+        <h2 id="install-title" class="heading-2">Your first resource<br />starts here.</h2>
         <ol class="steps" role="list">
-          {
-            steps.map(({ title, text }, index) => (
-              <li class="step">
-                <span class="step-number" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{inline(text).map((part, i) => (i % 2 ? <code>{part}</code> : part))}</p>
-                </div>
-              </li>
-            ))
-          }
+          <li><span class="step-number caption-1">1</span><div><h3 class="title-3">Install and configure</h3><p class="body-3 muted">Add Bouncer, install Azu, and run configure.</p></div></li>
+          <li><span class="step-number caption-1">2</span><div><h3 class="title-3">Allow your account</h3><p class="body-3 muted">Update <code>accessAdmin</code> in <code>app/abilities/main.ts</code>.</p></div></li>
+          <li><span class="step-number caption-1">3</span><div><h3 class="title-3">Generate a resource</h3><p class="body-3 muted">Point it at a model, sign in, and open <code>/admin</code>.</p></div></li>
         </ol>
-        <div>
-          <a class="btn secondary" href="/docs/installation/">
-            Read the installation guide
-            <ArrowRight size={16} />
-          </a>
+        <a class="text-link button-md" href="/docs/installation/">Read the installation guide <ArrowRight size={18} aria-hidden="true" /></a>
+      </div>
+      <div class="setup-code">
+        <Code code={terminal} lang="sh" title="Terminal" />
+        <div class="requirements">
+          <h3 class="title-3">What you need</h3>
+          <ul role="list">{requirements.map((text) => <li class="caption-2"><Check size={16} aria-hidden="true" />{text}</li>)}</ul>
+          <a class="text-link button-sm" href="/docs/starter-kits/">Check your starter kit <ArrowRight size={16} aria-hidden="true" /></a>
         </div>
       </div>
-      <Code code={terminal} lang="sh" title="Terminal" />
     </div>
   </section>
 
-  <section class="wrap open-source-wrap" aria-labelledby="open-source-title">
-    <div class="open-source">
-      <div class="open-source-copy">
-        <h2 id="open-source-title">Free, open source, and in preview.</h2>
-        <p>
-          Azu is MIT licensed. The API may still change, so tell us what you'd do differently while it
-          settles.
-        </p>
-        <a class="limits-link" href="/docs/preview-limits/">See what's not ready yet</a>
-        <div class="open-source-actions">
-          <a class="btn on-ink-primary" href={discussions}>Join the discussion</a>
-          <a class="btn on-ink-secondary" href={github}>
-            <Icon name="github" size="1.125rem" />
-            View on GitHub
-          </a>
-        </div>
+  <section class="wrap closing-wrap" aria-labelledby="closing-title">
+    <div class="closing">
+      <div class="closing-copy">
+        <p class="eyebrow caption-1">Free, open source, and in preview</p>
+        <h2 id="closing-title" class="heading-2">Build the back<br />of your app.</h2>
+        <p class="body-lead">Azu is MIT licensed. The API may change during preview.</p>
+        <a class="limits-link caption-1" href="/docs/preview-limits/">Read the preview limits</a>
       </div>
-      <div class="needs">
-        <h3>What you need</h3>
-        <ul role="list">
-          {
-            requirements.map((requirement) => (
-              <li>
-                <span aria-hidden="true">·</span>
-                {requirement}
-              </li>
-            ))
-          }
-        </ul>
+      <div class="closing-actions">
+        <a class="btn on-ink-primary button-md" href="/docs/quick-start/">Start with your first resource <ArrowRight size={18} aria-hidden="true" /></a>
+        <div class="community-links">
+          <a class="text-link button-sm" href={github}><Icon name="github" size="1rem" />GitHub</a>
+          <a class="text-link button-sm" href={`${github}/discussions`}>Join the discussion <ArrowRight size={16} aria-hidden="true" /></a>
+        </div>
       </div>
     </div>
   </section>
@@ -400,736 +271,785 @@ const footerLinks = [
   <footer class="site-footer">
     <div class="wrap site-footer-inner">
       <div class="site-footer-brand">
-        <Image src={lockup} alt="Azu" class="dark:sl-hidden" />
-        <Image src={lockupReversed} alt="Azu" class="light:sl-hidden" />
-        <p>Built by Mezie Labs. MIT licence.</p>
+        <Image src={lockup} alt="Azu" class="dark:sl-hidden" /><Image src={lockupReversed} alt="Azu" class="light:sl-hidden" />
+        <p class="caption-2 muted">Built by <a href="https://mezielabs.com">Mezie Labs</a>. MIT licence.</p>
       </div>
-      <nav aria-label="Footer">
-        {footerLinks.map(({ label, href }) => <a href={href}>{label}</a>)}
-      </nav>
+      <nav aria-label="Footer">{footerLinks.map(({ label, href }) => <a class="caption-1" href={href}>{label}</a>)}</nav>
     </div>
   </footer>
 </div>
 
 <script>
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
-    const status = button.parentElement?.querySelector('[data-copy-status]')
-    let timer: number | undefined
-
-    button.addEventListener('click', async () => {
-      window.clearTimeout(timer)
-      try {
-        await navigator.clipboard.writeText(button.dataset.copy ?? '')
-      } catch {
-        // Select the command (after the $ prompt), so it's ready to copy by hand
-        const code = button.parentElement?.querySelector('code')
-        const selection = window.getSelection()
-        if (code && selection) {
-          const range = document.createRange()
-          range.selectNodeContents(code)
-          const prompt = code.querySelector('.prompt')
-          if (prompt) range.setStartAfter(prompt)
-          selection.removeAllRanges()
-          selection.addRange(range)
-        }
-        if (status) status.textContent = "Couldn't copy, so the command is selected for you."
-        return
-      }
-      button.dataset.copied = ''
-      if (status) status.textContent = 'Copied'
-      timer = window.setTimeout(() => {
-        delete button.dataset.copied
-        if (status) status.textContent = ''
-      }, 2000)
+  for (const preview of document.querySelectorAll<HTMLElement>('[data-preview]')) {
+    const tablist = preview.querySelector<HTMLElement>('[role="tablist"]')!
+    const tabs = [...tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+    const panels = [...preview.querySelectorAll<HTMLElement>('[data-preview-panel]')]
+    const activate = (index: number, focus = false) => {
+      tabs.forEach((tab, position) => {
+        const selected = position === index
+        tab.setAttribute('aria-selected', String(selected))
+        tab.tabIndex = selected ? 0 : -1
+        panels[position].hidden = !selected
+      })
+      if (focus) tabs[index].focus()
+    }
+    panels.forEach((panel, index) => {
+      panel.setAttribute('role', 'tabpanel')
+      panel.setAttribute('aria-labelledby', tabs[index].id)
+      panel.tabIndex = 0
     })
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activate(index))
+      tab.addEventListener('keydown', (event) => {
+        let next: number
+        switch (event.key) {
+          case 'ArrowRight':
+            next = (index + 1) % tabs.length
+            break
+          case 'ArrowLeft':
+            next = (index - 1 + tabs.length) % tabs.length
+            break
+          case 'Home':
+            next = 0
+            break
+          case 'End':
+            next = tabs.length - 1
+            break
+          default:
+            return
+        }
+        event.preventDefault()
+        activate(next, true)
+      })
+    })
+    activate(0)
+    preview.dataset.enhanced = ''
+    tablist.hidden = false
   }
 </script>
 
 <style>
-  /*
-   * Landing.astro owns this page (docs/decisions.md). PageTitle renders
-   * nothing here, so its panel is empty: drop it. The content panel gives
-   * up its padding and 67.5rem width, so each section sets its own and the
-   * band can run full width without a 100vw breakout (which scrolls
-   * sideways where scrollbars take space). Starlight's footer is empty on
-   * this page, and the landing has its own.
-   */
   :global(main:has(.landing)) {
     padding-bottom: 0;
   }
-
   :global(.content-panel:has(+ .content-panel .landing)) {
     display: none;
   }
-
   :global(.content-panel:has(.landing)) {
     padding: 0;
     border-top: 0;
   }
-
   :global(.content-panel:has(.landing) > .sl-container) {
     max-width: none;
   }
-
   :global(.content-panel:has(.landing) > .sl-container > footer) {
     display: none;
   }
 
-  /* Colours: brand.css tokens only. Dark is Starlight's default. */
   .landing {
-    --landing-gutter: clamp(1.25rem, 4vw, 2rem);
-    --landing-surface: var(--sl-color-gray-6);
-    --landing-sunken: var(--sl-color-gray-6);
+    --landing-gutter: 1.5rem;
     --landing-line: var(--sl-color-gray-5);
-    --landing-control: var(--sl-color-gray-4);
     --landing-muted: var(--sl-color-gray-3);
-    --landing-shadow:
-      0 4px 12px color-mix(in srgb, var(--sl-color-hairline-shade) 50%, transparent),
-      0 32px 64px -16px color-mix(in srgb, var(--sl-color-hairline-shade) 70%, transparent);
-    --landing-band-bg: var(--sl-color-gray-6);
-    --landing-band-line: var(--sl-color-gray-5);
-
+    --landing-surface: var(--sl-color-gray-6);
+    --landing-ease: cubic-bezier(0.22, 1, 0.36, 1);
     color: var(--sl-color-white);
     line-height: 1.5;
   }
-
   :global([data-theme='light']) .landing {
     --landing-surface: var(--sl-color-black);
-    --landing-sunken: var(--sl-color-gray-7);
-    --landing-shadow:
-      0 4px 12px color-mix(in srgb, var(--azu-ink) 8%, transparent),
-      0 32px 64px -16px color-mix(in srgb, var(--azu-ink) 20%, transparent);
-    --landing-band-bg: var(--azu-ink);
-    --landing-band-line: var(--azu-ink);
   }
-
   .wrap {
-    max-width: 75rem;
+    max-width: 80rem;
     margin-inline: auto;
     padding-inline: var(--landing-gutter);
   }
-
+  .landing :is(h1, h2, h3) {
+    margin: 0;
+    text-wrap: balance;
+  }
+  .landing p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .landing :is(ul, ol) {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .landing figure {
+    margin: 0;
+    min-width: 0;
+  }
   .landing a {
     text-decoration: none;
   }
-
   .landing code {
     font-family: var(--sl-font-mono);
   }
-
-  .landing :is(h1, h2, h3) {
-    text-wrap: balance;
-  }
-
-  .landing p {
-    text-wrap: pretty;
-  }
-
   .landing p code {
     font-size: 0.875em;
+    overflow-wrap: anywhere;
     color: var(--sl-color-white);
   }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 3rem;
-    padding: 0.5rem 1.25rem;
-    border: 1px solid transparent;
-    border-radius: 0.625rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    line-height: 1.2;
+  .landing [hidden] {
+    display: none !important;
+  }
+  .landing :is(section[id], h2[id]) {
+    scroll-margin-top: calc(var(--sl-nav-height) + 1.5rem);
   }
 
-  .btn.primary {
-    min-height: 3.125rem;
-    padding-inline: 1.5rem;
-    font-size: var(--sl-text-base);
+  .heading-1 {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+  .heading-2 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+  .heading-5 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .title-2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+  }
+  .title-3 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+  }
+  .body-lead {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 400;
+  }
+  .body-3 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+  }
+  .button-md {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+  .button-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+  .caption-1 {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+  .caption-2 {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+  .muted {
+    color: var(--landing-muted);
+  }
+  .eyebrow {
+    color: var(--sl-color-text-accent);
+  }
+
+  .btn,
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+  }
+  .btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    text-align: center;
+  }
+  .btn,
+  .text-link,
+  .preview-tab {
+    transition:
+      color 300ms var(--landing-ease),
+      background-color 300ms var(--landing-ease),
+      transform 300ms var(--landing-ease);
+  }
+  .btn:active,
+  .preview-tab:active {
+    transform: scale(0.98);
+  }
+  .btn :global(svg),
+  .text-link :global(svg) {
+    flex: none;
+  }
+  .primary {
     background: var(--sl-color-text-accent);
     color: var(--sl-color-text-invert);
   }
-
-  .btn.primary:hover {
+  .primary:hover {
     background: var(--azu-accent-hover);
   }
-
-  .btn.secondary {
-    border-color: var(--landing-control);
-    background: var(--landing-surface);
+  .text-link {
+    justify-content: flex-start;
     color: var(--sl-color-white);
+    text-underline-offset: 0.25em;
+  }
+  .text-link:hover {
+    color: var(--sl-color-text-accent);
+    text-decoration: underline;
   }
 
-  .btn.secondary:hover {
-    border-color: var(--sl-color-white);
-  }
-
-  /* Hero */
   .hero {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
-    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+    gap: 1rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
     text-align: center;
   }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.375rem 0.875rem;
-    border-radius: 999px;
-    background: var(--sl-color-accent-low);
-    color: var(--sl-color-accent-high);
-    font-size: var(--sl-text-sm);
-    font-weight: 500;
-  }
-
-  .dot {
-    width: 0.375rem;
-    height: 0.375rem;
-    border-radius: 999px;
-    background: currentColor;
-  }
-
-  /* The id matches brand.css's h1#_top, so this wins over its letter-spacing */
   .hero h1#_top {
-    max-width: 57.5rem;
-    font-size: clamp(2.75rem, 6.2vw, 5.25rem);
-    font-weight: 600;
-    line-height: 1.02;
-    letter-spacing: -0.035em;
-    color: var(--sl-color-white);
-  }
-
-  .hero-lead {
     max-width: 42.5rem;
-    font-size: clamp(1.125rem, 1.6vw, 1.3125rem);
-    line-height: 1.55;
+    letter-spacing: -0.04em;
+  }
+  .hero-lead {
+    max-width: 36rem;
     color: var(--landing-muted);
   }
-
   .hero-actions {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: center;
-    gap: 0.75rem;
-    max-width: 100%;
-    margin-top: 0.5rem;
+    gap: 1.5rem;
   }
-
-  .install-command {
+  .hero-meta {
     display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    min-width: 0;
-    max-width: 100%;
-    padding: 0.25rem 0.25rem 0.25rem 1rem;
-    border: 1px solid var(--landing-line);
-    border-radius: 0.625rem;
-    background: var(--landing-surface);
-  }
-
-  .install-command code {
-    min-width: 0;
-    font-size: var(--sl-text-sm);
-    text-align: start;
-    overflow-wrap: anywhere;
-    color: var(--sl-color-white);
-  }
-
-  .prompt {
-    color: var(--sl-color-text-accent);
-  }
-
-  .copy-button {
-    display: inline-flex;
-    flex: none;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
+    gap: 0.5rem;
+    color: var(--landing-muted);
+  }
+  .preview-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+  }
+
+  .showcase {
+    scroll-margin-top: calc(var(--sl-nav-height) + 1.5rem);
+  }
+  .showcase-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .showcase-top .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .preview-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--landing-line);
+    border-radius: 0.75rem;
+  }
+  .preview-tab {
+    min-height: 3rem;
+    padding: 0.5rem 1rem;
     border: 0;
     border-radius: 0.5rem;
     background: transparent;
     color: var(--landing-muted);
     cursor: pointer;
   }
-
-  .copy-button:hover {
+  .preview-tab:hover {
+    background: var(--sl-color-accent-low);
     color: var(--sl-color-white);
   }
-
-  /* The icons are Lucide's components, outside this component's scope */
-  .copy-button :global(.copy-done),
-  .copy-button[data-copied] :global(.copy-idle) {
-    display: none;
+  .preview-tab[aria-selected='true'] {
+    background: var(--sl-color-white);
+    color: var(--sl-color-black);
   }
-
-  .copy-button[data-copied] :global(.copy-done) {
-    display: block;
-  }
-
-  /* Product shot */
-  .shot {
-    margin-top: clamp(3rem, 6vw, 4.5rem);
-  }
-
-  .browser {
-    overflow: hidden;
-    border: 1px solid var(--landing-line);
-    border-radius: 0.875rem;
-    background: var(--landing-surface);
-    box-shadow: var(--landing-shadow);
-  }
-
-  .browser-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--landing-line);
-    background: var(--landing-sunken);
-  }
-
-  .browser-dots {
-    display: flex;
-    flex: none;
-    gap: 0.5rem;
-  }
-
-  .browser-dots span {
-    width: 0.625rem;
-    height: 0.625rem;
-    border-radius: 999px;
-    background: var(--landing-control);
-  }
-
-  .browser-url {
+  .preview-panel {
     min-width: 0;
-    overflow: hidden;
-    font-family: var(--sl-font-mono);
-    font-size: 0.75rem;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  }
+  .preview-panel + .preview-panel {
+    margin-top: 2.5rem;
+  }
+  .showcase[data-enhanced] .preview-panel {
+    margin-top: 0;
+  }
+  .preview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--landing-line);
+    border-radius: 1rem;
+    background: var(--landing-surface);
+  }
+  .preview-visual {
+    align-self: start;
+  }
+  .preview-visual figcaption {
+    padding: 0.75rem 0.5rem 0.25rem;
     color: var(--landing-muted);
   }
-
-  /* Phone shot below 40rem, desktop shot above. These rules only hide: a
-     `display` that shows would beat Starlight's layered sl-hidden. Below
-     40rem the frame is a plain rounded screenshot, since a URL bar over a
-     phone layout reads wrong. */
-  @media (max-width: 39.9375rem) {
-    .shot :global(.shot-desktop),
-    .browser-bar {
-      display: none;
-    }
-
-    /* Narrower than the phone itself, so it reads as a picture */
-    .browser {
-      max-width: 18.75rem;
-      margin-inline: auto;
-    }
+  .preview-code {
+    min-width: 0;
+    padding: 0 0.5rem 0.5rem;
+  }
+  .code-label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-block: 0.5rem 1rem;
+  }
+  .code-label span {
+    color: var(--landing-muted);
+  }
+  .code-note {
+    margin-top: 1rem !important;
+    color: var(--landing-muted);
+  }
+  .preview-code :global(.expressive-code) {
+    --ec-codeFontSize: 0.875rem;
+    --ec-codeLineHeight: 1.25rem;
+  }
+  .preview-code :global(.expressive-code .header) {
+    display: none;
+  }
+  .preview-code :global(.expressive-code pre) {
+    border-radius: 0.5rem;
+  }
+  .preview-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 0;
+  }
+  .preview-summary > div {
+    max-width: 42.5rem;
+  }
+  .preview-summary p {
+    margin-top: 0.5rem;
+    color: var(--landing-muted);
+  }
+  .preview-summary .text-link {
+    flex: none;
   }
 
-  @media (min-width: 40rem) {
-    .shot :global(.shot-phone) {
-      display: none;
-    }
+  .section {
+    padding-top: 4rem;
+  }
+  .rules-heading {
+    max-width: 42.5rem;
+  }
+  .rules-heading .heading-2 {
+    margin-block: 1rem;
+  }
+  .rules-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: center;
+    margin-block: 2rem 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--landing-line);
+    border-radius: 1rem;
+  }
+  .rule-sources {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .rule-sources li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .rule-sources :global(svg) {
+    flex: none;
+    color: var(--sl-color-text-accent);
+  }
+  .rule-sources p {
+    margin-top: 0.25rem;
+  }
+  .flow-arrow {
+    display: flex;
+    justify-content: center;
+    color: var(--landing-muted);
+    transform: rotate(90deg);
+  }
+  .flow-azu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .flow-azu :global(img) {
+    width: 4rem;
+    height: 4rem;
+  }
+  .flow-result {
+    text-align: center;
+  }
+  .flow-result .title-2 {
+    margin-top: 0.5rem;
   }
 
-  /* No `display` here: it would beat Starlight's layered sl-hidden and
-     show both themes' images. vertical-align drops the inline gap instead. */
-  .landing figure :global(img) {
+  .feature-section,
+  .custom-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+  }
+  .feature-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .feature-copy .text-link {
+    margin-top: 0.5rem;
+  }
+  .feature-shot {
+    padding: 0.5rem;
+    border: 1px solid var(--landing-line);
+    border-radius: 1rem;
+    background: var(--landing-surface);
+  }
+  .feature-shot figcaption {
+    padding: 0.75rem 0.5rem 0.25rem;
+  }
+  .custom-demo {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .custom-form-crop {
+    max-height: 19rem;
+    overflow: hidden;
+    border: 1px solid var(--landing-line);
+    border-radius: 0.75rem;
+  }
+  .custom-form-crop :global(img) {
     width: 100%;
     height: auto;
     vertical-align: top;
   }
-
-  .landing figcaption {
-    font-size: var(--sl-text-sm);
-    color: var(--landing-muted);
+  .custom-form figcaption {
+    margin-top: 0.75rem;
   }
 
-  .shot figcaption {
-    margin-top: 1rem;
-    text-align: center;
+  .setup-band {
+    margin-top: 4rem;
+    padding-block: 3rem;
+    background: var(--sl-color-gray-6);
   }
-
-  /* Sections */
-  .section {
-    padding-top: clamp(5rem, 9vw, 7.5rem);
-  }
-
-  .intro {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-width: 45rem;
-  }
-
-  .intro > p:not(.eyebrow) {
-    font-size: var(--sl-text-lg);
-    line-height: 1.6;
-    color: var(--landing-muted);
-  }
-
-  .eyebrow {
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--sl-color-text-accent);
-  }
-
-  .landing h2 {
-    font-size: clamp(2rem, 3.6vw, 3rem);
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    color: var(--sl-color-white);
-  }
-
-  .landing h3 {
-    font-size: 1.0625rem;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: normal;
-    color: var(--sl-color-white);
-  }
-
-  .landing ul,
-  .landing ol {
-    padding: 0;
-    list-style: none;
-  }
-
-  /* One source of truth */
-  .rules {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
-    gap: 1rem;
-    margin-top: 3rem;
-  }
-
-  .rule {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid var(--landing-line);
-    border-radius: 0.75rem;
-    background: var(--landing-surface);
-  }
-
-  .rule h3 {
-    font-size: var(--sl-text-lg);
-  }
-
-  .rule p,
-  .feature p,
-  .step p {
-    font-size: 0.9375rem;
-    line-height: 1.6;
-    color: var(--landing-muted);
-  }
-
-  .rule-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
-    background: var(--sl-color-accent-low);
-    color: var(--sl-color-text-accent);
-  }
-
-  /* What you write */
-  .write {
+  .setup-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
     align-items: start;
-    gap: 1.5rem;
-    margin-top: 3rem;
   }
-
-  /* Two columns from 64rem. The file runs about twice the screenshot's
-     height, so the screenshot and its caption stay in view beside it. */
-  @media (min-width: 64rem) {
-    /* About 3:2, so most lines of the resource file don't wrap at 1440 */
-    .write {
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    }
-
-    .form-shot {
-      position: sticky;
-      top: calc(var(--sl-nav-height) + 2rem);
-      align-self: start;
-    }
-  }
-
-  .note {
-    margin-top: 0.75rem;
-    font-size: var(--sl-text-sm);
-    color: var(--landing-muted);
-  }
-
-  .note code {
-    color: var(--sl-color-white);
-  }
-
-  /* The form card brings its own border, so the frame adds only the
-     rounding and the shadow */
-  .frame {
-    overflow: hidden;
-    border-radius: 0.75rem;
-    background: var(--landing-surface);
-    box-shadow: var(--landing-shadow);
-  }
-
-  .form-shot figcaption {
-    margin-top: 1rem;
-    font-size: 0.9375rem;
-    line-height: 1.6;
-  }
-
-  /* In the box: full width, so outside .wrap */
-  .band {
-    margin-top: clamp(5rem, 9vw, 7.5rem);
-    border-block: 1px solid var(--landing-line);
-    background: var(--landing-sunken);
-  }
-
-  .band-inner {
-    padding-block: clamp(4rem, 8vw, 6rem);
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-    gap: 2.5rem 3rem;
-    margin-top: 3rem;
-  }
-
-  .feature {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .feature > div {
+  .setup-copy {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
+    align-items: flex-start;
+    gap: 1rem;
   }
-
-  .feature-icon {
-    flex: none;
-    padding-top: 0.125rem;
-    color: var(--sl-color-text-accent);
-  }
-
-  /* Install */
-  .install {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26.25rem), 1fr));
-    align-items: start;
-    gap: 3rem;
-  }
-
   .steps {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    margin-top: 1rem;
+    gap: 1.5rem;
+    margin-top: 1rem !important;
   }
-
-  .step {
+  .steps li {
     display: flex;
     gap: 1rem;
   }
-
-  .step p {
+  .steps p {
     margin-top: 0.25rem;
   }
-
   .step-number {
-    display: inline-flex;
+    display: flex;
     flex: none;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border: 1px solid var(--landing-control);
-    border-radius: 999px;
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 50%;
   }
-
-  .install .btn {
+  .setup-code {
+    min-width: 0;
+  }
+  .requirements {
+    margin-top: 1.5rem;
+  }
+  .requirements ul {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .requirements li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--landing-muted);
+  }
+  .requirements li :global(svg) {
+    flex: none;
+    color: var(--sl-color-text-accent);
+  }
+  .requirements .text-link {
     margin-top: 0.5rem;
   }
-
-  /* Expressive Code's copy button is 2.5rem; touch targets here are 44px */
   .landing :global(.expressive-code .copy button) {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 3rem;
+    height: 3rem;
   }
 
-  /* Open source: Ink in light, the raised dark surface in dark */
-  .open-source-wrap {
-    padding-block: clamp(5rem, 9vw, 7.5rem);
+  .closing-wrap {
+    padding-block: 3rem;
   }
-
-  .open-source {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26.25rem), 1fr));
-    gap: 3rem;
-    padding: clamp(2rem, 5vw, 3.5rem);
-    border: 1px solid var(--landing-band-line);
-    border-radius: 1rem;
-    background: var(--landing-band-bg);
-    color: var(--azu-on-ink);
-  }
-
-  .open-source :focus-visible {
-    outline-color: var(--azu-clay-on-dark);
-  }
-
-  .open-source-copy {
+  .closing {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-  }
-
-  .open-source h2 {
-    font-size: clamp(1.875rem, 3.2vw, 2.625rem);
+    gap: 2rem;
+    padding: 2rem;
+    border-radius: 1rem;
+    background: var(--azu-ink);
     color: var(--azu-on-ink);
   }
-
-  .open-source-copy p {
-    font-size: var(--sl-text-lg);
-    line-height: 1.6;
+  .closing-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    max-width: 32rem;
+  }
+  .closing .eyebrow {
+    color: var(--azu-clay-on-dark);
+  }
+  .closing .body-lead {
     color: var(--azu-on-ink-muted);
   }
-
-  .open-source .limits-link {
+  .closing :focus-visible {
+    outline-color: var(--azu-clay-on-dark);
+  }
+  .limits-link {
     display: inline-flex;
     align-items: center;
-    align-self: flex-start;
-    min-height: 2.75rem;
+    min-height: 3rem;
+    text-decoration: underline !important;
+    text-underline-offset: 0.25em;
     color: var(--azu-clay-on-dark);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
-
-  .open-source .limits-link:hover {
+  .limits-link:hover {
     color: var(--azu-clay-on-dark-hover);
   }
-
-  .open-source-actions {
+  .closing-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-
-  .btn.on-ink-primary {
+  .on-ink-primary {
     background: var(--azu-clay-on-dark);
     color: var(--azu-ink);
   }
-
-  .btn.on-ink-primary:hover {
+  .on-ink-primary:hover {
     background: var(--azu-clay-on-dark-hover);
   }
-
-  .btn.on-ink-secondary {
-    border-color: var(--azu-on-ink-control);
-    color: var(--azu-on-ink);
-  }
-
-  .btn.on-ink-secondary:hover {
-    border-color: var(--azu-on-ink);
-  }
-
-  .needs {
+  .community-links {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
   }
-
-  .open-source .needs h3 {
-    font-size: var(--sl-text-sm);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+  .closing .text-link {
     color: var(--azu-on-ink-muted);
   }
-
-  .needs li {
-    display: flex;
-    gap: 0.75rem;
-    padding-block: 0.75rem;
-    border-bottom: 1px solid var(--azu-on-ink-line);
-  }
-
-  .needs li:last-child {
-    border-bottom: 0;
-  }
-
-  .needs li > span {
+  .closing .text-link:hover {
     color: var(--azu-clay-on-dark);
   }
 
-  /* Footer */
   .site-footer {
     border-top: 1px solid var(--landing-line);
   }
-
-  .site-footer-inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding-block: 2rem 2.5rem;
-  }
-
+  .site-footer-inner,
   .site-footer-brand {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
   }
-
+  .site-footer-inner {
+    justify-content: space-between;
+    padding-block: 1.5rem;
+  }
   .site-footer-brand :global(img) {
     width: auto;
-    height: 1.625rem;
+    height: 2rem;
   }
-
-  .site-footer-brand p,
-  .site-footer nav a {
-    font-size: var(--sl-text-sm);
-    color: var(--landing-muted);
+  .site-footer-brand a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
   }
-
   .site-footer nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 0.5rem;
+    gap: 0.5rem;
   }
-
   .site-footer nav a {
     display: inline-flex;
     align-items: center;
-    min-height: 2.75rem;
-    padding-inline: 0.625rem;
+    min-height: 3rem;
+    padding-inline: 0.5rem;
+    color: var(--landing-muted);
+  }
+  .site-footer a:hover {
+    color: var(--sl-color-text-accent);
   }
 
-  .site-footer nav a:hover {
-    color: var(--sl-color-text-accent);
+  @media (min-width: 40rem) {
+    .landing {
+      --landing-gutter: 2rem;
+    }
+    .hero {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+    }
+    .heading-1 {
+      font-size: 3.75rem;
+      line-height: 1;
+    }
+    .heading-2 {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+    }
+    .heading-5 {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+    .preview-layout {
+      padding: 1rem;
+    }
+    .preview-code {
+      padding: 0;
+    }
+    .preview-code :global(.expressive-code) {
+      --ec-codeFontSize: 0.875rem;
+    }
+    .section {
+      padding-top: 5rem;
+    }
+    .rules-flow {
+      grid-template-columns: minmax(0, 1fr) 1.5rem 5rem;
+      padding: 2rem;
+    }
+    .flow-arrow {
+      transform: none;
+    }
+    .flow-arrow:last-of-type {
+      display: none;
+    }
+    .flow-result {
+      grid-column: 1 / -1;
+      text-align: start;
+    }
+    .setup-band {
+      margin-top: 5rem;
+    }
+    .closing {
+      padding: 3rem;
+    }
+  }
+  @media (min-width: 64rem) {
+    .heading-2 {
+      font-size: 3rem;
+      line-height: 1;
+    }
+    .preview-layout {
+      grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+      min-height: 30rem;
+    }
+    .preview-code :global(.expressive-code) {
+      --ec-codeFontSize: 0.75rem;
+    }
+    .rules-flow {
+      grid-template-columns: minmax(0, 1.2fr) 1.5rem 6rem 1.5rem minmax(0, 1fr);
+      gap: 2rem;
+    }
+    .flow-arrow:last-of-type {
+      display: flex;
+    }
+    .flow-result {
+      grid-column: auto;
+    }
+    .feature-section {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+      gap: 3rem;
+    }
+    .custom-section {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+      gap: 3rem;
+    }
+    .custom-form-crop {
+      max-height: 22rem;
+    }
+    .custom-form-crop :global(img) {
+      margin-top: -1px;
+    }
+    .setup-layout {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+      gap: 3rem;
+    }
+    .setup-band {
+      padding-block: 4rem;
+    }
+    .closing {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn,
+    .text-link,
+    .preview-tab {
+      transition: none;
+    }
+    .btn:active,
+    .preview-tab:active {
+      transform: none;
+    }
   }
 </style>
