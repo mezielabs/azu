@@ -33,8 +33,8 @@ Resource definitions are typed against the model. A typo like `column.text('nmae
 | `fields` | The form and detail fields. See [Fields](/docs/guides/fields/). |
 | `filters` | The list's filters. See [Filters](/docs/guides/filters/). |
 | `actions` | Row and bulk actions. See [Actions](/docs/guides/actions/). |
-| `beforeSave`, `afterSave` | Hooks around a form save. Each gets the record and the HTTP context, in the save's transaction. |
-| `beforeDelete` | A hook before each record is deleted. See [Actions](/docs/guides/actions/#delete). |
+| `beforeSave`, `afterSave` | Hooks around a form save. See [Resource hooks](/docs/reference/resource-hooks/) for arguments, order, and transactions. |
+| `beforeDelete` | A hook before each built-in Delete. See [Resource hooks](/docs/reference/resource-hooks/#beforedelete). |
 | `slots` | Your components on the resource's pages. See [Customising](/docs/guides/customising/#slots). |
 
 ## Loading resources
@@ -60,3 +60,5 @@ Note: registering the same resource twice does nothing. Two resources with the s
 ## Generate one
 
 `node ace azu:resource Product` writes a resource from a model, with its validators. [Quick start](/docs/quick-start/#what-the-generator-writes) walks through it, and [Ace commands](/docs/reference/commands/#azuresource) lists the flags.
+
+[Add an existing model](/docs/guides/existing-model/) walks through policies, validators, relationships, and a verified save.

@@ -45,7 +45,7 @@ The save bar sticks to the bottom of the window while the form scrolls.
 
 Leaving a form with unsaved changes asks first:
 
-- Inertia visits ask with a "Leave without saving?" dialog. That covers the sidebar, a breadcrumb, Cancel, and Sign out.
+- Inertia visits ask with a **Leave without saving?** dialog. That covers the sidebar, a breadcrumb, **Cancel**, and **Sign out**.
 - Reloading, closing the tab, or leaving the app shows the browser's own prompt.
 - The form's own submit never asks, and neither does what follows a successful save.
 
@@ -53,6 +53,8 @@ Note: the browser's Back button, between two pages of the panel, leaves without 
 
 ## What gets saved
 
-Azu reads only the fields the form showed this user from the request. Read-only fields are left out. Then your validator checks the rest, and only its output is written. See [Validation](/docs/guides/validation/).
+Azu reads only declared, visible, writable fields from the request. On edit, read-only fields reach the validator with their stored values. Unchanged file fields do too. Their request values are ignored, and they aren't written again.
 
-`beforeSave`, the save, and `afterSave` share one transaction.
+After validation, Azu writes only output for writable fields. A validator's extra output keys aren't mass-assigned. See [Validation](/docs/guides/validation/) for the relation-field exceptions.
+
+`beforeSave`, the save, and `afterSave` share one transaction. [Resource hooks](/docs/reference/resource-hooks/) explains their order and how additional queries join it.

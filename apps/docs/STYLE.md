@@ -17,7 +17,15 @@ Write like you're pairing with one developer who has an AdonisJS app open. They 
 - Use the Oxford comma: "models, policies, and validators".
 - Write numbers one to nine in words, and 10 and up in digits. Code, units, and versions stay as they are (`limit(5)`, 2mb, Node 24.21).
 - No em dashes. Use a colon, a comma, parentheses, or a new sentence.
-- Bold is for terms where they're defined, and for key warnings. Nothing else.
+- Bold UI labels exactly as they appear: **Save changes**, **Users**, and **Columns**. Also use bold for defined terms and key warnings.
+
+## Consistency
+
+- Use British English in prose: colour, customise, authorisation, and licence. Keep API names such as `color` unchanged.
+- Use **resource** for a model's admin pages, **screen** for a standalone admin page, and **record** for one model instance.
+- Name the package when a version could be ambiguous: `@inertiajs/react` and `@adonisjs/inertia` have different versions.
+- State the page's task and prerequisites before its steps. Tell readers how to check that the task succeeded.
+- Describe current behaviour in installation and reference pages. Keep future work on the roadmap, clearly labelled as plans.
 
 ## Words to leave out
 
@@ -56,4 +64,6 @@ Write a sample inline only when the demo can't have it: a shell command, or code
 
 - `pnpm docs:build` passes (it validates links).
 - The page reads aloud without stumbling.
+- Prerequisites, expected results, defaults, and unsupported cases match the implementation.
+- New pages appear in the sidebar and are linked from the relevant guide.
 - Search the page for the words to leave out, and for "—".

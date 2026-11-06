@@ -39,8 +39,12 @@ Note: `azu:doctor` reports a `by()` that can need more than 100 buckets in one o
 
 - Hover or focus the chart for each bucket's value.
 - Use the arrow keys to move between buckets.
-- Press Enter or click to open the list, filtered to that day, week, or month.
-- "View as table" shows the numbers.
+- With a matching date-range filter, press Enter or click to open the list for that day, week, or month.
+- **View as table** shows the numbers.
+
+For bucket links, add `filter.dateRange()` to the resource on the same column as the trend's `date()`. Without it, buckets have no links. Hourly buckets never link, because date-range filters cover whole days.
+
+Bucket links carry the date range, but don't reproduce a trend's `where()` query. Keep this in mind when comparing the chart with its linked list.
 
 ## Speed
 

@@ -59,6 +59,7 @@ export default defineConfig({
             'docs/quick-start',
             'docs/starter-kits',
             'docs/preview-limits',
+            'docs/guides/existing-model',
           ],
         },
         {
@@ -81,12 +82,15 @@ export default defineConfig({
             'docs/guides/trends',
             'docs/guides/customising',
             'docs/guides/theming',
+            'docs/guides/upgrading',
           ],
         },
         {
           label: 'Reference',
           items: [
             'docs/reference/config',
+            'docs/reference/builders',
+            'docs/reference/resource-hooks',
             'docs/reference/commands',
             'docs/reference/doctor',
             'docs/reference/component-props',

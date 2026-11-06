@@ -17,9 +17,9 @@ Here's the demo's product policy:
 | --- | --- |
 | `viewList` | The resource in the navigation, and its list. |
 | `view` | Opening a record's detail page. |
-| `create` | The New button and the create form. |
-| `update` | The Edit button, the edit form, and actions without `.ability()`. |
-| `delete` | The built-in Delete row and bulk actions. |
+| `create` | The **New** button and the create form. |
+| `update` | The **Edit** button, the edit form, and actions without `.ability()`. |
+| `delete` | The built-in **Delete** row and bulk actions. |
 | Your own, such as `publish` | Actions and fields that name it with `.ability('publish')`. |
 
 `view`, `update`, and `delete` receive the record. A custom method receives it for actions and for fields on edit and detail pages. On create, the field check runs before a record exists.
@@ -30,9 +30,11 @@ Here's the demo's product policy:
 
 ## Hiding is a convenience
 
-Azu hides buttons, fields, and actions a user can't use. But hiding is a convenience. The server always checks the policy, so a crafted request gets the same answer as a click.
+Azu hides buttons, fields, and actions a user can't use. The server repeats those policy checks on submitted requests.
 
 That includes each record in a bulk action. Records the user can't touch are skipped and reported.
+
+Relationship input needs a separate check in your validator. The related resource's `query` scopes picker options, but doesn't validate newly submitted IDs. See [Validating related IDs](/docs/guides/relationships/#validating-related-ids).
 
 ## Fields and actions
 

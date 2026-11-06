@@ -7,6 +7,8 @@ import { LinkCard, CardGrid } from '@astrojs/starlight/components'
 
 Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and forms using your existing Lucid models, Bouncer policies, and VineJS validators.
 
+These guides are for developers who can run Ace commands and edit an AdonisJS app. Start with [Installation](/docs/installation/) for dependency requirements and access setup.
+
 _Azụ_ means "back" in Igbo, as in your app's back office.
 
 :::note[Azu is in preview]
@@ -42,10 +44,10 @@ Resources are typed against the model, so a typo like `column.text('nmae')` fail
 <CardGrid>
   <LinkCard title="Installation" description="Add Bouncer and Azu to your app, and decide who gets in." href="/docs/installation/" />
   <LinkCard title="Quick start" description="Generate your first resource and open /admin." href="/docs/quick-start/" />
-  <LinkCard title="Resources" description="The file behind each admin page, and what it borrows from your app." href="/docs/guides/resources/" />
+  <LinkCard title="Add an existing model" description="Connect a policy, validators, relationships, and scoped queries." href="/docs/guides/existing-model/" />
   <LinkCard title="Screens" description="Pages of your own: reports, settings, and dashboards of widgets." href="/docs/guides/screens/" />
 </CardGrid>
 
 ## Licence
 
-The core is free and MIT licensed, and it always will be. Azu is built by [Mezie Labs](https://mezielabs.com). [Azu Pro](/docs/roadmap/#azu-pro) will add paid extensions later.
+The core is free and MIT licensed, and it always will be. Azu is built by [Mezie Labs](https://mezielabs.com). The [roadmap](/docs/roadmap/) describes plans for paid extensions.

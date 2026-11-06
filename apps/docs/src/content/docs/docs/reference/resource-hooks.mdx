@@ -1,0 +1,92 @@
+---
+title: Resource hooks
+description: Query and lifecycle hook arguments, execution order, transactions, and failure behaviour.
+---
+
+Use resource hooks to scope reads or run work around a save or built-in Delete. They are options on `defineResource`, and stay on the server.
+
+## query
+
+`query(query)` receives a Lucid model query builder. Mutate it synchronously to add constraints or preloads. Azu ignores its return value and doesn't await it, so don't make this hook async.
+
+The hook scopes resource reads, including list and record lookups, actions, resource-backed widgets, and related-resource picker queries. Related tables use their own resource's hook.
+
+There is no HTTP-context argument. For request-specific scoping, get the current context with AdonisJS's `HttpContext.getOrFail()`.
+
+For example, a different app with a `Project.workspaceId` attribute could use this resource option:
+
+```ts title="app/admin/resources/project_resource.ts (query option)"
+query: (query) => {
+  const ctx = HttpContext.getOrFail()
+  query.where('workspaceId', ctx.auth.use('web').user!.workspaceId)
+},
+```
+
+Import `HttpContext` from `@adonisjs/core/http`. This example assumes a `web` guard whose user has a trusted `workspaceId`. Match the guard to your app.
+
+The hook doesn't assign attributes on create, or validate submitted relationship IDs. Use a save hook for trusted attributes and [scoped validator rules](/docs/guides/relationships/#validating-related-ids) for related IDs.
+
+## Lifecycle arguments
+
+`beforeSave(record, ctx)`, `afterSave(record, ctx)`, and `beforeDelete(record, ctx)` receive the typed model instance and HTTP context. They may be sync or async; Azu awaits each one and ignores its return value.
+
+| Hook | When it runs | Record state |
+| --- | --- | --- |
+| `beforeSave` | After validation and attribute assignment, before `record.save()` | New on create; existing on update. Already bound to the transaction. |
+| `afterSave` | After the save and `manyToMany` syncs, before commit | Saved, but the transaction is still open. |
+| `beforeDelete` | Before each record's built-in Delete | Existing record, bound to the delete transaction. |
+
+These hooks belong to Azu's resource operations. Writes from your API, jobs, or custom action handlers don't automatically call them.
+
+## Save order
+
+Resource create and update operations run in this order:
+
+1. Check access, determine writable fields, and validate input and uploads.
+2. Store any new uploads, with cleanup if the transaction fails.
+3. Start the database transaction and bind the record to it.
+4. Merge validated writable attributes into the record.
+5. Await `beforeSave(record, ctx)`.
+6. Save the record and sync writable `manyToMany` fields from validated output.
+7. Await `afterSave(record, ctx)`.
+8. Commit, then remove replaced or cleared files.
+
+Changes made to attributes in `beforeSave` are included in the save. If `afterSave` changes attributes, call `record.save()` again to persist them.
+
+Hook changes aren't revalidated. Use trusted server-side values and keep user-input rules in your validator.
+
+## Additional queries
+
+The record's `save()` and relationship syncs use its transaction. Other queries must join it explicitly through `record.$trx`, or they may commit independently.
+
+For example, a different app might record an audit row inside `afterSave`:
+
+```ts title="app/admin/resources/project_resource.ts (afterSave option)"
+afterSave: async (record, ctx) => {
+  const trx = record.$trx
+  if (!trx) throw new Error('Expected the resource save transaction')
+
+  await db.table('project_changes').useTransaction(trx).insert({
+    project_id: record.id,
+    actor_id: ctx.auth.use('web').user!.id,
+  })
+},
+```
+
+Import `db` from `@adonisjs/lucid/services/db`. This assumes a `project_changes` table with `project_id` and `actor_id` columns, and a `web` guard.
+
+## beforeDelete
+
+The built-in Delete calls `beforeDelete` for each authorised record, then deletes that record. Stored files are removed after commit.
+
+A selected-row deletion uses one transaction. An all-matching deletion uses one transaction per chunk, so earlier chunks stay committed if a later chunk fails. See [Actions](/docs/guides/actions/#all-matching-rows).
+
+There is no `afterDelete` resource hook. A custom action that calls `record.delete()` must arrange any extra work itself.
+
+## Failures and external effects
+
+A thrown lifecycle-hook error rolls back the current transaction. During saves, newly stored uploads are cleaned up. A validation failure never reaches the lifecycle hooks.
+
+`afterSave` runs before commit; it isn't an after-commit notification. Database rollback can't undo sent mail, remote API calls, or other external effects. Arrange those through your app's after-commit or job mechanism.
+
+Resource save errors propagate to your app's exception handling. Built-in Delete errors use the [action error response](/docs/guides/actions/#transactions-and-errors).

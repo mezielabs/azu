@@ -1,0 +1,133 @@
+---
+title: Builders
+description: Field, column, filter, and action builders, with arguments, defaults, and supported kinds.
+---
+
+Import `field`, `column`, `filter`, and `action` from `@mezielabs/azu`. Use them inside `defineResource(Model, options)` so TypeScript checks model names and policy methods.
+
+This reference covers builders for resource lists, forms, and actions. For widget builders, see [Widgets](/docs/guides/widgets/) and [Trends](/docs/guides/trends/).
+
+## Fields
+
+Every field builder takes one name. Resource fields target persisted model attributes or Lucid relationships, rather than computed getters.
+
+| Builder | Model value or relationship | Where it appears |
+| --- | --- | --- |
+| `field.text(name)` | String | Text input and detail value. |
+| `field.textarea(name)` | String | Auto-growing textarea and detail value. |
+| `field.number(name)` | Number | Numeric input and detail value. |
+| `field.decimal(name)` | String containing a decimal | Exact decimal input and detail value. |
+| `field.boolean(name)` | Boolean | Toggle and detail value. |
+| `field.select(name)` | String | Radios for four or fewer options, otherwise a dropdown. |
+| `field.date(name)` | Luxon `DateTime` | Date picker and detail value. |
+| `field.datetime(name)` | Luxon `DateTime` | Datetime picker in the admin timezone and detail value. |
+| `field.richText(name)` | String containing HTML | Lazy editor, or an HTML textarea without Tiptap. Sanitised on the server. |
+| `field.file(name)` | String containing a Drive key | Upload and detail link. |
+| `field.image(name)` | String containing a Drive key | Image upload and detail preview. |
+| `field.belongsTo(name)` | Lucid `belongsTo` | Searchable picker; submits the foreign-key attribute. |
+| `field.manyToMany(name)` | Lucid `manyToMany` | Searchable picker; submits `<singularRelation>Ids`. |
+| `field.hasMany(name)` | Lucid `hasMany` | Related table on the detail page only. |
+
+Null values are supported where your model and validator allow them. Booleans start as `false` on create unless you set a default.
+
+### Common field methods
+
+These methods are available on all field builders. Some affect forms only; `hasMany` has no form control.
+
+| Method | Argument | Default and behaviour |
+| --- | --- | --- |
+| `.label(text)` | String | Name in sentence case, with common acronyms capitalised. |
+| `.section(heading)` | String | Ungrouped. Trims the heading; blank text removes the section. Forms only. |
+| `.help(text)` | String | No help text. |
+| `.placeholder(text)` | String | No placeholder. Used by controls that support one. |
+| `.default(value)` | String, number, or boolean | `null`, except booleans start as `false`. Resource create forms and action dialogs use it. |
+| `.visibleOn(form)` | `'create'` or `'edit'` | Both forms. Doesn't hide a detail value. |
+| `.readOnly()` | None | Writable. Prevents resource and screen form writes; stored values still reach update validation. |
+| `.ability(method)` | Policy method name | No extra field check. Resource fields only; controls visibility and request input. |
+| `.component(name)` | Registered component name | Built-in control. See [Component props](/docs/reference/component-props/#fieldprops). |
+
+### Methods for specific field kinds
+
+| Method | Supported kinds | Argument and default |
+| --- | --- | --- |
+| `.min(value)` | `number`, `decimal` | Number or string; otherwise inferred from the validator, or unset. UI hint only. |
+| `.max(value)` | `number`, `decimal` | Number or string; otherwise inferred from the validator, or unset. UI hint only. |
+| `.step(value)` | `number`, `decimal` | Number or string; otherwise inferred from the validator, or unset. UI hint only. |
+| `.prefix(text)` | `text` | String; unset. Number and decimal fields can instead inherit a currency prefix from their list column. |
+| `.suffix(text)` | `text` | String; unset. |
+| `.options(map)` | `select` | `Record<string, string>` mapping values to labels; otherwise takes enum choices from the validator. |
+| `.disk(name)` | `file`, `image` | String; falls back to `defaultDisk`, then Drive's default disk. |
+| `.maxSize(size)` | `file`, `image` | Size string, such as `'2mb'`; 10mb for files, 5mb for images. |
+| `.accept(...types)` | `file`, `image` | MIME-type strings replacing the defaults. See [Uploads](/docs/guides/uploads/#size-and-type). |
+| `.searchable(attribute)` | `belongsTo`, `manyToMany` | Related string attribute; otherwise uses the related resource's `title`. |
+
+There is no `.required()` method. [Fields](/docs/guides/fields/#no-required) explains which hints come from validators and their limits.
+
+### Screen and action fields
+
+Screen forms accept text, textarea, number, decimal, boolean, select, date, datetime, and rich text. Names and types match `load`'s return values. The screen's ability covers the whole form; `.ability()` isn't supported. Starting values come from `load`, rather than `.default()`. See [Screen forms](/docs/guides/screen-forms/).
+
+Action dialogs accept text, textarea, number, decimal, boolean, select, date, and datetime. Rich text, uploads, and relationships aren't supported.
+
+Resource field gates aren't applied to dialog inputs: `.visibleOn()` and `.ability()` don't filter them. A dialog's `.readOnly()` affects its control, but doesn't exclude submitted input on the server. Use the action's ability and validator to enforce its rules.
+
+## Columns
+
+Display columns can target model getters. Sorting requires a persisted attribute. Columns have no field-style `.ability()` gate; keep sensitive values out of their definitions.
+
+| Builder | Value | Extra arguments |
+| --- | --- | --- |
+| `column.text(name)` | String | None. |
+| `column.number(name)` | Number | None. |
+| `column.decimal(name)` | Decimal string | None. |
+| `column.boolean(name)` | Boolean | None. |
+| `column.badge(name)` | String | None. |
+| `column.image(name)` | String containing an image key or URL | None. |
+| `column.date(name)` | Luxon `DateTime` | None. |
+| `column.datetime(name)` | Luxon `DateTime` | None. |
+| `column.belongsTo(relation, title)` | Lucid `belongsTo` | Required related attribute to show. Preloaded automatically. |
+| `column.custom(name, component)` | Any model attribute | Required registered component name; no built-in formatting. |
+
+| Method | Supported kinds | Argument and default |
+| --- | --- | --- |
+| `.label(text)` | All | String; defaults to the attribute's label. |
+| `.component(name)` | All | Registered component name; defaults to the built-in cell. |
+| `.hiddenByDefault()` | All | No argument; visible by default. Users can reveal it with **Columns**. |
+| `.sortable()` | `text`, `number`, `decimal`, `boolean`, `badge`, `date`, `datetime` | No argument; off by default. Persisted attributes only. |
+| `.format(style, currency?)` | `number`, `decimal` | `'currency'` or `'percent'`; no format by default. Supply a currency code with `'currency'`. |
+| `.colors(map)` | `badge` | Value-to-colour map; unset by default. Built-in colours are `gray`, `green`, `blue`, `red`, and `yellow`. |
+
+See [Columns and lists](/docs/guides/columns-and-lists/) for URL state, search, paging, and column choices.
+
+## Filters
+
+Filters start inactive. Every kind accepts `.label(text)`, which changes its displayed label without changing the URL parameter.
+
+| Builder | Arguments | URL value |
+| --- | --- | --- |
+| `filter.select(attribute, options)` | String attribute and a value-to-label map | One declared option. |
+| `filter.boolean(attribute)` | Boolean attribute | `true` or `false`. |
+| `filter.dateRange(attribute)` | Date or datetime attribute | `YYYY-MM-DD..YYYY-MM-DD`; either end can be empty. |
+| `filter.belongsTo(relation)` | Lucid `belongsTo` name | Related key, subject to picker access and scope. |
+| `filter.custom(label, apply)` | Label and synchronous query callback | `1` enables it; the parameter name is the label in kebab case. |
+
+`apply(query)` mutates the model query builder; its return value isn't used. Date ranges include both named days in the panel's timezone. Reversed endpoints are swapped. Invalid values turn the filter off.
+
+Filter names must be unique within the resource. `page`, `perPage`, `sort`, `direction`, `search`, and `columns` are reserved. See [Filters](/docs/guides/filters/).
+
+## Actions
+
+`action.row(name)` creates an action for one record. `action.bulk(name)` creates one for selected or all-matching records. Names are strings; `delete` is reserved for the built-in Delete actions.
+
+| Method | Argument | Default and behaviour |
+| --- | --- | --- |
+| `.label(text)` | String | Name in sentence case. |
+| `.ability(method)` | Policy method name | `update`; checked for each record. |
+| `.confirm(message)` | String | No confirmation message. |
+| `.destructive()` | None | `false`; styles the action as destructive without changing its handler. |
+| `.fields(fields, validator)` | Supported dialog fields and a compiled validator | No fields; validates declared dialog input before calling the handler. |
+| `.handle(handler)` | Sync or async function | No handler. Add one to perform the action. |
+
+A row handler receives `(record, { ctx, input, trx })`. A bulk handler receives `(records, { ctx, input, trx })`. TypeScript infers the model from the resource and `input` from the validator. Without `.fields()`, `input` is `undefined`.
+
+Handlers may return `{ message: string }`, `{ redirect: string }`, or nothing. All-matching runs supply their own summary message. See [Actions](/docs/guides/actions/#all-matching-rows) for redirects, chunk transactions, limits, and retry behaviour.
