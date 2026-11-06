@@ -46,6 +46,8 @@ export default defineConfig({
         SocialIcons: './src/components/SocialIcons.astro',
         // Renders nothing on the landing page, whose Landing.astro owns its h1
         PageTitle: './src/components/PageTitle.astro',
+        // Search belongs in the docs, not the landing page
+        Search: './src/components/Search.astro',
       },
       plugins: [starlightLinksValidator()],
       sidebar: [
