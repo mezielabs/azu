@@ -155,6 +155,7 @@ Cloudflare Workers Builds deploys it. In the dashboard, connect `mezielabs/azu` 
 
 - A push to `main` builds and deploys the site.
 - With preview builds turned on, a push to any other branch runs the preview command instead. That branch gets its own preview URL, and production stays as it is.
+- `wrangler preview` requires the `previews` block in `apps/docs/wrangler.jsonc`. It is empty because this site only uses top-level assets and compatibility settings. See [Cloudflare's preview configuration](https://developers.cloudflare.com/workers/previews/configuration/#wrangler-configuration-file).
 - Wrangler isn't a dependency, so `npx` fetches it. Previews need Wrangler 4.135.0 or later, according to Cloudflare's docs.
 
 Under the Worker's Settings › Domains & Routes, add `azuadmin.com` and `www.azuadmin.com` as custom domains. Then send www to the bare domain with a Redirect Rule in the `azuadmin.com` zone (Rules › Redirect Rules): `www.azuadmin.com` to `https://azuadmin.com`, keeping the path and query, with a 301.
