@@ -4,9 +4,9 @@ import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro'
 import SiteTitle from './SiteTitle.astro'
 
 const links = [
-  { label: 'Product', href: '#product-preview' },
-  { label: 'Customise', href: '#customise' },
   { label: 'Docs', href: '/docs/' },
+  { label: 'Changelog', href: '/docs/changelog/' },
+  { label: 'Roadmap', href: '/docs/roadmap/' },
 ]
 const github = 'https://github.com/mezielabs/azu'
 ---
@@ -21,7 +21,6 @@ const github = 'https://github.com/mezielabs/azu'
       <Icon name="github" size="1.25rem" />
     </a>
     <div class="theme-control desktop-only"><ThemeSelect /></div>
-    <a class="start-link" href="/docs/installation/">Get started <span aria-hidden="true">↗</span></a>
     <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="landing-menu" hidden>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path class="menu-line first" d="M4 8h16" /><path class="menu-line last" d="M4 16h16" /></svg>
     </button>
@@ -39,7 +38,6 @@ const github = 'https://github.com/mezielabs/azu'
     </nav>
     <div class="menu-bottom">
       <div class="menu-theme"><span>Appearance</span><ThemeSelect /></div>
-      <a class="start-link" href="/docs/installation/">Get started <span aria-hidden="true">↗</span></a>
       <p>Free, open source, and in preview.</p>
     </div>
   </dialog>
@@ -58,20 +56,7 @@ const github = 'https://github.com/mezielabs/azu'
       toggle.setAttribute('aria-expanded', String(dialog.open))
     })
     dialog.querySelectorAll<HTMLAnchorElement>('a').forEach((link) => {
-      link.addEventListener('click', (event) => {
-        dialog.close()
-        if (link.hash && link.pathname === location.pathname) {
-          const section = document.getElementById(link.hash.slice(1))
-          const target = section?.querySelector<HTMLElement>('h2') ?? section
-          if (target) {
-            event.preventDefault()
-            history.pushState(null, '', link.hash)
-            section?.scrollIntoView({ block: 'start' })
-            target.tabIndex = -1
-            target.focus({ preventScroll: true })
-          }
-        }
-      })
+      link.addEventListener('click', () => dialog.close())
     })
     matchMedia('(min-width: 56rem)').addEventListener('change', ({ matches }) => {
       if (matches && dialog.open) {
@@ -127,6 +112,7 @@ const github = 'https://github.com/mezielabs/azu'
   }
   .header-actions {
     gap: 0.5rem;
+    flex: none;
   }
   .preview-label,
   .desktop-nav,
@@ -142,28 +128,10 @@ const github = 'https://github.com/mezielabs/azu'
       background-color 300ms var(--header-ease),
       transform 300ms var(--header-ease);
   }
-  .marketing-header :is(button, .start-link):active {
+  .marketing-header button:active {
     transform: scale(0.98);
   }
 
-  .start-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    gap: 0.5rem;
-    min-height: 3rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    background: var(--sl-color-text-accent);
-    color: var(--sl-color-text-invert);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    font-weight: 600;
-  }
-  .start-link:hover {
-    background: var(--azu-accent-hover);
-  }
   .menu-toggle,
   .menu-close {
     display: inline-flex;
@@ -355,7 +323,7 @@ const github = 'https://github.com/mezielabs/azu'
     .mobile-menu[open] .mobile-links a {
       animation: none;
     }
-    .marketing-header :is(button, .start-link):active {
+    .marketing-header button:active {
       transform: none;
     }
   }

@@ -7,8 +7,6 @@ import DemoCode from './DemoCode.astro'
 import LandingShot from './LandingShot.astro'
 import lockup from '../assets/brand/azu-lockup.svg'
 import lockupReversed from '../assets/brand/azu-lockup-reversed.svg'
-import mark from '../assets/brand/azu-mark.svg'
-import markDark from '../assets/brand/azu-mark-dark.svg'
 import listLight from '../../../../docs/screenshots/list-light.png'
 import listDark from '../../../../docs/screenshots/list-dark.png'
 import listPhoneLight from '../../../../docs/screenshots/list-phone-light.png'
@@ -127,7 +125,6 @@ const footerLinks = [
       <a class="btn primary button-md" href="/docs/installation/">Get started <ArrowRight size={18} aria-hidden="true" /></a>
       <a class="text-link button-md" href="#product-preview">See how it works <ArrowDown size={16} aria-hidden="true" /></a>
     </div>
-    <p class="hero-meta caption-2"><span class="preview-dot" aria-hidden="true"></span>In preview <span aria-hidden="true">·</span> AdonisJS 7 <span aria-hidden="true">·</span> Free and MIT licensed</p>
   </section>
 
   <section class="wrap showcase" id="product-preview" aria-labelledby="preview-title" data-preview>
@@ -146,47 +143,47 @@ const footerLinks = [
     </div>
     {previews.map((preview, index) => (
       <div class="preview-panel" id={`panel-${preview.id}`} data-preview-panel>
-        <div class="preview-layout">
-          <figure class="preview-visual">
-            <LandingShot light={preview.light} dark={preview.dark} phoneLight={preview.phoneLight}
-              phoneDark={preview.phoneDark} alt={preview.alt} phoneAlt={preview.phoneAlt} primary={index === 0} />
-            <figcaption class="caption-2">Azu Store / Products / {preview.label}</figcaption>
-          </figure>
-          <div class="preview-code">
-            <p class="code-label caption-1">product_resource.ts <span>/{preview.region === 'publish-action' ? 'actions' : preview.region}</span></p>
-            <DemoCode file={resource} region={preview.region} title={`Product resource · ${preview.label.toLowerCase()}`} />
-            <p class="code-note caption-2">{preview.note}</p>
-          </div>
-        </div>
         <div class="preview-summary">
           <div><h3 class="title-2">{preview.title}</h3><p class="body-3">{preview.description}</p></div>
           <a class="text-link button-sm" href={preview.link}>{preview.linkLabel}<ArrowRight size={16} aria-hidden="true" /></a>
+        </div>
+        <div class="preview-layout">
+          <figure class="preview-visual">
+            <LandingShot light={preview.light} dark={preview.dark} phoneLight={preview.phoneLight}
+              phoneDark={preview.phoneDark} alt={preview.alt} phoneAlt={preview.phoneAlt} primary={index === 0}
+              crop={preview.id === 'actions' ? 'center' : 'top'} />
+            <figcaption class="caption-2">Azu Store / Products / {preview.label}</figcaption>
+          </figure>
+          <details class="preview-code" open data-resource-code>
+            <summary class="button-sm"><span class="code-closed">View resource code</span><span class="code-open">Hide resource code</span></summary>
+            <div class="code-content">
+            <p class="code-label caption-1">product_resource.ts <span>/{preview.region === 'publish-action' ? 'actions' : preview.region}</span></p>
+            <DemoCode file={resource} region={preview.region} title={`Product resource · ${preview.label.toLowerCase()}`} />
+            <p class="code-note caption-2">{preview.note}</p>
+            </div>
+          </details>
         </div>
       </div>
     ))}
   </section>
 
-  <section class="wrap section rules-section" aria-labelledby="rules-title">
-    <div class="rules-heading">
-      <p class="eyebrow caption-1">Built on your AdonisJS app</p>
-      <h2 id="rules-title" class="heading-2">Your app sets the rules.<br />Azu puts them to work.</h2>
-      <p class="body-lead muted">Keep permissions and validation in the code your app already runs.</p>
-    </div>
-    <div class="rules-flow">
+  <section class="rules-band" aria-labelledby="rules-title">
+    <div class="wrap rules-section">
+      <div class="rules-heading">
+        <p class="eyebrow caption-1">Built on your AdonisJS app</p>
+        <h2 id="rules-title" class="heading-2">Your app sets the rules.<br />Azu puts them to work.</h2>
+        <p class="body-lead muted">Keep permissions and validation in the code your app already runs.</p>
+      </div>
       <ul class="rule-sources" role="list">
         {rules.map(({ icon: RuleIcon, title, detail }) => (
-          <li><RuleIcon size={20} stroke-width={1.75} aria-hidden="true" /><div><h3 class="title-3">{title}</h3><p class="caption-2 muted">{detail}</p></div></li>
+          <li>
+            <span class="rule-icon"><RuleIcon size={24} stroke-width={1.75} aria-hidden="true" /></span>
+            <div><h3 class="title-2">{title}</h3><p class="body-3 muted">{detail}</p></div>
+          </li>
         ))}
       </ul>
-      <span class="flow-arrow" aria-hidden="true"><ArrowRight size={24} /></span>
-      <div class="flow-azu">
-        <Image src={mark} alt="" class="dark:sl-hidden" /><Image src={markDark} alt="" class="light:sl-hidden" />
-        <span class="title-3">Azu</span>
-      </div>
-      <span class="flow-arrow" aria-hidden="true"><ArrowRight size={24} /></span>
-      <div class="flow-result"><span class="eyebrow caption-1">Your admin</span><p class="title-2">Lists, forms, and actions.<br />The same rules throughout.</p></div>
+      <a class="text-link button-sm" href="/docs/guides/resources/">See how a resource fits together <ArrowRight size={16} aria-hidden="true" /></a>
     </div>
-    <a class="text-link button-sm" href="/docs/guides/resources/">See how a resource fits together <ArrowRight size={16} aria-hidden="true" /></a>
   </section>
 
   <section class="wrap section feature-section" aria-labelledby="screens-title">
@@ -215,6 +212,13 @@ const footerLinks = [
       <p class="caption-2 muted">Light and dark themes are built in. Publish a page to edit its React source in your app.</p>
     </div>
     <div class="custom-demo">
+      <div class="sku-example">
+        <p class="caption-1">Automatic SKU formatting</p>
+        <dl>
+          <div><dt class="caption-2 muted">You type</dt><dd><code>sku-0007</code></dd></div>
+          <div><dt class="caption-2 muted">The field shows</dt><dd><code>SKU-0007</code></dd></div>
+        </dl>
+      </div>
       <figure class="custom-form">
         <div class="custom-form-crop">
           <Image src={formCardLight} alt="The demo’s product form with the custom SKU input, name, and price fields" class="dark:sl-hidden" loading="lazy" widths={[480, 960]} sizes="(min-width: 64rem) 36rem, calc(100vw - 3rem)" />
@@ -259,7 +263,7 @@ const footerLinks = [
         <a class="limits-link caption-1" href="/docs/preview-limits/">Read the preview limits</a>
       </div>
       <div class="closing-actions">
-        <a class="btn on-ink-primary button-md" href="/docs/quick-start/">Start with your first resource <ArrowRight size={18} aria-hidden="true" /></a>
+        <a class="btn on-ink-primary button-md" href="/docs/installation/">Get started <ArrowRight size={18} aria-hidden="true" /></a>
         <div class="community-links">
           <a class="text-link button-sm" href={github}><Icon name="github" size="1rem" />GitHub</a>
           <a class="text-link button-sm" href={`${github}/discussions`}>Join the discussion <ArrowRight size={16} aria-hidden="true" /></a>
@@ -280,6 +284,17 @@ const footerLinks = [
 </div>
 
 <script>
+  const desktopCode = matchMedia('(min-width: 64rem)')
+  for (const details of document.querySelectorAll<HTMLDetailsElement>('[data-resource-code]')) {
+    const syncCode = () => {
+      if (!desktopCode.matches && details.contains(document.activeElement)) {
+        details.querySelector('summary')?.focus()
+      }
+      details.open = desktopCode.matches
+    }
+    syncCode()
+    desktopCode.addEventListener('change', syncCode)
+  }
   for (const preview of document.querySelectorAll<HTMLElement>('[data-preview]')) {
     const tablist = preview.querySelector<HTMLElement>('[role="tablist"]')!
     const tabs = [...tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
@@ -542,6 +557,29 @@ const footerLinks = [
     gap: 0.5rem;
     color: var(--landing-muted);
   }
+  .hero-requirements {
+    max-width: 36rem;
+    color: var(--landing-muted);
+  }
+  .hero-compatibility {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    max-width: 42.5rem;
+  }
+  .hero-limits {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+    color: var(--sl-color-text-accent);
+    text-decoration: underline !important;
+    text-underline-offset: 0.25em;
+  }
+  .hero-limits:hover {
+    color: var(--azu-accent-hover);
+  }
   .preview-dot {
     width: 0.5rem;
     height: 0.5rem;
@@ -588,6 +626,8 @@ const footerLinks = [
     color: var(--sl-color-black);
   }
   .preview-panel {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
   }
   .preview-panel + .preview-panel {
@@ -599,7 +639,7 @@ const footerLinks = [
   .preview-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 1.5rem;
+    gap: 1rem;
     padding: 0.5rem;
     border: 1px solid var(--landing-line);
     border-radius: 1rem;
@@ -615,6 +655,22 @@ const footerLinks = [
   .preview-code {
     min-width: 0;
     padding: 0 0.5rem 0.5rem;
+  }
+  .preview-code summary {
+    min-height: 3rem;
+    padding-block: 0.75rem;
+    cursor: pointer;
+    color: var(--sl-color-white);
+  }
+  .preview-code summary:hover {
+    color: var(--sl-color-text-accent);
+  }
+  .preview-code .code-open,
+  .preview-code[open] .code-closed {
+    display: none;
+  }
+  .preview-code[open] .code-open {
+    display: inline;
   }
   .code-label {
     display: flex;
@@ -646,7 +702,7 @@ const footerLinks = [
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.5rem 0;
+    padding: 0 0 1.5rem;
   }
   .preview-summary > div {
     max-width: 42.5rem;
@@ -662,59 +718,45 @@ const footerLinks = [
   .section {
     padding-top: 4rem;
   }
+  .rules-band {
+    margin-top: 4rem;
+    padding-block: 3rem;
+    background: var(--sl-color-gray-6);
+  }
+  .rules-section {
+    text-align: center;
+  }
   .rules-heading {
     max-width: 42.5rem;
+    margin-inline: auto;
   }
   .rules-heading .heading-2 {
     margin-block: 1rem;
   }
-  .rules-flow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.5rem;
-    align-items: center;
-    margin-block: 2rem 1rem;
-    padding: 1.5rem;
-    border: 1px solid var(--landing-line);
-    border-radius: 1rem;
-  }
-  .rule-sources {
+  .rules-section .rule-sources {
     display: grid;
     gap: 1.5rem;
+    max-width: 64rem;
+    margin: 2rem auto 1.5rem;
   }
   .rule-sources li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
+    text-align: start;
   }
-  .rule-sources :global(svg) {
+  .rule-icon {
+    display: flex;
     flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: var(--sl-color-accent-low);
     color: var(--sl-color-text-accent);
   }
   .rule-sources p {
-    margin-top: 0.25rem;
-  }
-  .flow-arrow {
-    display: flex;
-    justify-content: center;
-    color: var(--landing-muted);
-    transform: rotate(90deg);
-  }
-  .flow-azu {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  .flow-azu :global(img) {
-    width: 4rem;
-    height: 4rem;
-  }
-  .flow-result {
-    text-align: center;
-  }
-  .flow-result .title-2 {
     margin-top: 0.5rem;
   }
 
@@ -748,6 +790,23 @@ const footerLinks = [
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+  .sku-example {
+    padding: 1rem;
+    border: 1px solid var(--landing-line);
+    border-radius: 0.75rem;
+  }
+  .sku-example dl {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0 0;
+  }
+  .sku-example dd {
+    margin: 0.25rem 0 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
   .custom-form-crop {
     max-height: 19rem;
@@ -968,19 +1027,23 @@ const footerLinks = [
     .section {
       padding-top: 5rem;
     }
-    .rules-flow {
-      grid-template-columns: minmax(0, 1fr) 1.5rem 5rem;
-      padding: 2rem;
+    .rules-band {
+      margin-top: 5rem;
+      padding-block: 4rem;
     }
-    .flow-arrow {
-      transform: none;
+    .rules-section .rule-sources {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 3rem;
+      margin-top: 3rem;
     }
-    .flow-arrow:last-of-type {
-      display: none;
+    .rule-sources li {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
-    .flow-result {
-      grid-column: 1 / -1;
-      text-align: start;
+    .rule-sources p {
+      max-width: 20ch;
+      margin-inline: auto;
     }
     .setup-band {
       margin-top: 5rem;
@@ -990,6 +1053,13 @@ const footerLinks = [
     }
   }
   @media (min-width: 64rem) {
+    .preview-summary {
+      order: 1;
+      padding: 1.5rem 0;
+    }
+    .preview-code summary {
+      display: none;
+    }
     .heading-2 {
       font-size: 3rem;
       line-height: 1;
@@ -1002,16 +1072,6 @@ const footerLinks = [
     }
     .preview-code :global(.expressive-code) {
       --ec-codeFontSize: 0.75rem;
-    }
-    .rules-flow {
-      grid-template-columns: minmax(0, 1.2fr) 1.5rem 6rem 1.5rem minmax(0, 1fr);
-      gap: 2rem;
-    }
-    .flow-arrow:last-of-type {
-      display: flex;
-    }
-    .flow-result {
-      grid-column: auto;
     }
     .feature-section {
       grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
