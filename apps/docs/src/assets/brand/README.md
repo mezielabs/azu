@@ -14,3 +14,8 @@
 Colours: Ink #1C1916 (text, the mark's tile) · Ground #F7F6F4 (page) · Clay #B0472A (brand, actions, the dot on light) · Clay on dark #E47A57 · Warm gray #5A544E (secondary text).
 Type: Instrument Sans (headings, prose), JetBrains Mono (code, commands, package names).
 Contrast (WCAG): Clay on Ground 5.1:1, white on Clay 5.6:1, Clay on dark on Ink 6.0:1, Warm gray on Ground 6.9:1, Ink on Ground 16.2:1.
+
+The shared social card is `public/og/azu.png` (1200×630). Regenerate it with
+`pnpm --filter docs og:generate` after editing `scripts/generate-og.mjs` or updating
+`docs/screenshots/list-light.png`. The renderer uses the existing lockup and bundled
+Instrument Sans files, so it needs no system fonts or running demo.
