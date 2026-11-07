@@ -92,4 +92,85 @@ test.group('Screenshots', (group) => {
   })
     .skip(!process.env.AZU_SCREENSHOTS, 'Run with pnpm screenshots')
     .timeout(120_000)
+
+  test('captures landing page actions, screens, and phone forms', async ({ browser }) => {
+    if (db.connection().dialect.name !== 'postgres') {
+      throw new Error('Capture the screenshots on Postgres: DB_CONNECTION=pg, see CLAUDE.md')
+    }
+    await new MainSeeder(db.connection()).run()
+    await mkdir(OUT, { recursive: true })
+    const admin = await User.findByOrFail('role', 'admin')
+    const product = await Product.findByOrFail('sku', 'SKU-0007')
+
+    for (const colorScheme of ['light', 'dark'] as const) {
+      for (const mobile of [false, true]) {
+        const context = await browser.newContext({
+          viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 },
+          deviceScaleFactor: 2,
+          isMobile: mobile,
+          hasTouch: mobile,
+          colorScheme,
+          baseURL: `http://${process.env.HOST}:${process.env.PORT}`,
+        })
+        await context.loginAs(admin)
+        const page = await context.newPage()
+        const size = mobile ? '-phone' : ''
+
+        await page.goto('/admin/resources/products')
+        await page
+          .locator(mobile ? '.azu-list-cards .azu-card' : '.azu-table tbody tr')
+          .nth(3)
+          .waitFor()
+        if (mobile) {
+          await page.getByRole('button', { name: 'Select records', exact: true }).click()
+          await page.getByRole('button', { name: 'Select this page', exact: true }).click()
+          await page
+            .getByRole('toolbar', { name: 'Bulk actions' })
+            .getByRole('button', { name: 'Actions', exact: true })
+            .click()
+          await page.getByRole('menuitem', { name: 'Publish', exact: true }).click()
+        } else {
+          await page
+            .locator('.azu-checkbox', {
+              has: page.getByRole('checkbox', { name: 'Select All', exact: true }),
+            })
+            .click()
+          await page
+            .getByRole('toolbar', { name: 'Bulk actions' })
+            .getByRole('button', { name: 'Publish', exact: true })
+            .click()
+        }
+        await page.getByRole('alertdialog').waitFor()
+        await page.evaluate(() => (globalThis as any).document.fonts.ready)
+        await page.screenshot({ path: `${OUT}/actions${size}-${colorScheme}.png` })
+
+        await page.goto('/admin')
+        await page.locator('[data-azu-widget] .azu-widget-figure').first().waitFor()
+        await page.waitForFunction(() => {
+          const widgets = [...(globalThis as any).document.querySelectorAll('[data-azu-widget]')]
+          return (
+            widgets.length > 0 &&
+            widgets.every((widget: any) => widget.dataset.azuState === 'ready')
+          )
+        })
+        await page.evaluate(async () => {
+          const doc = (globalThis as any).document
+          await doc.fonts.ready
+          await Promise.all([...doc.images].map((img: any) => img.decode().catch(() => {})))
+        })
+        await page.screenshot({ path: `${OUT}/overview${size}-${colorScheme}.png` })
+
+        if (mobile) {
+          await page.goto(`/admin/resources/products/${product.id}/edit`)
+          await page.locator('[data-azu-field="tags"] [role="row"]').first().waitFor()
+          await page.locator('[data-azu-field="description"] [contenteditable="true"]').waitFor()
+          await page.evaluate(() => (globalThis as any).document.fonts.ready)
+          await page.screenshot({ path: `${OUT}/form-phone-${colorScheme}.png` })
+        }
+        await context.close()
+      }
+    }
+  })
+    .skip(!process.env.AZU_SCREENSHOTS, 'Run with pnpm screenshots')
+    .timeout(120_000)
 })
