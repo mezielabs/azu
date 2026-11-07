@@ -6,6 +6,8 @@
   "name": "azu-docs",
   // Cloudflare's docs: set it to the current date when the project starts
   "compatibility_date": "2026-11-05",
+  // Required by `wrangler preview`; this static site needs no preview overrides
+  "previews": {},
   "assets": {
     // Astro's build output, relative to this file
     "directory": "./dist",

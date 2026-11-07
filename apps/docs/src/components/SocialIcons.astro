@@ -51,8 +51,8 @@ const path = Astro.url.pathname
    * Docs. Starlight hides this whole group below 50rem (sl-hidden
    * md:sl-flex), so show the group and keep the rest of it hidden as
    * before: the GitHub icon, its divider, the theme select, and the other
-   * two links. The lockup takes the free space, so Docs and search sit
-   * together at the end, Docs first.
+   * two links. The lockup takes the free space, so Docs sits at the end.
+   * Other splash pages also keep search after Docs.
    */
   @media screen and (width < 50rem) {
     :global(:root:not([data-has-sidebar]) .header .title-wrapper) {

@@ -41,6 +41,8 @@ export default defineConfig({
       ],
       // Code blocks: see ec.config.mjs (the brand theme, wrapping, diff tints)
       components: {
+        // The landing page has its own product navigation
+        Header: './src/components/Header.astro',
         SiteTitle: './src/components/SiteTitle.astro',
         // Adds Docs, Changelog and Roadmap links beside Starlight's own icons
         SocialIcons: './src/components/SocialIcons.astro',

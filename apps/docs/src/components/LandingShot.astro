@@ -1,0 +1,200 @@
+---
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+
+interface Props {
+  light: ImageMetadata
+  dark: ImageMetadata
+  phoneLight: ImageMetadata
+  phoneDark: ImageMetadata
+  alt: string
+  phoneAlt: string
+  primary?: boolean
+  crop?: 'top' | 'center'
+}
+
+const { light, dark, phoneLight, phoneDark, alt, phoneAlt, primary = false, crop = 'top' } = Astro.props
+const viewerId = `shot-${light.src.split('/').pop()?.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+const shots = [
+  { src: light, alt, theme: 'light', size: 'desktop', visibility: 'desktop dark:sl-hidden' },
+  { src: dark, alt, theme: 'dark', size: 'desktop', visibility: 'desktop light:sl-hidden' },
+  { src: phoneLight, alt: phoneAlt, theme: 'light', size: 'phone', visibility: 'phone dark:sl-hidden' },
+  { src: phoneDark, alt: phoneAlt, theme: 'dark', size: 'phone', visibility: 'phone light:sl-hidden' },
+]
+---
+
+<div class="shot-container" data-shot>
+<div class="product-shot" data-primary-shot={primary || undefined} data-crop={crop}>
+  <Image src={light} alt={alt} class="desktop dark:sl-hidden" loading="lazy"
+    widths={[640, 1280, 1920]} sizes="(min-width: 75rem) 46rem, (min-width: 64rem) 60vw, calc(100vw - 3rem)" data-shot-theme="light" data-shot-size="desktop" />
+  <Image src={dark} alt={alt} class="desktop light:sl-hidden" loading="lazy"
+    widths={[640, 1280, 1920]} sizes="(min-width: 75rem) 46rem, (min-width: 64rem) 60vw, calc(100vw - 3rem)" data-shot-theme="dark" data-shot-size="desktop" />
+  <Image src={phoneLight} alt={phoneAlt} class="phone dark:sl-hidden" loading="lazy"
+    widths={[390, 780]} sizes="(min-width: 40rem) 0px, min(22rem, calc(100vw - 3rem))" data-shot-theme="light" data-shot-size="phone" />
+  <Image src={phoneDark} alt={phoneAlt} class="phone light:sl-hidden" loading="lazy"
+    widths={[390, 780]} sizes="(min-width: 40rem) 0px, min(22rem, calc(100vw - 3rem))" data-shot-theme="dark" data-shot-size="phone" />
+</div>
+<div class="shot-links">
+  {shots.map((shot) => (
+    <a href={shot.src.src} class={shot.visibility} data-open-shot data-link-theme={shot.theme} aria-label={`View full screenshot: ${shot.alt}`}>View full screenshot <span aria-hidden="true">↗</span></a>
+  ))}
+</div>
+<dialog class="shot-viewer" id={viewerId} aria-labelledby={`${viewerId}-title`}>
+  <div class="viewer-header">
+    <p id={`${viewerId}-title`}>Full screenshot</p>
+    <button type="button" data-close-shot aria-label="Close screenshot" autofocus><span aria-hidden="true">×</span></button>
+  </div>
+  <div class="viewer-images">
+    {shots.map((shot) => <Image src={shot.src} alt={shot.alt} class={shot.visibility} loading="lazy" />)}
+  </div>
+</dialog>
+</div>
+
+<script>
+  for (const shot of document.querySelectorAll<HTMLElement>('[data-shot]')) {
+    const dialog = shot.querySelector<HTMLDialogElement>('dialog')!
+    let opener: HTMLAnchorElement | undefined
+    shot.querySelectorAll<HTMLAnchorElement>('[data-open-shot]').forEach((link) => {
+      link.setAttribute('aria-haspopup', 'dialog')
+      link.setAttribute('aria-controls', dialog.id)
+      link.addEventListener('click', (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        event.preventDefault()
+        opener = link
+        dialog.showModal()
+      })
+    })
+    shot.querySelector('[data-close-shot]')?.addEventListener('click', () => dialog.close())
+    dialog.addEventListener('close', () => opener?.focus({ preventScroll: true }))
+  }
+</script>
+
+<script is:inline>
+  // Promote only the visible hero image. Hidden tabs and other themes stay lazy.
+  document.querySelectorAll('[data-primary-shot] img').forEach((img) => {
+    const size = matchMedia('(max-width: 39.9375rem)').matches ? 'phone' : 'desktop'
+    if (img.dataset.shotTheme === document.documentElement.dataset.theme && img.dataset.shotSize === size) {
+      img.loading = 'eager'
+      img.fetchPriority = 'high'
+    }
+  })
+</script>
+
+<style>
+  .shot-container {
+    min-width: 0;
+  }
+  .product-shot {
+    overflow: hidden;
+    border-radius: 0.5rem;
+  }
+  /* Only hide images: unlayered display:block would override Starlight's theme utilities. */
+  .product-shot :global(img) {
+    width: 100%;
+    height: auto;
+    vertical-align: top;
+  }
+  .shot-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    width: fit-content;
+    padding-inline: 0.5rem;
+    color: var(--sl-color-white);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .shot-links a:hover {
+    color: var(--sl-color-text-accent);
+  }
+  :global([data-theme='dark']) .shot-links [data-link-theme='light'],
+  :global([data-theme='light']) .shot-links [data-link-theme='dark'] {
+    display: none;
+  }
+  .shot-viewer {
+    width: calc(100% - 2rem);
+    max-width: 90rem;
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 1rem;
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    overscroll-behavior: contain;
+  }
+  .shot-viewer::backdrop {
+    background: var(--sl-color-backdrop-overlay);
+  }
+  :global(html:has(.shot-viewer[open])) {
+    overflow: hidden;
+  }
+  .viewer-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--sl-color-black);
+  }
+  .viewer-header p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+  }
+  .viewer-header button {
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.875rem;
+    cursor: pointer;
+  }
+  .viewer-header button:hover {
+    background: var(--sl-color-accent-low);
+  }
+  .viewer-images {
+    padding: 0 1rem 1rem;
+  }
+  .viewer-images :global(img) {
+    width: 100%;
+    height: auto;
+    vertical-align: top;
+    border-radius: 0.5rem;
+  }
+  @media (max-width: 39.9375rem) {
+    .product-shot {
+      max-width: 22rem;
+      max-height: 20rem;
+      margin-inline: auto;
+    }
+    .product-shot[data-crop='center'] :global(.phone) {
+      height: 20rem;
+      object-fit: cover;
+      object-position: center;
+    }
+    .shot-container :global(.desktop) {
+      display: none !important;
+    }
+    .viewer-images {
+      max-width: 26rem;
+      margin-inline: auto;
+    }
+  }
+  @media (min-width: 40rem) {
+    .shot-container :global(.phone) {
+      display: none !important;
+    }
+  }
+</style>

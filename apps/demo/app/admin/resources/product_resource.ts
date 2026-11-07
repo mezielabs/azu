@@ -79,6 +79,7 @@ export default defineResource(Product, {
 
   // #region actions
   actions: [
+    // #region publish-action
     action
       .bulk('publish')
       .confirm('Publish the selected products?')
@@ -93,6 +94,7 @@ export default defineResource(Product, {
 
         return { message: `${products.length} products published` }
       }),
+    // #endregion
     // A dialog field, validated by its own VineJS validator
     action
       .row('restock')

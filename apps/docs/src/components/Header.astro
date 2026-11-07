@@ -1,0 +1,8 @@
+---
+import Default from '@astrojs/starlight/components/Header.astro'
+import LandingHeader from './LandingHeader.astro'
+
+const isLanding = Astro.locals.starlightRoute.id === ''
+---
+
+{isLanding ? <LandingHeader /> : <Default />}
