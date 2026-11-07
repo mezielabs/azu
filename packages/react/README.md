@@ -9,7 +9,7 @@ npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
 node ace configure @mezielabs/azu
 ```
 
-`@preview` goes away at 0.1.0, when `node ace add @mezielabs/azu` does both steps.
+Use this two-step installation for the current preview.
 
 React 19 and Inertia 3 are required. Tiptap and Lucide are optional peers. Import the package stylesheet as `@mezielabs/azu-react/styles.css`; the configure command sets up the separate admin entry point. Source pages ship for `node ace azu:publish` overrides.
 

@@ -56,3 +56,57 @@ Picker and filter values use Lucid's configured relation key: `localKey` for `be
 ## Filters
 
 `filter.belongsTo('category')` filters the list by a related record. See [Filters](/docs/guides/filters/#filter-kinds).
+
+## Validating related IDs
+
+Picker options run through the related resource's `query` hook. That limits what the picker offers, but doesn't validate newly submitted keys.
+
+Your validator decides which related records a user may attach. A plain `exists()` rule only checks whether a record exists. For scoped data, add the same access restrictions to that rule.
+
+For example, another app might assign projects to categories and tags within a workspace. Its update validator could be:
+
+```ts title="app/validators/project_assignments.ts"
+import vine from '@vinejs/vine'
+
+export const updateProjectAssignmentsValidator = vine
+  .withMetaData<{ workspaceId: number }>()
+  .create({
+    categoryId: vine.number().exists({
+      table: 'categories',
+      column: 'id',
+      filter: (query, _value, field) => {
+        query.where('workspace_id', field.meta.workspaceId)
+      },
+    }),
+    tagIds: vine
+      .array(
+        vine.number().exists({
+          table: 'tags',
+          column: 'id',
+          filter: (query, _value, field) => {
+            query.where('workspace_id', field.meta.workspaceId)
+          },
+        })
+      )
+      .optional(),
+  })
+```
+
+This example assumes numeric IDs and a `workspace_id` column on both related tables. Merge these rules with any other writable fields' rules.
+
+Supply the workspace from trusted server-side state. In an app whose `web` user has a `workspaceId`, the resource's validator options are:
+
+```ts title="app/admin/resources/project_resource.ts (validators option)"
+validators: {
+  update: updateProjectAssignmentsValidator,
+  meta: ({ ctx }) => ({
+    workspaceId: ctx.auth.use('web').user!.workspaceId,
+  }),
+},
+```
+
+Import the validator from `#validators/project_assignments`. Match the guard to your app. For create forms, apply the same rules to the create validator too.
+
+Never take the workspace ID from the submitted form. Test a forged request with a related ID outside the workspace: validation must reject it.
+
+The read-only protections described above still apply. They preserve existing attachments; they don't authorise newly selected records.

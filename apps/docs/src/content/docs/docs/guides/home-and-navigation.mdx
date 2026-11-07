@@ -19,7 +19,7 @@ Or send people to a resource's list:
 home: { resource: 'orders' },
 ```
 
-- The home screen replaces "Dashboard" at the top of the navigation.
+- The home screen replaces **Dashboard** at the top of the navigation.
 - A user who fails the screen's ability gets the welcome page, not a 403.
 - With `{ resource }`, only users who may list that resource are redirected. Everyone else gets the welcome page.
 - A `home` that names no screen or resource stops the app from booting.
@@ -53,7 +53,7 @@ A link's `ability` is a Bouncer ability, like a screen's. It only hides the link
 A link's `ability` doesn't protect the page it opens. That page must check access itself, as Azu's resource pages do through their policies.
 :::
 
-The demo's "Awaiting shipping" link asks the order policy, rather than repeating its rule:
+The demo's **Awaiting shipping** link asks the order policy, rather than repeating its rule:
 
 <DemoCode file="app/abilities/main.ts" region="view-orders" />
 
@@ -81,10 +81,10 @@ An unknown name gives a warning at build time and shows no icon.
 
 The account button's menu holds:
 
-- the theme: Light, Dark, or System. See [Theming](/docs/guides/theming/#light-and-dark).
-- "View site", which opens your `siteUrl` (`/` by default). Set `siteUrl: false` to hide it.
-- Sign out.
+- the theme: **Light**, **Dark**, or **System**. See [Theming](/docs/guides/theming/#light-and-dark).
+- **View site**, which opens your `siteUrl` (`/` by default). Set `siteUrl: false` to hide it.
+- **Sign out**.
 
-Sign out posts to `/admin/logout`. That signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`.
+**Sign out** posts to `/admin/logout`. That signs the user out of Azu's auth guard (`guard` in `config/azu.ts`) and sends them to your `loginUrl`.
 
 Note: sign out doesn't run your app's own logout code, such as an audit entry or extra cookies.

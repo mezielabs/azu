@@ -27,6 +27,10 @@ In a bulk action, records the user can't touch are skipped and reported. They do
 
 Return `{ message }` for a toast, or `{ redirect }` to go somewhere else.
 
+Dialog fields support text, textarea, number, decimal, boolean, select, date, and datetime. Rich text, uploads, and relationships aren't supported in action dialogs.
+
+[Builders](/docs/reference/builders/#actions) documents the methods, handler arguments, and dialog-field restrictions.
+
 ## Transactions and errors
 
 The handler runs in a transaction, with its records bound to it. Run your other queries through `trx` too. Then, if the handler throws, all its changes roll back and the user sees an error toast.
@@ -40,7 +44,9 @@ The demo's order resource cancels orders, and refuses to cancel one that has shi
 
 <DemoCode file="app/admin/resources/order_resource.ts" region="refuse" title="app/admin/resources/order_resource.ts (part)" />
 
-Cancelling a shipped order fails the whole batch, including orders the handler already cancelled.
+For selected rows, cancelling a shipped order rolls back the whole selection, including orders the handler already cancelled.
+
+For **Select all N matching**, only the failing chunk rolls back. Earlier chunks remain committed, as described below.
 
 ## All matching rows
 

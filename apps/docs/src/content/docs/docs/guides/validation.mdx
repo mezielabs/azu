@@ -17,6 +17,12 @@ A resource with no validator for an operation can't save, by design. Azu never w
 
 Note: validators written for your API don't always fit a form. If update needs different rules from create, an optional password say, give the resource a separate `update` validator.
 
+On edit, read-only fields reach the validator with their stored values, never the request's values. Unchanged uploads also keep their stored keys. Neither is written again, even if the validator transforms it.
+
+A read-only `manyToMany` field supplies its current keys only up to the 200-record attachment limit. Above that limit, its input is omitted. See [Relationships](/docs/guides/relationships/#more-than-200-attached).
+
+Fields hidden by `.visibleOn()` or `.ability()` don't reach the validator. Make their rules optional for that operation, or use a separate validator.
+
 ## What relation fields submit
 
 - A `belongsTo` field submits its foreign key: `category` becomes `categoryId`.
@@ -24,9 +30,11 @@ Note: validators written for your API don't always fit a form. If update needs d
 
 [Relationships](/docs/guides/relationships/#manytomany) shows the validator rule and how the pivot rows are synced.
 
+Your validator must also restrict submitted relationship keys to records the user may attach. An unscoped `exists()` checks existence alone. See [Validating related IDs](/docs/guides/relationships/#validating-related-ids).
+
 ## Errors under the field
 
-Validation errors show under the field that caused them, including nested and array fields like `tags.0`.
+Validation errors show under the field that caused them, including nested and array fields like `tagIds.0`.
 
 They read as your validator words them. VineJS's defaults name a field by its key: "The price field must be at least 0". To use the form's labels, give the validator a `SimpleMessagesProvider` with them. Key them by input name: `categoryId`, not `category`.
 

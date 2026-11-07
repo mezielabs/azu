@@ -7,24 +7,37 @@ import { Steps } from '@astrojs/starlight/components'
 
 Generate a resource for the starter kit's `User` model. In an existing app, you can use another model with a migrated table.
 
+Before you start, complete [Installation](/docs/installation/) and allow your account through `accessAdmin`. Run commands from your app's root directory. This walkthrough uses the React starter kit's `User` model and signup routes.
+
+For a business model with relationships and its own rules, follow [Add an existing model](/docs/guides/existing-model/).
+
 <Steps>
 
-1. Run your migrations and generate the resource. The generator reads the model and its database table.
+1. Run your migrations:
 
    ```sh
    node ace migration:run
+   ```
+
+2. Generate the resource. The generator reads the model and its database table.
+
+   ```sh
    node ace azu:resource User --policy
    ```
 
-2. Start your dev server.
+   Check that `app/admin/resources/user_resource.ts` exists. The generated files are listed below.
+
+3. Start your dev server.
 
    ```sh
    npm run dev
    ```
 
-3. Sign up at `/signup` with the email you allowed in [`accessAdmin`](/docs/installation/#let-people-in). If you already have that account, sign in at `/login`.
+4. If you already have the allowed account, sign in at `/login`. Otherwise, sign up at `/signup` with the email you allowed in [`accessAdmin`](/docs/installation/#let-people-in).
 
-4. Open `/admin` and choose **Users**. You can search the list, open a user, and edit their details. Use the app's signup page to create users. The generated policy omits `create` because the required password has no generated admin field.
+5. Open `/admin` and choose **Users**. Open your user, choose **Edit**, change a non-sensitive detail, and save. Reload the record to check that the change persisted.
+
+   Use the app's signup page to create users. The generated policy omits `create` because the required password has no generated admin field.
 
 </Steps>
 
@@ -49,8 +62,17 @@ npm run typecheck
 
 Bouncer's middleware imports `#generated/policies`, which codegen writes. So `npm run typecheck` fails on a fresh app until codegen has run once. The dev server runs it for you.
 
+Then check the resource configuration:
+
+```sh
+node ace azu:doctor
+```
+
+Resolve errors for Users and review warnings. Doctor checks configuration, but doesn't prove your access rules are correct.
+
 ## Next
 
 - [Resources](/docs/guides/resources/) explains each part of the file you generated.
 - [Permissions](/docs/guides/permissions/) covers the policy.
 - [Ace commands](/docs/reference/commands/) lists every flag.
+- [Upgrading](/docs/guides/upgrading/) covers package updates and published-page changes.

@@ -1,0 +1,80 @@
+---
+title: Upgrading
+description: Upgrade both Azu packages together, check app compatibility, and reconcile published pages.
+---
+
+Upgrade Azu in a branch where you can review and test the changes. The preview API can change between releases.
+
+Before you start, commit or back up your app changes, including published pages. Run commands from your app's root directory.
+
+## Upgrade both packages
+
+1. Read the [changelog](/docs/changelog/) for changes since your installed version. Check [Installation](/docs/installation/#requirements) for dependency requirements.
+
+2. Update both packages together to the preview release:
+
+   ```sh
+   npm install @mezielabs/azu@preview @mezielabs/azu-react@preview
+   ```
+
+   With pnpm or Yarn, use `pnpm add` or `yarn add` with the same package names and tag.
+
+3. Confirm the resolved versions match:
+
+   ```sh
+   npm ls @mezielabs/azu @mezielabs/azu-react
+   ```
+
+   Both packages release together. Commit your package manifest and lockfile after verification.
+
+## Check your app
+
+1. Regenerate app types:
+
+   ```sh
+   node ace codegen
+   ```
+
+2. Run your app's typecheck:
+
+   ```sh
+   npm run typecheck
+   ```
+
+3. Check Azu's configuration and overrides:
+
+   ```sh
+   node ace azu:doctor
+   ```
+
+   Resolve errors and review warnings. Doctor also reports original pages that changed since you published them.
+
+4. Run your app's tests and production build. Then check sign-in, a list, a create or edit form, actions, and any custom screens.
+
+Recheck denied access and scoped relationships as well as successful operations. Typechecking and doctor don't test your app's permission rules.
+
+## Reconcile published pages
+
+Pages in `inertia/admin/pages` continue to override Azu's installed pages after an upgrade. They don't receive upstream changes automatically.
+
+For each drift warning, compare your local page with the matching source in `node_modules/@mezielabs/azu-react/src/pages`. Merge relevant changes while preserving your customisations.
+
+If you want to replace your override completely, first save its changes in version control. Then publish the installed version again:
+
+```sh
+node ace azu:publish resource/index --force
+```
+
+:::caution
+`--force` overwrites your published file and removes its edits. Use it only when you intend to replace that file.
+:::
+
+Run doctor again after merging or republishing. A manually merged page can retain a drift warning because its original stamp hasn't changed. Treat that warning as a review reminder; don't overwrite a reviewed custom page just to clear it.
+
+## Configuration and custom components
+
+The upgrade command doesn't regenerate your resources, validators, or custom components. Review any API changes against those files and your `config/azu.ts`.
+
+Run configure again only when release instructions require it. Configure keeps existing generated files, so rerunning it isn't a substitute for merging configuration or entry-point changes.
+
+See [Customising](/docs/guides/customising/) for override ownership and [azu:doctor checks](/docs/reference/doctor/) for diagnostic limits.

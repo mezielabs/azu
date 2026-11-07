@@ -27,7 +27,11 @@ Fields become the create and edit forms, and the detail page. You list them on t
 
 ## No `required()`
 
-You won't find `required()` on any field. Azu reads that from your VineJS validator, so the form and the rules can't disagree. The same goes for limits like `maxLength`: the form shows what the validator enforces.
+You won't find `required()` on any field. Azu reads static hints from your VineJS validator: required markers, lengths, numeric bounds, steps, and enum choices.
+
+Conditional requirements, such as `requiredWhen`, appear optional in the UI. Explicit field hints such as `.min()` override inferred bounds for display only. Validators without VineJS 4's introspection methods supply no hints.
+
+Your validator checks every submission, regardless of the UI hints. Keep explicit hints consistent with its rules.
 
 ## Decimals
 
@@ -70,3 +74,5 @@ Give any field, column, filter, or action its own label with `.label()`. The dem
 - `.readOnly()` shows the value without letting anyone change it.
 - `.ability('publish')` shows the field only to users the policy's `publish` method allows. See [Permissions](/docs/guides/permissions/#fields-and-actions).
 - `.component('SkuInput')` swaps in your own React component. See [Customising](/docs/guides/customising/#2-swap-a-component).
+
+[Builders](/docs/reference/builders/#fields) lists each method's arguments, defaults, and supported field kinds.

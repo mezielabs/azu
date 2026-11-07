@@ -1,0 +1,179 @@
+---
+title: Add an existing model
+description: Turn an existing Article model into an admin resource with a policy, validators, a relationship column, and scoped queries.
+---
+
+Give editors a place to create and edit their own articles. You'll generate a resource, restrict access, connect validators, and check a saved record.
+
+This walkthrough uses a different app from the demo store. Its resource intentionally shows each editor only their own articles, including administrators.
+
+## Before you start
+
+Complete [Installation](/docs/installation/) and confirm your account can open `/admin`. Run commands from your app's root directory.
+
+You need these existing models and tables:
+
+- `Article`, imported from `#models/article`, with a numeric `id`, string `title`, nullable string `body`, and numeric `authorId`.
+- `User`, imported from `#models/user`, with a numeric `id`, string `email`, and string `role`.
+- A required author foreign key, and a Lucid `author` relationship from `Article` to `User`.
+- A `web` session guard. Your test account's role must be `editor` or `admin`.
+
+On your existing `Article` model, the relationship declaration is:
+
+```ts title="app/models/article.ts (relationship)"
+@belongsTo(() => User, { foreignKey: 'authorId' })
+declare author: BelongsTo<typeof User>
+```
+
+Import `belongsTo` from `@adonisjs/lucid/orm`, `BelongsTo` from `@adonisjs/lucid/types/relations`, and `User` from `#models/user`.
+
+This guide assumes the schema and authentication already exist. It doesn't create tables, signup routes, or role-management features.
+
+## Generate the resource
+
+1. Run your pending migrations:
+
+   ```sh
+   node ace migration:run
+   ```
+
+2. Generate an article resource and any missing policy. Skip generated validators so you can connect your form rules explicitly:
+
+   ```sh
+   node ace azu:resource Article --policy --no-validator
+   ```
+
+   Check for `app/admin/resources/article_resource.ts`. If the file already exists, edit it instead; the generator won't overwrite it.
+
+## Restrict the policy
+
+Replace the generated policy with these rules, or merge them into your existing policy:
+
+```ts title="app/policies/article_policy.ts"
+import { BasePolicy } from '@adonisjs/bouncer'
+import type User from '#models/user'
+import type Article from '#models/article'
+
+export default class ArticlePolicy extends BasePolicy {
+  viewList(user: User) {
+    return user.role === 'editor' || user.role === 'admin'
+  }
+
+  view(user: User, article: Article) {
+    return this.viewList(user) && article.authorId === user.id
+  }
+
+  create(user: User) {
+    return this.viewList(user)
+  }
+
+  update(user: User, article: Article) {
+    return this.view(user, article)
+  }
+}
+```
+
+There is no `delete` method, so Azu offers no Delete action. A user must still pass `accessAdmin` before these methods run.
+
+## Connect the validators
+
+Create an admin validator file without changing your API's existing validator:
+
+```ts title="app/validators/article_admin.ts"
+import vine from '@vinejs/vine'
+
+const fields = {
+  title: vine.string().trim().minLength(2).maxLength(160),
+  body: vine.string().trim().nullable().optional(),
+}
+
+export const createArticleValidator = vine.create(fields)
+export const updateArticleValidator = vine.create(fields)
+```
+
+Keep these bounds within your database's column limits. If your API already exports suitable validators, import those instead.
+
+The author isn't a writable form field, so these validators don't accept `authorId`. The resource assigns it from the signed-in user.
+
+## Define the resource
+
+Replace the generated resource with:
+
+```ts title="app/admin/resources/article_resource.ts"
+import { HttpContext } from '@adonisjs/core/http'
+import { column, defineResource, field } from '@mezielabs/azu'
+import Article from '#models/article'
+import ArticlePolicy from '#policies/article_policy'
+import {
+  createArticleValidator,
+  updateArticleValidator,
+} from '#validators/article_admin'
+
+export default defineResource(Article, {
+  title: 'title',
+  search: ['title'],
+  policy: ArticlePolicy,
+  validators: {
+    create: createArticleValidator,
+    update: updateArticleValidator,
+  },
+  query: (query) => {
+    const user = HttpContext.getOrFail().auth.use('web').user!
+    query.where('authorId', user.id)
+  },
+  columns: [
+    column.text('title').sortable(),
+    column.belongsTo('author', 'email'),
+  ],
+  fields: [field.text('title'), field.textarea('body')],
+  beforeSave: (record, ctx) => {
+    if (record.$isNew) record.authorId = ctx.auth.use('web').user!.id
+  },
+})
+```
+
+The `query` hook scopes lists and record lookups. A different editor's article won't appear in the list or open by URL.
+
+The author column preloads the relationship automatically. It displays the author's email without making the author editable. Submitted `authorId` values are ignored because no writable field declares that input.
+
+If you add writable relationships later, [validate their IDs against the allowed scope](/docs/guides/relationships/#validating-related-ids).
+
+## Check the result
+
+1. Generate app types:
+
+   ```sh
+   node ace codegen
+   ```
+
+2. Run your app's typecheck:
+
+   ```sh
+   npm run typecheck
+   ```
+
+3. Check Azu's setup:
+
+   ```sh
+   node ace azu:doctor
+   ```
+
+   Resolve errors for Articles before continuing. Review warnings too; doctor doesn't prove your policies or scopes are correct.
+
+4. Start the app:
+
+   ```sh
+   npm run dev
+   ```
+
+5. Sign in as the allowed editor and open `/admin/resources/articles`. Choose **New article**, enter a title and body, and save.
+
+   You should reach the article's detail page. Return to the list and check that the author column shows your account's email.
+
+6. Edit the article, change its title, and save. Reload to check persistence. Try a one-character title: validation should reject it.
+
+7. Sign in as a second allowed editor. The first editor's article must be absent. Its direct URL must return a 404.
+
+Keep these cases in your app's integration tests, including a forged create request with another user's `authorId`.
+
+For more options, see [Builders](/docs/reference/builders/), [Resource hooks](/docs/reference/resource-hooks/), and [Permissions](/docs/guides/permissions/).

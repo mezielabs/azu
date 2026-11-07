@@ -15,4 +15,4 @@ npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
 node ace configure @mezielabs/azu
 ```
 
-`@preview` goes away at 0.1.0, when `node ace add @mezielabs/azu` does both steps. Review the generated `accessAdmin` ability before granting admin access.
+Use this two-step installation for the current preview. Review the generated `accessAdmin` ability before granting admin access.

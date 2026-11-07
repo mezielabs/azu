@@ -8,10 +8,14 @@ import { Steps } from '@astrojs/starlight/components'
 
 Azu runs inside your AdonisJS app, at `/admin`. You'll add Bouncer, install Azu, and write one rule that says who gets in.
 
+This guide assumes you can run Ace commands and edit TypeScript in an existing AdonisJS app. You should know how your app signs users in. Resource definitions also use Lucid models, Bouncer policies, and VineJS validators.
+
 ## Requirements
 
-- AdonisJS 7 with Lucid, Auth, and Bouncer.
-- Inertia with React.
+- AdonisJS 7, Lucid 22, Auth 10, Bouncer 4, and VineJS 4.
+- `@adonisjs/inertia` 5 for the server integration.
+- React 19, React DOM 19, and `@inertiajs/react` 3 for the panel.
+- Vite 8, `@adonisjs/vite` 6, and Edge 6.
 - Node.js 24.21 or later.
 - PostgreSQL, MySQL, or SQLite.
 
@@ -23,22 +27,27 @@ Note: the React and Vue starter kits have everything but Bouncer. The Hypermedia
 
 <Steps>
 
-1. Add Bouncer, if your app doesn't have it. Azu's access gate is a Bouncer ability, and the AdonisJS starter kits don't include Bouncer.
+1. If your app doesn't have Bouncer, add it. Azu's access gate is a Bouncer ability, and the AdonisJS starter kits don't include Bouncer.
 
    ```sh
    node ace add @adonisjs/bouncer
    ```
 
-2. Install Azu and its React package with the `preview` tag, then configure Azu. Use `pnpm add` or `yarn add` if you prefer.
+2. From your app's root directory, install both Azu packages with the `preview` tag. Use `pnpm add` or `yarn add` if you prefer.
 
    ```sh
    npm i @mezielabs/azu@preview @mezielabs/azu-react@preview
+   ```
+
+3. Configure Azu:
+
+   ```sh
    node ace configure @mezielabs/azu
    ```
 
-   The `@preview` tag goes away at 0.1.0. From then on, `node ace add @mezielabs/azu` installs and configures in one step.
+   A successful configure creates `config/azu.ts` and `inertia/admin/app.tsx`. Resolve any provider warnings before opening the panel.
 
-3. Decide who gets in. Configuring adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`, so nothing is exposed until you change it.
+4. Decide who gets in, as described below. Configuring adds an `accessAdmin` ability to `app/abilities/main.ts` that returns `false`.
 
 </Steps>
 
@@ -79,6 +88,16 @@ Azu uses your app's existing auth guard. Guests are sent to your login page, and
 
 With session middleware, Azu remembers the admin page a guest asked for. Your login can send them back there. [Troubleshooting](/docs/troubleshooting/#login-doesnt-return-to-the-admin) shows the demo's login controller.
 
+## Verify access
+
+If your dev server isn't running, start it:
+
+```sh
+npm run dev
+```
+
+Check that your login works and the account you allowed can open `/admin`. Before you add resources or a home screen, the panel shows a welcome page. Signed-in accounts outside the access rule should receive a 403.
+
 ## Next
 
-[Quick start](/docs/quick-start/) generates your first resource.
+[Quick start](/docs/quick-start/) generates your first resource. For an app with existing business models, follow [Add an existing model](/docs/guides/existing-model/).

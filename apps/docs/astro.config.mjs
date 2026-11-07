@@ -9,7 +9,7 @@ const site = 'https://azuadmin.com'
 // merges this after its own head tags and before a page's frontmatter head.
 const socialCard = new URL('/og/azu.png', site).href
 const socialCardAlt =
-  'Azu, the back of your AdonisJS app. npm i @mezielabs/azu@preview @mezielabs/azu-react@preview'
+  'Azu, the back of your AdonisJS app. Your models, policies, and validators, with a preview of the product admin.'
 
 export default defineConfig({
   site,
@@ -59,6 +59,7 @@ export default defineConfig({
             'docs/quick-start',
             'docs/starter-kits',
             'docs/preview-limits',
+            'docs/guides/existing-model',
           ],
         },
         {
@@ -81,12 +82,15 @@ export default defineConfig({
             'docs/guides/trends',
             'docs/guides/customising',
             'docs/guides/theming',
+            'docs/guides/upgrading',
           ],
         },
         {
           label: 'Reference',
           items: [
             'docs/reference/config',
+            'docs/reference/builders',
+            'docs/reference/resource-hooks',
             'docs/reference/commands',
             'docs/reference/doctor',
             'docs/reference/component-props',
