@@ -64,6 +64,45 @@ test.group('manyToMany picker (FR-09)', (group) => {
     )
   })
 
+  // #79: the product resource's query hook preloads its category, which
+  // failed on the grouped selection a tag's pages load its products with
+  test("a tag's detail and edit pages show its products", async ({
+    visit,
+    browserContext,
+    assert,
+  }) => {
+    await browserContext.loginAs(await createUser('admin'))
+    const category = await Category.create({ name: 'Kitchen', slug: 'kitchen-m2m-tag' })
+    const [pot, mug] = await Product.createMany(
+      ['Clay pot', 'Gift mug'].map((name, index) => ({
+        categoryId: category.id,
+        name,
+        sku: `M2M-TAG-${index}`,
+        price: '12.50',
+        stock: 3,
+        status: 'draft' as const,
+        isFeatured: false,
+      }))
+    )
+    const tag = await Tag.create({ name: 'Clay', slug: 'clay-m2m-tag' })
+    await tag.related('products').attach([mug.id, pot.id])
+
+    const detail = await visit(`/admin/resources/tags/${tag.id}`)
+    const products = detail.locator('[data-azu-field="products"]')
+    await products.getByRole('link', { name: 'Clay pot' }).waitFor()
+    assert.deepEqual(await products.getByRole('link').allInnerTexts(), ['Clay pot', 'Gift mug'])
+    assert.equal(
+      await products.getByRole('link', { name: 'Gift mug' }).getAttribute('href'),
+      `/admin/resources/products/${mug.id}`
+    )
+
+    const edit = await visit(`/admin/resources/tags/${tag.id}/edit`)
+    const picker = edit.locator('[data-azu-field="products"]')
+    await picker.locator('[role="row"]', { hasText: 'Clay pot' }).waitFor()
+    await picker.locator('[role="row"]', { hasText: 'Gift mug' }).waitFor()
+    await picker.getByRole('combobox', { name: 'Add products' }).waitFor()
+  })
+
   test('clearing the last tag while uploading an image persists both changes', async ({
     visit,
     browserContext,

@@ -2,6 +2,12 @@
 
 `@mezielabs/azu` and `@mezielabs/azu-react` version and release together. Dates are publication dates, not when the work was done.
 
+## 0.1.0-preview.1 — Unreleased
+
+### Fixed
+
+- A manyToMany field's detail and edit pages no longer fail when the related resource's query hook preloads a relation (#79).
+
 ## 0.1.0-preview.0 — 2026-11-03
 
 The first preview, for early testers. Install it with the `preview` tag (see the README). The API may change before 0.1.0.
