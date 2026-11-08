@@ -180,22 +180,33 @@ async function scopedAttachments(
     .related(field.name)
     .query()
   resource?.options.query?.(query)
-  const primary = `${keys.related.table}.${columnName(keys.related, keys.related.primaryKey)}`
+  const key = columnName(keys.related, keys.related.primaryKey)
+  const primary = `${keys.related.table}.${key}`
   const label = title ? `${keys.related.table}.${columnName(keys.related, title)}` : null
   // Group only scalar record keys/titles before applying the limit. An
   // aggregate keeps Lucid from adding pivot metadata to this selection;
   // differing pivot rows must not count as different picker records.
+  // Plain rows, not models: the hook's preloads would run on rows that
+  // hold only these columns, and a belongsTo preload fails without its
+  // foreign key.
   const columns = label ? [primary, label] : [primary]
   query.clearSelect().select(columns).groupBy(columns).count('* as attachment_rows').clearOrder()
   if (label) query.orderBy(label, 'asc')
-  const selected = (await query.orderBy(primary, 'asc').limit(MANY_TO_MANY_LIMIT)) as LucidRow[]
+  const selected = await query
+    .orderBy(primary, 'asc')
+    .limit(MANY_TO_MANY_LIMIT)
+    .pojo<Record<string, string | number>>()
   if (selected.length === 0) return []
 
-  // Fetch full models for per-record policies on the same connection. Grouping
-  // is limited to scalar keys/titles: full records can contain JSON columns.
-  const records = keys.related.query({ client: query.client }).whereIn(
+  // Fetch full models for per-record policies on the same connection, through
+  // the same hook, so `view` checks and titles see the list's preloads and
+  // scope. Grouping is limited to scalar keys/titles: full records can contain
+  // JSON columns. The order is the grouped query's: title, then key.
+  const records = keys.related.query({ client: query.client })
+  resource?.options.query?.(records)
+  records.clearOrder().whereIn(
     primary,
-    selected.map((item) => item.$primaryKeyValue as string | number)
+    selected.map((row) => row[key])
   )
   if (label) records.orderBy(label, 'asc')
   const related = await records.orderBy(primary, 'asc')
