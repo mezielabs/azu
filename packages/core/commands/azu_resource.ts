@@ -39,12 +39,14 @@ export default class AzuResource extends BaseCommand {
   declare validator: boolean
 
   @flags.boolean({
-    description: 'Create a policy that lets admin users list, view, create and update',
+    description:
+      'Create a missing policy: list, view, and update for anyone who passes accessAdmin, and create when the fields cover every required column',
   })
   declare policy: boolean
 
   @flags.boolean({
-    description: 'List and detail only: no validators, and a policy without create or update',
+    description:
+      'List and detail only: no validators, and with --policy, a policy that only lists and views',
   })
   declare readonly: boolean
 
