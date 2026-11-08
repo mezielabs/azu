@@ -5,7 +5,7 @@
 Azu is an admin panel for AdonisJS 7. Build searchable lists, detail pages, and forms using your existing Lucid models, Bouncer policies, and VineJS validators.
 
 > [!NOTE]
-> **Azu is in preview (0.1.0-preview.0).** The API may change based on feedback; tell us in [Discussions](https://github.com/mezielabs/azu/discussions).
+> **Azu is in preview (0.1.0-preview.1).** The API may change based on feedback; tell us in [Discussions](https://github.com/mezielabs/azu/discussions).
 
 **Documentation: [azuadmin.com/docs](https://azuadmin.com/docs)**
 

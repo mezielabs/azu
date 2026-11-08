@@ -21,7 +21,7 @@ Recorded from the compatibility pass and the benchmarks; both issues stay open f
 
 - ✅ **Version** both packages `0.1.0-preview.0`, in one commit. They release together: `@mezielabs/azu-react` has a peer dependency on `@mezielabs/azu`, written `workspace:^`, which `pnpm pack` rewrites to `^0.1.0-preview.0`.
 - ✅ **npm dist-tag `preview`.** Published with `--tag preview`. On the first publish npm set `latest` to `0.1.0-preview.0` as well (section 7), so `npm install @mezielabs/azu` installs the preview until `latest` moves.
-- ⬜ **Git tag** `v0.1.0-preview.0` on the release commit, and a GitHub release (marked pre-release) with the changelog entry.
+- ✅ **Git tag** `v0.1.0-preview.0` on the release commit (`141275c`), and a GitHub release (marked pre-release) with the changelog entry, published 2026-11-03.
 - ⬜ **Later previews** bump the last number (`0.1.0-preview.1`). `0.1.0` itself is the Phase 3 release.
 
 ## 2. package.json fields
@@ -95,7 +95,7 @@ All on `61dde23`, 2026-11-02.
 
 - ✅ **CI and the release workflow green** ([run 41453957618](https://github.com/mezielabs/azu/actions/runs/41453957618)):
   - Lint and typecheck: passed.
-  - Core: 275 passed on each of SQLite, Postgres 18 and MySQL 8.4.
+  - Core: 275 passed in each database's job. Those runs were all on in-memory SQLite, though: core's specs built their own SQLite database and ignored the job's database until #84 added `tests/helpers/test_database.ts`, which one spec uses so far. The demo suite below is what ran on each database. Moving the rest of core onto it is [#85](https://github.com/mezielabs/azu/issues/85).
   - Demo: 329 passed, 1 skipped (README screenshots) on each database, the full browser suite in Chromium included; the generator proof's own run, 9 of 9, on each.
   - Smoke subset (`smoke.yml`): 5 of 5 in Firefox and 5 of 5 in WebKit.
   - One flaky browser test turned up afterwards, on SQLite in this PR's own CI: `save_and_continue.spec.ts` reads the save bar before the lazy form renders. Fixed for [#69](https://github.com/mezielabs/azu/issues/69): the test waits for the bar, the browser suite waits for menus the same way, and the suite then passed 10 runs in a row on SQLite.
@@ -116,7 +116,7 @@ All on `61dde23`, 2026-11-02.
 - **Dist-tags:** `latest` and `preview` both `0.1.0-preview.0`, on both packages. A package's first publish sets `latest` even with `--tag preview`, as Verdaccio did (below); later previews published with `--tag preview` leave it where it is.
 - **Integrity:** npm's `shasum` for each version matches the job log's: `5e4d5036…6e8d49` for `@mezielabs/azu`, `cf29429a…67c861` for `@mezielabs/azu-react`.
 - **Provenance:** both versions carry an SLSA v1 provenance attestation, signed in the run and logged in Sigstore's transparency log.
-- ⬜ **Next preview:** note whether trusted publishing also stages, and add it here.
+- ⬜ **Next preview:** note whether trusted publishing also stages. It's recorded under [0.1.0-preview.1](#010-preview1) below.
 
 **Approving a staged publish.** You need npm 11.15 or later, 2FA on your npm account, and a session logged in as a maintainer (`npm login`). The `stage` subcommands other than `publish` can't use the job's OIDC token. Do this for each package, core first, since `@mezielabs/azu-react`'s peer range names core's version:
 
@@ -161,3 +161,20 @@ Cloudflare Workers Builds deploys it. In the dashboard, connect `mezielabs/azu` 
 Under the Worker's Settings › Domains & Routes, add `azuadmin.com` and `www.azuadmin.com` as custom domains. Then send www to the bare domain with a Redirect Rule in the `azuadmin.com` zone (Rules › Redirect Rules): `www.azuadmin.com` to `https://azuadmin.com`, keeping the path and query, with a 301.
 
 The release workflow's `docs-live` job needs the site live. Before publishing, it checks that `https://azuadmin.com/docs/` answers 2xx, because the packages, the README and Azu's setup messages link there. Deploy the docs before you publish.
+
+## 0.1.0-preview.1
+
+The second preview: the #79 fix and the docs site (`CHANGELOG.md`). Both packages are versioned `0.1.0-preview.1` in one commit, and `pnpm pack:check` rewrites the React peer to `^0.1.0-preview.1`. The steps follow sections 4 and 7.
+
+1. ⬜ **Dry run:** dispatch `release.yml` on the release branch with `version: 0.1.0-preview.1` and `publish: false`. The run needs `verify`, `smoke` and `packages` green, and the staging jobs skipped.
+2. ⬜ **(Chimezie)** **Publish:** after the release PR merges and the docs have deployed, dispatch `release.yml` from `main` with `version: 0.1.0-preview.1` and `publish: true`. `docs-live` checks that azuadmin.com answers, then the job stages both tarballs through OIDC.
+3. ⬜ **(Chimezie)** **Approve, core then React:** follow section 7's steps (`npm stage list`, `view`, and optionally `download`, then `approve`) for `@mezielabs/azu` first, then `@mezielabs/azu-react`.
+4. ⬜ **(Chimezie)** **Move `latest`:** staging with `--tag preview` leaves `latest` on `0.1.0-preview.0` (section 7). Run `npm dist-tag add @mezielabs/azu@0.1.0-preview.1 latest`, and the same for `@mezielabs/azu-react`, then check `npm view <package> dist-tags` shows both tags on `0.1.0-preview.1`.
+5. ⬜ **Tag and release:** tag `v0.1.0-preview.1` on the release commit on `main`, and publish a GitHub release (marked pre-release) with the changelog entry. Set the changelog entry's date to the day it went live.
+
+**Result** (fill in after publishing):
+
+- Run: ⬜
+- **Did trusted publishing stage it?** ⬜ Record what npm did for the OIDC publish: staged as expected, or something else (this answers section 7's "next preview" item).
+- Integrity: ⬜ `shasum` for each package against the job's "Tarball checksums" step.
+- Dist-tags after step 4: ⬜
