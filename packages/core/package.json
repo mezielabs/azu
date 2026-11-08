@@ -1,7 +1,7 @@
 {
   "name": "@mezielabs/azu",
   "description": "Admin panel for AdonisJS 7, built on your Lucid models, Bouncer policies and VineJS validators",
-  "version": "0.1.0-preview.0",
+  "version": "0.1.0-preview.1",
   "type": "module",
   "license": "MIT",
   "author": "Mezie Labs",
