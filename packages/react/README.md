@@ -1,6 +1,6 @@
 # @mezielabs/azu-react
 
-Inertia + React pages, components and prebuilt styles for [Azu](https://github.com/mezielabs/azu), the AdonisJS admin panel. MIT licensed.
+Inertia + React pages, components and prebuilt styles for [Azu](https://azuadmin.com), the AdonisJS admin panel. MIT licensed.
 
 This preview pairs with the same version of `@mezielabs/azu`; it is not a standalone admin application. The API may change before a stable release. Install both packages with the `preview` tag, then configure (the [Azu installation guide](https://azuadmin.com/docs/installation/) has the rest):
 

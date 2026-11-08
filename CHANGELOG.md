@@ -4,9 +4,19 @@
 
 ## 0.1.0-preview.1 — Unreleased
 
+### Changed
+
+- `node ace configure @mezielabs/azu`'s refusal and the `E_AZU_SETUP` error point to the [Starter kits](https://azuadmin.com/docs/starter-kits/) page at azuadmin.com instead of the README (#76).
+- Both package READMEs link to the documentation at [azuadmin.com](https://azuadmin.com) and describe the two-step preview install (#76, #81, #83).
+- `node ace azu:resource --help` describes what `--policy` and `--readonly` generate.
+
 ### Fixed
 
 - A manyToMany field's detail and edit pages no longer fail when the related resource's query hook preloads a relation (#79).
+
+### Documentation
+
+- The documentation is now a site at [azuadmin.com](https://azuadmin.com), with the guides and reference that used to be the README, plus new pages on [adding an existing model](https://azuadmin.com/docs/guides/existing-model/), [builders](https://azuadmin.com/docs/reference/builders/), [resource hooks](https://azuadmin.com/docs/reference/resource-hooks/) and [upgrading](https://azuadmin.com/docs/guides/upgrading/) (#76–#83).
 
 ## 0.1.0-preview.0 — 2026-11-03
 
