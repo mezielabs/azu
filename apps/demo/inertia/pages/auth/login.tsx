@@ -1,11 +1,52 @@
 import AuthLayout from '~/layouts/auth'
+import DemoBanner from '~/components/demo_banner'
 import { Form, Link } from '@adonisjs/inertia/react'
 
-export default function Login() {
+type DemoRole = 'admin' | 'editor' | 'viewer'
+
+/**
+ * The public demo (DEMO_MODE): the roles to sign in as, and when the
+ * demo last reset. Absent otherwise.
+ */
+type DemoProps = {
+  roles: DemoRole[]
+  resetEveryMinutes: number
+  lastResetAt: string | null
+}
+
+const ROLE_LABELS: Record<DemoRole, string> = {
+  admin: 'Admin',
+  editor: 'Editor',
+  viewer: 'Viewer',
+}
+
+export default function Login({ demo }: { demo?: DemoProps }) {
   return (
     <>
+      {demo && <DemoBanner everyMinutes={demo.resetEveryMinutes} lastResetAt={demo.lastResetAt} />}
+
       <h1 className="auth__title">Welcome back</h1>
       <p className="auth__sub">Sign in to continue building.</p>
+
+      {demo && (
+        <div className="demo-sign-in" aria-label="Try the demo" role="group">
+          {/* A POST each, with the XSRF-TOKEN cookie as the CSRF token */}
+          {demo.roles.map((role) => (
+            <Form key={role} action={`/demo/sign-in/${role}`} method="post">
+              {({ processing }) => (
+                <button
+                  type="submit"
+                  className="btn btn--secondary btn--block"
+                  disabled={processing}
+                >
+                  Sign in as {ROLE_LABELS[role]}
+                </button>
+              )}
+            </Form>
+          ))}
+          <p className="demo-sign-in__or">or with an email and password</p>
+        </div>
+      )}
 
       <Form route="session.store">
         {({ errors, processing }) => (

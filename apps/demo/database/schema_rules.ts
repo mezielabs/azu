@@ -8,7 +8,7 @@ export default {
   tables: {
     users: {
       columns: {
-        role: { tsType: `'admin' | 'staff' | 'customer'` },
+        role: { tsType: `'admin' | 'staff' | 'viewer' | 'customer'` },
       },
     },
     products: {

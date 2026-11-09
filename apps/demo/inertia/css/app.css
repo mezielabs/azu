@@ -906,3 +906,30 @@ input {
     padding: 20px;
   }
 }
+
+/* ==========================================================================
+   The public demo (DEMO_MODE): reset banner and one-click sign-in
+   ========================================================================== */
+
+.demo-banner {
+  margin-bottom: 22px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.demo-sign-in {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 22px;
+}
+.demo-sign-in__or {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}

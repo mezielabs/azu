@@ -28,3 +28,21 @@ export const loginValidator = vine.create({
   email: email(),
   password: vine.string(),
 })
+
+/**
+ * Editing a user in the public demo's Users resource (DEMO_MODE). Azu
+ * passes `{ record }` as metadata: the user being edited, so their own
+ * email doesn't count as taken. The role is optional because only
+ * admins see that field.
+ */
+export const updateUserValidator = vine.create({
+  fullName: vine.string().trim().maxLength(160).nullable(),
+  email: email().unique({
+    table: 'users',
+    column: 'email',
+    filter: (query, _value, field) => {
+      query.whereNot('id', field.meta.record.id)
+    },
+  }),
+  role: vine.enum(['admin', 'staff', 'viewer', 'customer'] as const).optional(),
+})

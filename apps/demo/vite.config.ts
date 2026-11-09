@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     adonisjs({ entryPoints: ['inertia/app.tsx'], reload: ['resources/views/**/*.edge'] }),
-    azu(),
+    // The public demo's Users resource (DEMO_MODE) is outside
+    // app/admin/resources, so the plugin doesn't read its icon there
+    azu({ icons: ['users'] }),
   ],
 
   /**

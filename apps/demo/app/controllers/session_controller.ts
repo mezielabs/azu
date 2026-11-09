@@ -1,11 +1,23 @@
 import { isValidRedirectUrl } from '@adonisjs/core/http/helpers'
 import User from '#models/user'
+import demo, { type DemoRole } from '#config/demo'
+import { lastDemoReset } from '#services/demo_reset'
 import { loginValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class SessionController {
   async create({ inertia }: HttpContext) {
-    return inertia.render('auth/login', {})
+    if (!demo.enabled) return inertia.render('auth/login', {})
+
+    // The public demo (DEMO_MODE): one-click sign-in and the reset banner
+    const resetAt = await lastDemoReset()
+    return inertia.render('auth/login', {
+      demo: {
+        roles: Object.keys(demo.accounts) as DemoRole[],
+        resetEveryMinutes: demo.resetEveryMinutes,
+        lastResetAt: resetAt?.toISO() ?? null,
+      },
+    })
   }
 
   async store({ request, auth, response, session, inertia }: HttpContext) {

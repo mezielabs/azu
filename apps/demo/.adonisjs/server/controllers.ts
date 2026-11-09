@@ -4,6 +4,8 @@
  */
 
 export const controllers = {
+  DemoSession: () => import('#controllers/demo_session_controller'),
+  HealthChecks: () => import('#controllers/health_checks_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Session: () => import('#controllers/session_controller'),
 }

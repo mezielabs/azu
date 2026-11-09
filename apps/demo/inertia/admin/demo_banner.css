@@ -1,0 +1,36 @@
+/*
+ * The public demo's banner above the admin panel (DEMO_MODE), in Azu's
+ * colours. It stays at the top, and the panel's full-height parts (the
+ * sidebar, and the top bar on phones) sit below it: --demo-banner-height
+ * is its measured height (demo_banner.tsx).
+ */
+#demo-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.demo-admin-banner {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  text-align: center;
+  color: var(--azu-text);
+  background: var(--azu-badge-yellow-bg);
+  border-bottom: 1px solid var(--azu-border);
+}
+
+body:has(> #demo-banner) .azu-shell {
+  min-height: calc(100vh - var(--demo-banner-height, 0px));
+}
+
+body:has(> #demo-banner) .azu-sidebar {
+  top: var(--demo-banner-height, 0px);
+  height: calc(100vh - var(--demo-banner-height, 0px));
+}
+
+body:has(> #demo-banner) .azu-topbar {
+  top: var(--demo-banner-height, 0px);
+}

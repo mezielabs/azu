@@ -2,6 +2,10 @@ import { BasePolicy } from '@adonisjs/bouncer'
 import type User from '#models/user'
 import type Product from '#models/product'
 
+/**
+ * Admins do everything; staff edit products but can't create, delete,
+ * publish, restock or feature them; viewers only list and view them.
+ */
 export default class ProductPolicy extends BasePolicy {
   viewList(user: User) {
     return user.role !== 'customer'

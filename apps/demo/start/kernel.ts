@@ -10,6 +10,7 @@
 
 import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
+import demo from '#config/demo'
 
 /**
  * The error handler is used to convert an exception
@@ -23,6 +24,8 @@ server.errorHandler(() => import('#exceptions/handler'))
  * the request URL.
  */
 server.use([
+  // The public demo (DEMO_MODE): noindex on every response
+  ...(demo.enabled ? [() => import('#middleware/noindex_middleware')] : []),
   () => import('#middleware/container_bindings_middleware'),
   () => import('@adonisjs/static/static_middleware'),
   () => import('@adonisjs/cors/cors_middleware'),
@@ -35,6 +38,9 @@ server.use([
  * requests with a registered route.
  */
 router.use([
+  // The public demo (DEMO_MODE): write rate limits, before the body is
+  // read, and the reset banner's cookie
+  ...(demo.enabled ? [() => import('#middleware/demo_mode_middleware')] : []),
   () => import('@adonisjs/core/bodyparser_middleware'),
   () => import('@adonisjs/session/session_middleware'),
   () => import('@adonisjs/shield/shield_middleware'),

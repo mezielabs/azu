@@ -45,7 +45,8 @@ Run from the repo root. Root scripts build `packages/*` first, because the demo 
 - Build packages: `pnpm build`
 - Typecheck: `pnpm typecheck` (packages, then the demo; the demo runs `node ace codegen` first)
 - Lint: `pnpm lint`
-- Test: `pnpm test` (core Japa suite, then the demo's `node ace test`)
+- Test: `pnpm test` (core Japa suite, then the demo's `node ace test`, then its `demo` suite with `DEMO_MODE=true`)
+- Public demo (demo.azuadmin.com): everything is behind `DEMO_MODE=true` in `apps/demo`; deploy, env vars and the hourly `node ace demo:reset` are in `apps/demo/DEPLOY.md`
 - Test on Postgres or MySQL: set `DB_CONNECTION=pg` (or `mysql`) and `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE` (see `apps/demo/.env.example`), then `pnpm test`. CI runs Postgres 18, MySQL 8.4 and SQLite (`.github/workflows/ci.yml`).
 - Run demo: `pnpm dev` (`node ace serve --hmr`), then open http://localhost:3333/admin. Needs Node 24.21 or later (`engines` in every package.json); `--hmr` and `sanitize-html` crash on 24.3.0. `.nvmrc` pins 24.21.
 - Reset and seed the demo DB: `pnpm demo:seed`. Logins are in `apps/demo/database/seeders/main_seeder.ts`.

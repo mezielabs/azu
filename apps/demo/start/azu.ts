@@ -14,4 +14,14 @@
 |
 */
 
-export {}
+import azu from '@mezielabs/azu/services/main'
+import demo from '#config/demo'
+
+/**
+ * The public demo (DEMO_MODE) adds a Users resource, to show the roles
+ * and the locked demo accounts. Otherwise the panel is unchanged.
+ */
+if (demo.enabled) {
+  const { default: userResource } = await import('#admin/demo/user_resource')
+  azu.register(userResource)
+}

@@ -14,3 +14,9 @@ createAzuApp({
   pages: import.meta.glob('./pages/**/*.tsx'),
   components: import.meta.glob('./components/**/*.tsx'),
 })
+
+// The public demo (DEMO_MODE) sets this cookie. Only then does the reset
+// banner load, so the panel is unchanged otherwise.
+if (/(?:^|;\s*)azu_demo=/.test(document.cookie)) {
+  void import('./demo_banner').then(({ mountDemoBanner }) => mountDemoBanner())
+}

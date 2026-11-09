@@ -4,5 +4,6 @@ export const policies = {
   OrderPolicy: () => import('#policies/order_policy'),
   ProductPolicy: () => import('#policies/product_policy'),
   TagPolicy: () => import('#policies/tag_policy'),
+  UserPolicy: () => import('#policies/user_policy'),
 }
 

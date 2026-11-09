@@ -1,6 +1,21 @@
+import { BlockList } from 'node:net'
 import env from '#start/env'
 import app from '@adonisjs/core/services/app'
 import { defineConfig } from '@adonisjs/core/http'
+import demo from '#config/demo'
+
+/**
+ * Proxies on the host's private network, such as the reverse proxy in
+ * front of the public demo (DEMO_MODE), so `request.ip()` is the
+ * visitor's address and the write limits count per visitor.
+ */
+const privateNetworks = new BlockList()
+privateNetworks.addSubnet('127.0.0.0', 8)
+privateNetworks.addSubnet('10.0.0.0', 8)
+privateNetworks.addSubnet('172.16.0.0', 12)
+privateNetworks.addSubnet('192.168.0.0', 16)
+privateNetworks.addAddress('::1', 'ipv6')
+privateNetworks.addSubnet('fc00::', 7, 'ipv6')
 
 /**
  * The app URL can be used in various places where you want to create absolute
@@ -18,6 +33,20 @@ export const http = defineConfig({
    * Useful to correlate logs and debug a request flow.
    */
   generateRequestId: true,
+
+  /**
+   * Which proxies' X-Forwarded-For to trust. The public demo trusts its
+   * reverse proxy; otherwise, the default (loopback only).
+   */
+  ...(demo.enabled
+    ? {
+        trustProxy: (address: string) =>
+          privateNetworks.check(
+            address.replace(/^::ffff:/, ''),
+            address.includes('.') ? 'ipv4' : 'ipv6'
+          ),
+      }
+    : {}),
 
   /**
    * Allow HTTP method spoofing via the "_method" form/query parameter.

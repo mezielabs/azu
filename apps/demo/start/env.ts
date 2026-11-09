@@ -45,4 +45,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   DRIVE_DISK: Env.schema.enum(['fs'] as const),
+
+  /**
+   * The public demo at demo.azuadmin.com (apps/demo/DEPLOY.md): one-click
+   * sign-in, locked demo accounts, write rate limits, a 1 MB upload cap,
+   * noindex, and the hourly reset banner. Off unless set to true.
+   */
+  DEMO_MODE: Env.schema.boolean.optional(),
 })
