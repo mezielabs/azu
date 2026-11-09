@@ -2,7 +2,7 @@
 
 `@mezielabs/azu` and `@mezielabs/azu-react` version and release together. Dates are publication dates, not when the work was done.
 
-## 0.1.0-preview.1 — Unreleased
+## 0.1.0-preview.1 — 2026-11-09
 
 ### Changed
 
