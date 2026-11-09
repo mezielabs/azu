@@ -172,7 +172,7 @@ The second preview: the #79 fix and the docs site (`CHANGELOG.md`). Both package
 2. ✅ **(Chimezie)** **Publish:** after the release PR merges and the docs have deployed, dispatch `release.yml` from `main` with `version: 0.1.0-preview.1` and `publish: true`. `docs-live` checks that azuadmin.com answers, then the job stages both tarballs through OIDC.
 3. ✅ **(Chimezie)** **Approve, core then React:** follow section 7's steps (`npm stage list`, `view`, and optionally `download`, then `approve`) for `@mezielabs/azu` first, then `@mezielabs/azu-react`.
 4. ✅ **(Chimezie)** **Move `latest`:** staging with `--tag preview` leaves `latest` on `0.1.0-preview.0` (section 7). Run `npm dist-tag add @mezielabs/azu@0.1.0-preview.1 latest`, and the same for `@mezielabs/azu-react`, then check `npm view <package> dist-tags` shows both tags on `0.1.0-preview.1`.
-5. ⬜ **Tag and release:** tag `v0.1.0-preview.1` on the release commit on `main` (`0877ee9`, the commit the publish run built), and publish a GitHub release (marked pre-release) with the changelog entry. Set the changelog entry's date to the day it went live.
+5. ✅ **Tag and release:** [`v0.1.0-preview.1`](https://github.com/mezielabs/azu/releases/tag/v0.1.0-preview.1), an annotated tag on `0877ee9` (the commit the publish run built), and a GitHub pre-release published 2026-11-09. The step was: tag `v0.1.0-preview.1` on the release commit on `main`, and publish a GitHub release (marked pre-release) with the changelog entry. Set the changelog entry's date to the day it went live.
 
 **Result** (published 2026-11-09):
 

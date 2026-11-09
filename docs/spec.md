@@ -518,8 +518,8 @@ export default defineConfig({
 | 2. Weeks 4–5 | FR-10 to FR-14: VineJS, Bouncer, Drive uploads, actions, filters, theming | Permission and validation tests pass | Done |
 | P1 items | FR-09, FR-15, FR-16, FR-17 (planned for v1.1, brought forward) | As each FR's acceptance | Done |
 | Screens | FR-20 to FR-25: custom screens, navigation links, home screen, screen forms, widgets, trends | As each FR's acceptance | Done |
-| Preview | Review fixes (`docs/reviews/2026-10-22-azu-review.md`), packaging, release workflow, then 0.1.0-preview.0 | `docs/release.md`'s checklist on the release commit | Next |
-| 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | The docs' quick start works on a fresh app in under five minutes | Not started |
+| Preview | Review fixes (`docs/reviews/2026-10-22-azu-review.md`), packaging, release workflow, then 0.1.0-preview.0 | `docs/release.md`'s checklist on the release commit | Done: 0.1.0-preview.0 on 2026-11-03 and 0.1.0-preview.1 on 2026-11-09, both from `release.yml` with 2FA-approved staging |
+| 3. Week 6 | Docs, quickstart, demo polish, v1.0 release | The docs' quick start works on a fresh app in under five minutes | In progress: the docs site is live at azuadmin.com, and the quick start is timed at about two minutes (`docs/quickstart.md`). v1.0 is not started |
 | Later | Private Drive disks (`file` and `image` URLs signed through Drive's `getSignedUrl` instead of `getUrl`, which only suits public disks); FR-18 soft deletes, FR-19 global search (P2); navigation badges; Azu's own UI strings through AdonisJS i18n (English-only in the preview, R03) | | Not started |
 
 **Phase 0 risk checks:**
