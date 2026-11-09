@@ -29,12 +29,12 @@ Recorded from the compatibility pass and the benchmarks; both issues stay open f
 | Field | `@mezielabs/azu` | `@mezielabs/azu-react` | Needed |
 | --- | --- | --- | --- |
 | `name` | ✅ | ✅ | |
-| `version` | ✅ `0.1.0-preview.0` | ✅ `0.1.0-preview.0` | Coordinated preview |
+| `version` | ✅ `0.1.0-preview.1` | ✅ `0.1.0-preview.1` | Coordinated preview |
 | `description` | ✅ | ✅ | |
 | `license` | ✅ MIT, `LICENSE.md` shipped | ✅ MIT, `LICENSE.md` shipped | |
 | `author` | ✅ Mezie Labs | ✅ Mezie Labs | |
 | `repository` | ✅ | ✅ | **Required for provenance**: npm checks it against the repo that built the package. `{ "type": "git", "url": "git+https://github.com/mezielabs/azu.git", "directory": "packages/core" }` (and `packages/react`) |
-| `homepage` | ✅ | ✅ | `https://github.com/mezielabs/azu#readme` |
+| `homepage` | ✅ | ✅ | `https://azuadmin.com`, from the release after 0.1.0-preview.1; earlier versions show `https://github.com/mezielabs/azu#readme` on npm |
 | `bugs` | ✅ | ✅ | `https://github.com/mezielabs/azu/issues` |
 | `keywords` | ✅ | ✅ | e.g. `adonisjs`, `adonis`, `admin`, `admin-panel`, `inertia`, `react`, `lucid` |
 | `engines` | ✅ `node >=24.21.0` | ✅ `node >=24.21.0` | |
@@ -116,7 +116,7 @@ All on `61dde23`, 2026-11-02.
 - **Dist-tags:** `latest` and `preview` both `0.1.0-preview.0`, on both packages. A package's first publish sets `latest` even with `--tag preview`, as Verdaccio did (below); later previews published with `--tag preview` leave it where it is.
 - **Integrity:** npm's `shasum` for each version matches the job log's: `5e4d5036…6e8d49` for `@mezielabs/azu`, `cf29429a…67c861` for `@mezielabs/azu-react`.
 - **Provenance:** both versions carry an SLSA v1 provenance attestation, signed in the run and logged in Sigstore's transparency log.
-- ⬜ **Next preview:** note whether trusted publishing also stages. It's recorded under [0.1.0-preview.1](#010-preview1) below.
+- ✅ **Next preview:** trusted publishing stages too. The OIDC publish of 0.1.0-preview.1 staged both packages, as recorded under [0.1.0-preview.1](#010-preview1) below.
 
 **Approving a staged publish.** You need npm 11.15 or later, 2FA on your npm account, and a session logged in as a maintainer (`npm login`). The `stage` subcommands other than `publish` can't use the job's OIDC token. Do this for each package, core first, since `@mezielabs/azu-react`'s peer range names core's version:
 
@@ -127,6 +127,8 @@ All on `61dde23`, 2026-11-02.
 5. `npm stage approve <stage-id>` (2FA). The version then goes live with the tag it was staged with. npmjs.com's Staged Packages tab has the same Approve button.
 
 Then run `npm view @mezielabs/azu dist-tags` (and the same for `@mezielabs/azu-react`) to check the result.
+
+**If staging fails with `ENEEDAUTH`.** From `npm stage publish` in the job, `ENEEDAUTH` usually means npm refused the OIDC exchange. Adding `--loglevel verbose` to the job's `npm stage publish` command shows npm's refusal. For 0.1.0-preview.1 the cause was an expired trusted publisher: npm expires a trusted-publisher configuration that isn't used within 2 days of being created. Create a package's trusted publisher just before its first OIDC publish, and if one has expired, recreate it (Packages → the package → Settings → Trusted publishing) with the same repository, workflow, environment and stage-only setting, then re-run the failed job.
 
 **The install, checked before publishing** (2026-11-03) against a local registry: Verdaccio 7.0.2, with the tarballs `pnpm pack:check` built from `94bb98a`, published as `release.yml` does (`npm publish <tarball> --tag preview --access public`, core first, with `--provenance` off because provenance needs GitHub's OIDC token). They went into a fresh React starter kit (`create-adonisjs` 3.4.0, npm 11.19.0) whose `.npmrc` sent only the `@mezielabs` scope to Verdaccio.
 
@@ -166,15 +168,16 @@ The release workflow's `docs-live` job needs the site live. Before publishing, i
 
 The second preview: the #79 fix and the docs site (`CHANGELOG.md`). Both packages are versioned `0.1.0-preview.1` in one commit, and `pnpm pack:check` rewrites the React peer to `^0.1.0-preview.1`. The steps follow sections 4 and 7.
 
-1. ⬜ **Dry run:** dispatch `release.yml` on the release branch with `version: 0.1.0-preview.1` and `publish: false`. The run needs `verify`, `smoke` and `packages` green, and the staging jobs skipped.
-2. ⬜ **(Chimezie)** **Publish:** after the release PR merges and the docs have deployed, dispatch `release.yml` from `main` with `version: 0.1.0-preview.1` and `publish: true`. `docs-live` checks that azuadmin.com answers, then the job stages both tarballs through OIDC.
-3. ⬜ **(Chimezie)** **Approve, core then React:** follow section 7's steps (`npm stage list`, `view`, and optionally `download`, then `approve`) for `@mezielabs/azu` first, then `@mezielabs/azu-react`.
-4. ⬜ **(Chimezie)** **Move `latest`:** staging with `--tag preview` leaves `latest` on `0.1.0-preview.0` (section 7). Run `npm dist-tag add @mezielabs/azu@0.1.0-preview.1 latest`, and the same for `@mezielabs/azu-react`, then check `npm view <package> dist-tags` shows both tags on `0.1.0-preview.1`.
-5. ⬜ **Tag and release:** tag `v0.1.0-preview.1` on the release commit on `main`, and publish a GitHub release (marked pre-release) with the changelog entry. Set the changelog entry's date to the day it went live.
+1. ✅ **Dry run:** [run 42478534170](https://github.com/mezielabs/azu/actions/runs/42478534170) on the release branch. Dispatch `release.yml` on the release branch with `version: 0.1.0-preview.1` and `publish: false`. The run needs `verify`, `smoke` and `packages` green, and the staging jobs skipped.
+2. ✅ **(Chimezie)** **Publish:** after the release PR merges and the docs have deployed, dispatch `release.yml` from `main` with `version: 0.1.0-preview.1` and `publish: true`. `docs-live` checks that azuadmin.com answers, then the job stages both tarballs through OIDC.
+3. ✅ **(Chimezie)** **Approve, core then React:** follow section 7's steps (`npm stage list`, `view`, and optionally `download`, then `approve`) for `@mezielabs/azu` first, then `@mezielabs/azu-react`.
+4. ✅ **(Chimezie)** **Move `latest`:** staging with `--tag preview` leaves `latest` on `0.1.0-preview.0` (section 7). Run `npm dist-tag add @mezielabs/azu@0.1.0-preview.1 latest`, and the same for `@mezielabs/azu-react`, then check `npm view <package> dist-tags` shows both tags on `0.1.0-preview.1`.
+5. ⬜ **Tag and release:** tag `v0.1.0-preview.1` on the release commit on `main` (`0877ee9`, the commit the publish run built), and publish a GitHub release (marked pre-release) with the changelog entry. Set the changelog entry's date to the day it went live.
 
-**Result** (fill in after publishing):
+**Result** (published 2026-11-09):
 
-- Run: ⬜
-- **Did trusted publishing stage it?** ⬜ Record what npm did for the OIDC publish: staged as expected, or something else (this answers section 7's "next preview" item).
-- Integrity: ⬜ `shasum` for each package against the job's "Tarball checksums" step.
-- Dist-tags after step 4: ⬜
+- **Run:** [run 42581837872](https://github.com/mezielabs/azu/actions/runs/42581837872), attempt 2, from `main` at `0877ee9`.
+- **Did trusted publishing stage it?** Yes, as expected. The OIDC publish staged both packages, and Chimezie approved them with 2FA, core first: `@mezielabs/azu` went live at 08:23 UTC, `@mezielabs/azu-react` at 08:24.
+- **Integrity:** npm's `shasum` matches the job's "Tarball checksums" step for both: `fcd88bcd9d96c5489ed1499e6a915e49b14b8993` for `@mezielabs/azu`, `c19ab4f85176f6a9116dd9f2a71e7aa3b557d710` for `@mezielabs/azu-react`.
+- **Dist-tags after step 4:** `latest` and `preview` both `0.1.0-preview.1`, on both packages.
+- **The first attempt failed with `ENEEDAUTH`.** The trusted publishers, created on 2026-11-03, had never been used, and npm expires a trusted-publisher configuration that isn't used within 2 days of being created. Chimezie recreated both on 2026-11-09 (`mezielabs/azu`, `release.yml`, environment `npm-preview`, `npm stage publish` only) and re-ran the failed job, which staged both packages. **Lesson:** create a trusted publisher just before its first OIDC publish. Section 7 has what to do if staging fails with `ENEEDAUTH`.
