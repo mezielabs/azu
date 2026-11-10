@@ -63,6 +63,19 @@ for (const dir of ['app/admin/resources', 'app/policies']) {
 rmSync(join(proof, 'app/admin/screens/overview.ts'))
 const config = join(proof, 'config/azu.ts')
 writeFileSync(config, readFileSync(config, 'utf8').replace(/^\s*home: 'overview',\n/m, ''))
+// The public demo's Users resource (DEMO_MODE) is hand-written too, and
+// start/azu.ts registers it: it reads UserPolicy's own abilities
+rmSync(join(proof, 'app/admin/demo'), { recursive: true, force: true })
+const preload = join(proof, 'start/azu.ts')
+// From its imports to the end of the block; nothing else is registered
+const demoBlock =
+  /^import azu from '@mezielabs\/azu\/services\/main'\n[\s\S]*?^if \(demo\.enabled\) \{\n[\s\S]*?^\}\n/m
+const preloadSource = readFileSync(preload, 'utf8')
+if (!demoBlock.test(preloadSource)) {
+  console.error('Generator proof: start/azu.ts no longer has the DEMO_MODE block to remove')
+  process.exit(1)
+}
+writeFileSync(preload, preloadSource.replace(demoBlock, 'export {}\n'))
 rmSync(join(proof, 'tests/functional'), { recursive: true, force: true })
 rmSync(join(proof, 'tests/types'), { recursive: true, force: true })
 // The browser suite (axe checks) uses the hand-written resources too
