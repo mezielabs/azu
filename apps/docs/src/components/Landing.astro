@@ -2,7 +2,7 @@
 /** The landing page owns its layout inside Starlight's splash template. */
 import { Image } from 'astro:assets'
 import { Code, Icon } from '@astrojs/starlight/components'
-import { ArrowDown, ArrowRight, Check, Database, ShieldCheck, ListChecks } from '@lucide/astro'
+import { ArrowRight, Check, Database, ShieldCheck, ListChecks } from '@lucide/astro'
 import DemoCode from './DemoCode.astro'
 import LandingShot from './LandingShot.astro'
 import lockup from '../assets/brand/azu-lockup.svg'
@@ -124,7 +124,6 @@ const footerLinks = [
     <div class="hero-actions">
       <a class="btn primary button-md" href="/docs/installation/">Get started <ArrowRight size={18} aria-hidden="true" /></a>
       <a class="btn secondary button-md" href="https://demo.azuadmin.com">Try the demo</a>
-      <a class="text-link button-md" href="#product-preview">See how it works <ArrowDown size={16} aria-hidden="true" /></a>
     </div>
   </section>
 
