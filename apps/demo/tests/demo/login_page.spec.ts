@@ -32,6 +32,10 @@ test.group('Demo / login page', () => {
     const github = page.getByRole('link', { name: 'GitHub' })
     assert.equal(await github.getAttribute('href'), 'https://github.com/mezielabs/azu')
 
+    // Azu's mark, not the starter kit's AdonisJS logo
+    await page.getByRole('link', { name: 'Azu home' }).waitFor()
+    assert.equal(await page.getByRole('link', { name: 'AdonisJS' }).count(), 0)
+
     assert.equal(await page.getByText(/Feature packs/).count(), 0)
     assert.equal(await page.getByText(/Create an account/).count(), 0)
     assert.equal(await page.title(), 'Azu demo')

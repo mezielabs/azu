@@ -18,6 +18,9 @@ test.group('Login page', () => {
     const github = page.getByRole('link', { name: 'GitHub' })
     assert.equal(await github.getAttribute('href'), 'https://github.com/mezielabs/azu')
 
+    await page.getByRole('link', { name: 'Azu home' }).waitFor()
+    assert.equal(await page.getByRole('link', { name: 'AdonisJS' }).count(), 0)
+
     assert.equal(await page.getByText(/Feature packs/).count(), 0)
     assert.equal(await page.getByText(/kept intentionally minimal/).count(), 0)
     assert.equal(await page.getByRole('term').count(), 0)
