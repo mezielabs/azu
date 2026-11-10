@@ -588,13 +588,13 @@ input {
   gap: 18px;
   max-width: 38ch;
 }
-.auth__role dt {
+.auth__roles .demo-role dt {
   font-family: var(--serif);
   font-size: 22px;
   line-height: 1.2;
   letter-spacing: 0.2px;
 }
-.auth__role dd {
+.auth__roles .demo-role dd {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 14px;
@@ -922,6 +922,38 @@ input {
   flex-direction: column;
   gap: 8px;
   margin-top: 22px;
+}
+/* The roles below the buttons, on narrow screens where the right panel
+   (which lists them otherwise) is hidden */
+.demo-sign-in__roles {
+  display: none;
+}
+@media (max-width: 880px) {
+  .demo-sign-in__roles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--line-2);
+    border-radius: var(--r);
+    background: var(--paper);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .demo-sign-in__roles .demo-role {
+    display: flex;
+    gap: 8px;
+  }
+  .demo-sign-in__roles dt {
+    flex: 0 0 3.6em;
+    font-weight: 560;
+  }
+  .demo-sign-in__roles dd {
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
 }
 .demo-sign-in__or {
   margin-top: 6px;

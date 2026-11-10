@@ -40,4 +40,25 @@ test.group('Demo / login page', () => {
     assert.equal(await page.getByText(/Create an account/).count(), 0)
     assert.equal(await page.title(), 'Azu demo')
   })
+
+  test('on a phone, the roles sit below the buttons', async ({ visit, assert }) => {
+    const page = await visit('/login')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.getByRole('heading', { level: 1, name: 'Try Azu' }).waitFor()
+
+    // The right panel is hidden, so the list below the buttons shows instead
+    await page.locator('.demo-sign-in__roles').waitFor()
+    const roles = page.getByRole('definition')
+    assert.deepEqual(await page.getByRole('term').allInnerTexts(), ['Admin', 'Editor', 'Viewer'])
+    assert.lengthOf(await roles.all(), 3)
+    assert.isFalse(await page.locator('.auth__aside').isVisible())
+
+    const viewer = page.getByRole('button', { name: 'Sign in as Viewer', exact: true })
+    const list = page.locator('.demo-sign-in__roles')
+    const [buttonBox, listBox] = [await viewer.boundingBox(), await list.boundingBox()]
+    assert.isAbove(listBox!.y, buttonBox!.y)
+    // Short enough that the email form still starts on the first screen
+    const email = await page.getByLabel('Email', { exact: true }).boundingBox()
+    assert.isBelow(email!.y, 844)
+  })
 })

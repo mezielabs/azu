@@ -41,6 +41,13 @@ test.group('Demo mode off', (group) => {
     assert.isFalse(cookies.some((line) => line.startsWith('azu_demo=')))
   })
 
+  test('`/` renders the home page', async ({ client }) => {
+    const response = await client.get('/').withInertia().redirects(0)
+
+    response.assertStatus(200)
+    response.assertInertiaComponent('home')
+  })
+
   test('signup works as before, and the pages link to it', async ({ client, assert }) => {
     for (const url of ['/login', '/']) {
       const page = await client.get(url).withInertia()
