@@ -3,6 +3,7 @@ import ace from '@adonisjs/core/services/ace'
 import router from '@adonisjs/core/services/router'
 import testUtils from '@adonisjs/core/services/test_utils'
 import Category from '#models/category'
+import User from '#models/user'
 import DemoReset from '#commands/demo_reset'
 import demo from '#config/demo'
 import { createUser } from './admin/helpers.ts'
@@ -38,6 +39,35 @@ test.group('Demo mode off', (group) => {
     assert.isUndefined(response.header('x-robots-tag'))
     const cookies = ([] as string[]).concat(response.header('set-cookie') ?? [])
     assert.isFalse(cookies.some((line) => line.startsWith('azu_demo=')))
+  })
+
+  test('signup works as before, and the pages link to it', async ({ client, assert }) => {
+    for (const url of ['/login', '/']) {
+      const page = await client.get(url).withInertia()
+      assert.isTrue(page.body().props.signupOpen, url)
+    }
+
+    const form = await client.get('/signup').withInertia()
+    form.assertStatus(200)
+    form.assertInertiaComponent('auth/signup')
+
+    const email = `new-${Date.now()}@example.com`
+    const response = await client
+      .post('/signup')
+      .withCsrfToken()
+      .form({
+        fullName: 'New Person',
+        email,
+        password: 'secret123',
+        passwordConfirmation: 'secret123',
+      })
+      .redirects(0)
+
+    response.assertStatus(302)
+    response.assertHeader('location', '/dashboard')
+    const user = await User.findByOrFail('email', email)
+    assert.equal(user.role, 'customer')
+    response.assertSession('auth_web', user.id)
   })
 
   test('the panel has no Users resource', async ({ client }) => {

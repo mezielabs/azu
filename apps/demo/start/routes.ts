@@ -16,8 +16,12 @@ router.on('/').renderInertia('home', {}).as('home')
 
 router
   .group(() => {
-    router.get('signup', [controllers.NewAccount, 'create'])
-    router.post('signup', [controllers.NewAccount, 'store'])
+    // Not in the public demo (DEMO_MODE): its Users resource would show
+    // every visitor's signup email to anyone who signs in
+    if (!demo.enabled) {
+      router.get('signup', [controllers.NewAccount, 'create'])
+      router.post('signup', [controllers.NewAccount, 'store'])
+    }
 
     router.get('login', [controllers.Session, 'create'])
     router.post('login', [controllers.Session, 'store'])

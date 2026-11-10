@@ -8,6 +8,7 @@ With `DEMO_MODE` off (the default), none of this applies: local dev and CI run t
 
 - **One-click sign-in.** The login page shows **Sign in as Admin**, **Sign in as Editor**, and **Sign in as Viewer**. Each is a POST to `/demo/sign-in/:role`, with the CSRF token, that signs in a seeded account. The Editor is the demo's `staff` role.
 - **A Users resource** under **Settings**, so visitors can compare the roles. The three demo accounts are locked: `UserPolicy` denies every change to them, for everyone.
+- **No signup.** `/signup` returns 404, and the login page and home page have no "Create an account" or "Get started" link. Otherwise the Users resource would show every visitor's email to anyone who signs in.
 - **A banner** on the login page and across the panel: "This demo resets every hour. Last reset 12 minutes ago."
 - **Limits.** 60 write requests (POST, PUT, PATCH, DELETE) per minute per IP address, uploads up to 1 MB on the local `fs` disk, and `X-Robots-Tag: noindex, nofollow` on every response. These live in `config/demo.ts`.
 - **`GET /health`**, for the host's health check.
@@ -35,6 +36,21 @@ In Coolify, create an **Application** from the GitHub repository with:
 | Domain | `https://demo.azuadmin.com` |
 
 Add a **PostgreSQL** resource (version 18) in the same project, and use its internal host for `DB_HOST`.
+
+## DNS
+
+In Cloudflare, add a record for the demo:
+
+| Setting | Value |
+| --- | --- |
+| Type | `A` |
+| Name | `demo` |
+| IPv4 address | The Coolify server's public IP |
+| Proxy status | **DNS only** (grey cloud), not proxied |
+
+Keep it DNS only. The app trusts `X-Forwarded-For` only from private network addresses, which is where Coolify's proxy (Traefik) connects from. Behind Cloudflare's proxy, Traefik sees Cloudflare's edge addresses instead of visitors', so `request.ip()` returns a Cloudflare address. Visitors who reach the same Cloudflare location would then share one write limit, and one busy visitor could block the rest.
+
+Coolify issues the TLS certificate itself. Its proxy requests and renews a Let's Encrypt certificate for any domain entered with `https://`, as the Domain setting above is. For that, the record must point at the server, and ports 80 and 443 must reach Coolify's proxy. See [Domains](https://coolify.io/docs/knowledge-base/domains) in Coolify's docs.
 
 ## Environment variables
 

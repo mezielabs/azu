@@ -1,5 +1,6 @@
 import AuthLayout from '~/layouts/auth'
 import DemoBanner from '~/components/demo_banner'
+import { usePage } from '@inertiajs/react'
 import { Form, Link } from '@adonisjs/inertia/react'
 
 type DemoRole = 'admin' | 'editor' | 'viewer'
@@ -21,6 +22,7 @@ const ROLE_LABELS: Record<DemoRole, string> = {
 }
 
 export default function Login({ demo }: { demo?: DemoProps }) {
+  const { signupOpen } = usePage().props
   return (
     <>
       {demo && <DemoBanner everyMinutes={demo.resetEveryMinutes} lastResetAt={demo.lastResetAt} />}
@@ -95,12 +97,14 @@ export default function Login({ demo }: { demo?: DemoProps }) {
         )}
       </Form>
 
-      <p className="auth__foot">
-        New here?{' '}
-        <Link route="new_account.create" className="il">
-          Create an account
-        </Link>
-      </p>
+      {signupOpen && (
+        <p className="auth__foot">
+          New here?{' '}
+          <Link route="new_account.create" className="il">
+            Create an account
+          </Link>
+        </p>
+      )}
     </>
   )
 }
