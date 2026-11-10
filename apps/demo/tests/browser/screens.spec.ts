@@ -87,7 +87,7 @@ test.group('Screens', (group) => {
     const docs = sidebar.getByRole('link', { name: /Azu documentation/ })
     assert.equal(await docs.getAttribute('target'), '_blank')
     assert.equal(await docs.getAttribute('rel'), 'noopener')
-    assert.equal(await docs.getAttribute('href'), 'https://github.com/mezielabs/azu#readme')
+    assert.equal(await docs.getAttribute('href'), 'https://azuadmin.com/docs/')
     // Named for screen readers, with the new tab said
     const text = await docs.innerText()
     assert.equal(text.replace(/\s+/g, ' ').trim(), 'Azu documentation (opens in a new tab)')

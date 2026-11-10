@@ -5,7 +5,9 @@ import { TuyauProvider } from '@adonisjs/inertia/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react'
 
-const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
+// The server renders the app name as the first title (appName in
+// config/app.ts), which depends on DEMO_MODE
+const appName = document.title.trim() || 'Azu demo store'
 
 createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),

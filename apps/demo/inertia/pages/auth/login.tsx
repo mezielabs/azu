@@ -1,5 +1,6 @@
 import AuthLayout from '~/layouts/auth'
 import DemoBanner from '~/components/demo_banner'
+import DemoRoles from '~/components/demo_roles'
 import { usePage } from '@inertiajs/react'
 import { Form, Link } from '@adonisjs/inertia/react'
 
@@ -27,8 +28,19 @@ export default function Login({ demo }: { demo?: DemoProps }) {
     <>
       {demo && <DemoBanner everyMinutes={demo.resetEveryMinutes} lastResetAt={demo.lastResetAt} />}
 
-      <h1 className="auth__title">Welcome back</h1>
-      <p className="auth__sub">Sign in to continue building.</p>
+      {demo ? (
+        <>
+          <h1 className="auth__title">Try Azu</h1>
+          <p className="auth__sub">
+            Sign in as a role to see how the same panel changes with your Bouncer policies.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="auth__title">Welcome back</h1>
+          <p className="auth__sub">Sign in to continue building.</p>
+        </>
+      )}
 
       {demo && (
         <div className="demo-sign-in" aria-label="Try the demo" role="group">
@@ -46,6 +58,8 @@ export default function Login({ demo }: { demo?: DemoProps }) {
               )}
             </Form>
           ))}
+          {/* Hidden where the right panel lists the roles */}
+          <DemoRoles className="demo-sign-in__roles" />
           <p className="demo-sign-in__or">or with an email and password</p>
         </div>
       )}

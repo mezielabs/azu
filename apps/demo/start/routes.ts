@@ -12,7 +12,12 @@ import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 import demo from '#config/demo'
 
-router.on('/').renderInertia('home', {}).as('home')
+// The public demo (DEMO_MODE) sends `/` to the login page or the panel
+if (demo.enabled) {
+  router.get('/', [controllers.DemoSession, 'home']).as('home')
+} else {
+  router.on('/').renderInertia('home', {}).as('home')
+}
 
 router
   .group(() => {

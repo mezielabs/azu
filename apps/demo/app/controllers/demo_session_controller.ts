@@ -5,10 +5,20 @@ import User from '#models/user'
 import demo, { type DemoRole } from '#config/demo'
 
 /**
- * "Sign in as Admin / Editor / Viewer" on the public demo's login page
- * (DEMO_MODE). start/routes.ts registers it only with DEMO_MODE on.
+ * The public demo's own routes (DEMO_MODE): "Sign in as Admin / Editor /
+ * Viewer" on the login page, and `/`. start/routes.ts registers them only
+ * with DEMO_MODE on.
  */
 export default class DemoSessionController {
+  /**
+   * `/`: the panel for a signed-in visitor, the login page otherwise, so
+   * "Try the demo" never lands on the starter kit's welcome page
+   */
+  async home(ctx: HttpContext) {
+    if (!ctx.auth.isAuthenticated) return ctx.response.redirect().toRoute('session.create')
+    return this.#openAdmin(ctx)
+  }
+
   async store({ params, request, response, auth, session, inertia }: HttpContext) {
     const role = params.role as string
     if (!Object.hasOwn(demo.accounts, role)) return response.notFound()
@@ -21,6 +31,14 @@ export default class DemoSessionController {
     }
 
     await auth.use('web').login(user)
+    return this.#openAdmin({ request, response, inertia })
+  }
+
+  #openAdmin({
+    request,
+    response,
+    inertia,
+  }: Pick<HttpContext, 'request' | 'response' | 'inertia'>) {
     const admin = app.config.get<AzuConfig>('azu').path
     // The admin has its own Inertia entry point, so load its page
     if (request.header('x-inertia')) return inertia.location(admin)
