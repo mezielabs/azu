@@ -102,7 +102,21 @@ During a reset, which takes a few seconds, requests can fail while the tables ar
 
 ## Health check
 
-`GET /health` returns 200 when the database answers, and 503 otherwise. The image's `HEALTHCHECK` calls it. In Coolify, set the health check path to `/health` on port `3333`.
+`GET /health` returns 200 when the database answers, and 503 otherwise.
+
+The image has its own `HEALTHCHECK`, which calls `/health` with Node. For an application built from a Dockerfile, Coolify uses the image's `HEALTHCHECK` instead of the one in its dashboard.
+
+Coolify's own HTTP check runs `curl` or `wget` inside the container, not on the server, and the slim Node image has neither. So the image installs `curl`, and the dashboard check works too if you use it. In the application's **Healthcheck** settings, with **Check type** set to **HTTP**:
+
+| Field | Value |
+| --- | --- |
+| Method | `GET` |
+| Scheme | `http` |
+| Host | `localhost` |
+| Port | `3333` |
+| Path | `/health` |
+
+See [Health checks](https://coolify.io/docs/knowledge-base/health-checks) in Coolify's docs.
 
 ## Check it works
 
@@ -120,5 +134,3 @@ Then open https://demo.azuadmin.com/login, check the banner, and sign in as each
 - **Admin** sees every resource, **Delete**, **Publish**, and the **Role** field on users.
 - **Editor** edits products but has no **Delete** or **Publish**, and no **Role** field on users. Categories, tags, and orders are hidden.
 - **Viewer** sees products, coupons, and users, with no **Edit** or **Create**.
-
-Once the demo is live, uncomment the "Try the demo" links in `apps/docs/src/components/Landing.astro` and `apps/docs/src/content/docs/docs/index.mdx`.

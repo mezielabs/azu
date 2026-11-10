@@ -32,7 +32,8 @@ export const plugins: Config['plugins'] = [
   authApiClient(app),
   shieldApiClient(),
   dbAssertions(app),
-  browserClient({ runInSuites: ['browser'] }),
+  // The demo suite checks the DEMO_MODE login page in a browser too
+  browserClient({ runInSuites: ['browser', 'demo'] }),
   sessionBrowserClient(app),
   authBrowserClient(app),
 ]

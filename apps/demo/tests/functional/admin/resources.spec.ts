@@ -72,7 +72,7 @@ const HELP = {
       name: 'link-1',
       label: 'Azu documentation',
       icon: 'book-open',
-      href: 'https://github.com/mezielabs/azu#readme',
+      href: 'https://azuadmin.com/docs/',
       external: true,
     },
   ],

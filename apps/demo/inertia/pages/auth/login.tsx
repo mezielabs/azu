@@ -27,8 +27,19 @@ export default function Login({ demo }: { demo?: DemoProps }) {
     <>
       {demo && <DemoBanner everyMinutes={demo.resetEveryMinutes} lastResetAt={demo.lastResetAt} />}
 
-      <h1 className="auth__title">Welcome back</h1>
-      <p className="auth__sub">Sign in to continue building.</p>
+      {demo ? (
+        <>
+          <h1 className="auth__title">Try Azu</h1>
+          <p className="auth__sub">
+            Sign in as a role to see how the same panel changes with your Bouncer policies.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="auth__title">Welcome back</h1>
+          <p className="auth__sub">Sign in to continue building.</p>
+        </>
+      )}
 
       {demo && (
         <div className="demo-sign-in" aria-label="Try the demo" role="group">

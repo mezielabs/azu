@@ -61,7 +61,7 @@ const azuConfig = defineConfig({
       },
       {
         label: 'Azu documentation',
-        url: 'https://github.com/mezielabs/azu#readme',
+        url: 'https://azuadmin.com/docs/',
         group: 'Help',
         icon: 'book-open',
       },

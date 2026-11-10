@@ -25,6 +25,12 @@ privateNetworks.addSubnet('fc00::', 7, 'ipv6')
 export const appUrl = env.get('APP_URL')
 
 /**
+ * The document title: resources/views/inertia_layout.edge renders it, and
+ * inertia/app.tsx reads it back for page titles.
+ */
+export const appName = demo.enabled ? 'Azu demo' : 'Azu demo store'
+
+/**
  * The configuration settings used by the HTTP server
  */
 export const http = defineConfig({

@@ -52,6 +52,11 @@ COPY --from=build --chown=node:node /repo/apps/demo/build ./build
 # Uploads (the Drive "fs" disk). Mount a volume here to keep them across
 # deploys; `node ace demo:reset` empties it every hour either way.
 RUN mkdir -p build/storage build/tmp && chown -R node:node build/storage build/tmp
+# Coolify's health check runs curl (or wget) inside the container, and the
+# slim image has neither
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 USER node
 WORKDIR /app/build
 EXPOSE 3333
