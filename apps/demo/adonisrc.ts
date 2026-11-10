@@ -65,6 +65,7 @@ export default defineConfig({
     () => import('@mezielabs/azu/azu_provider'),
     () => import('@adonisjs/bouncer/bouncer_provider'),
     () => import('@adonisjs/drive/drive_provider'),
+    () => import('@adonisjs/limiter/limiter_provider'),
   ],
 
   /*
@@ -107,6 +108,13 @@ export default defineConfig({
         files: ['tests/browser/**/*.spec.{ts,js}'],
         name: 'browser',
         timeout: 300000,
+      },
+      {
+        // The public demo, with DEMO_MODE=true: `pnpm test` runs it on its
+        // own after the other suites, which skip it otherwise
+        files: ['tests/demo/**/*.spec.{ts,js}'],
+        name: 'demo',
+        timeout: 60000,
       },
     ],
     forceExit: false,

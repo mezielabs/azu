@@ -14,6 +14,8 @@ export type SettingValues = {
   maintenanceMode: boolean | null
   checkoutAnnouncement: string | null
   lastChangedAt: DateTime | null
+  /** When `node ace demo:reset` last ran (the public demo, DEMO_MODE) */
+  demoResetAt: DateTime | null
 }
 
 export type SettingKey = keyof SettingValues

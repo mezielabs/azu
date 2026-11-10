@@ -179,7 +179,7 @@ export class UserSchema extends BaseModel {
   @column({ serializeAs: null })
   declare password: string
   @column()
-  declare role: 'admin' | 'staff' | 'customer'
+  declare role: 'admin' | 'staff' | 'viewer' | 'customer'
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

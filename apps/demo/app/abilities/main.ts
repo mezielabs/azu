@@ -14,11 +14,11 @@ import { policies } from '#generated/policies'
 
 /**
  * Who can open the admin panel. Azu's installer will add this ability
- * returning `false`; the demo lets admins and staff in.
+ * returning `false`; the demo lets admins, staff and viewers in.
  */
 // #region access-admin
 export const accessAdmin = Bouncer.ability((user: User) => {
-  return user.role === 'admin' || user.role === 'staff'
+  return user.role === 'admin' || user.role === 'staff' || user.role === 'viewer'
 })
 // #endregion
 

@@ -128,6 +128,15 @@ export default class MainSeeder extends BaseSeeder {
       )
     }
 
+    // A read-only account, after the customers so their ids stay put.
+    // The public demo's "Sign in as Viewer" (DEMO_MODE) uses it.
+    await User.create({
+      fullName: 'Val Viewer',
+      email: 'viewer@azu.test',
+      password: 'password',
+      role: 'viewer',
+    })
+
     const categories = await Category.createMany([
       { name: 'Kitchen', slug: 'kitchen', description: 'Pots, pans and everything in between' },
       { name: 'Fashion', slug: 'fashion', description: 'Ankara, aso-oke and accessories' },

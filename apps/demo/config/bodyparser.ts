@@ -1,3 +1,4 @@
+import demo from '#config/demo'
 import { defineConfig } from '@adonisjs/core/bodyparser'
 
 const bodyParserConfig = defineConfig({
@@ -64,9 +65,10 @@ const bodyParserConfig = defineConfig({
     processManually: [],
 
     /**
-     * Maximum accepted payload size for multipart requests.
+     * Maximum accepted payload size for multipart requests. The public
+     * demo (DEMO_MODE) caps uploads at 1 MB.
      */
-    limit: '20mb',
+    limit: demo.enabled ? demo.uploadLimit : '20mb',
 
     /**
      * Content types handled by the multipart parser.

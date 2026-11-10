@@ -23,9 +23,11 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
                 <Link route="session.create" className="btn btn--ghost btn--sm">
                   Sign in
                 </Link>
-                <Link route="new_account.create" className="btn btn--primary btn--sm">
-                  Get started
-                </Link>
+                {props.signupOpen && (
+                  <Link route="new_account.create" className="btn btn--primary btn--sm">
+                    Get started
+                  </Link>
+                )}
               </>
             )}
           </div>
